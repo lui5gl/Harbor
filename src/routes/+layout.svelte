@@ -4,6 +4,7 @@
   import "@fontsource/inter/600.css";
   import "@fontsource/inter/700.css";
   import NavigationBar from "$lib/features/navigation/NavigationBar.svelte";
+  import StatusBar from "$lib/features/status-bar/StatusBar.svelte";
 
   let { children } = $props();
 </script>
@@ -14,7 +15,10 @@
 
 <div class="application-shell">
   <NavigationBar />
-  {@render children()}
+  <div class="application-content">
+    {@render children()}
+  </div>
+  <StatusBar />
 </div>
 
 <style>
@@ -68,6 +72,12 @@
   .application-shell {
     background: var(--color-boulder-50);
     color: var(--color-boulder-950);
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
+  }
+
+  .application-content {
+    flex: 1;
   }
 </style>

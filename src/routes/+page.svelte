@@ -24,7 +24,7 @@
 <style>
   .services-page {
     box-sizing: border-box;
-    min-height: calc(100vh - 60px);
+    min-height: 100%;
     padding: 24px;
   }
 
