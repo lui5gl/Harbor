@@ -432,7 +432,8 @@
     flex-shrink: 0;
     gap: 0;
     justify-content: stretch;
-    width: 100%;
+    justify-self: end;
+    width: 435px;
   }
 
   .version-control-group {
@@ -480,6 +481,7 @@
     .service-controls {
       grid-column: 2;
       grid-row: 1;
+      width: min(435px, 100%);
     }
 
     .runtime-controls {
@@ -500,6 +502,10 @@
       grid-column: 1 / -1;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       margin-left: 0;
+      width: 100%;
+    }
+
+    .service-controls {
       width: 100%;
     }
 
