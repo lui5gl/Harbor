@@ -1,6 +1,44 @@
 <script lang="ts">
+  import { invoke } from "@tauri-apps/api/core";
   import ServiceCard from "$lib/features/services/ServiceCard.svelte";
-  import { serviceDefinitions } from "$lib/features/services/services";
+  import { serviceDefinitions, type ServiceDefinition } from "$lib/features/services/services";
+
+  let services = $state<ServiceDefinition[]>(serviceDefinitions);
+
+  $effect(() => {
+    void loadServiceVersions();
+  });
+
+  async function loadServiceVersions() {
+    const catalogRequests = [
+      ["Node.js", "get_node_versions"],
+      ["PHP", "get_php_versions"],
+      ["Apache", "get_apache_versions"]
+    ] as const;
+
+    const catalogResults = await Promise.allSettled(
+      catalogRequests.map(async ([serviceName, command]) => [
+        serviceName,
+          await getCatalog(command)
+      ] as const)
+    );
+
+    const versionsByService = new Map<string, string[]>();
+    for (const result of catalogResults) {
+      if (result.status === "fulfilled") {
+        versionsByService.set(result.value[0], result.value[1]);
+      }
+    }
+
+    services = services.map((service) => ({
+      ...service,
+      versions: versionsByService.get(service.name) ?? service.versions
+    }));
+  }
+
+    async function getCatalog(command: string): Promise<string[]> {
+      return await invoke<string[]>(command);
+    }
 </script>
 
 <svelte:head>
@@ -17,7 +55,7 @@
   </section>
 
   <section class="service-list" aria-label="Available services">
-    {#each serviceDefinitions as service (service.name)}
+    {#each services as service (service.name)}
       <ServiceCard
         serviceName={service.name}
         serviceDescription={service.description}
