@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Plus } from "@lucide/svelte";
   import { Button } from "bits-ui";
+  import ServiceCard from "$lib/features/services/ServiceCard.svelte";
 </script>
 
 <svelte:head>
@@ -19,6 +20,10 @@
       <span>Add Service</span>
     </Button.Root>
   </section>
+
+  <section class="service-list" aria-label="Available services">
+    <ServiceCard />
+  </section>
 </main>
 
 <style>
@@ -33,10 +38,21 @@
     display: flex;
     justify-content: space-between;
     gap: 24px;
+    max-width: 1120px;
+    margin: 0 auto;
+    width: 100%;
   }
 
   .heading-group {
     min-width: 0;
+  }
+
+  .service-list {
+    margin-top: 32px;
+    max-width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
   }
 
   h1 {
