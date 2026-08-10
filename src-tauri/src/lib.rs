@@ -17,8 +17,50 @@ struct NodeRelease {
     lts: serde_json::Value,
 }
 
-fn node_channel(lts: &serde_json::Value) -> String {
-    match lts.as_str().filter(|name| !name.is_empty() && *name != "false") {
+#[derive(serde::Deserialize)]
+struct PhpSupportCycle {
+    cycle: String,
+    support: String,
+    eol: String,
+}
+
+fn php_channel(version: &str, support_cycles: &[PhpSupportCycle]) -> String {
+    let cycle = version.split('.').take(2).collect::<Vec<_>>().join(".");
+    let today = chrono::Utc::now().date_naive().to_string();
+    let support_cycle = support_cycles.iter().find(|entry| entry.cycle == cycle);
+
+    let Some(support_cycle) = support_cycle else {
+        return "Unknown".to_string();
+    };
+    if today.as_str() <= support_cycle.support.as_str() {
+        return "Active".to_string();
+    }
+    if today.as_str() <= support_cycle.eol.as_str() {
+        return "Security".to_string();
+    }
+    "EOL".to_string()
+}
+
+fn node_channel(release: &NodeRelease, schedule: &serde_json::Map<String, serde_json::Value>) -> String {
+    let major_version = release
+        .version
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .trim_start_matches('v');
+    let schedule_key = format!("v{major_version}");
+    let schedule_entry = schedule.get(&schedule_key).and_then(serde_json::Value::as_object);
+    let today = chrono::Utc::now().date_naive().to_string();
+    let is_eol = schedule_entry
+        .and_then(|entry| entry.get("eol"))
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|eol_date| eol_date <= today.as_str());
+
+    if is_eol {
+        return "EOL".to_string();
+    }
+
+    match release.lts.as_str().filter(|name| !name.is_empty() && *name != "false") {
         Some(name) => format!("LTS - {name}"),
         None => "Current".to_string(),
     }
@@ -26,7 +68,10 @@ fn node_channel(lts: &serde_json::Value) -> String {
 
 #[tauri::command]
 async fn get_node_versions() -> Result<Vec<String>, String> {
-    let releases = reqwest::get("https://nodejs.org/download/release/index.json")
+    let client = reqwest::Client::new();
+    let releases = client
+        .get("https://nodejs.org/download/release/index.json")
+        .send()
         .await
         .map_err(|error| format!("Unable to fetch Node.js releases: {error}"))?
         .error_for_status()
@@ -34,12 +79,26 @@ async fn get_node_versions() -> Result<Vec<String>, String> {
         .json::<Vec<NodeRelease>>()
         .await
         .map_err(|error| format!("Unable to read Node.js release catalog: {error}"))?;
+    let schedule = client
+        .get("https://raw.githubusercontent.com/nodejs/Release/main/schedule.json")
+        .send()
+        .await
+        .map_err(|error| format!("Unable to fetch Node.js release schedule: {error}"))?
+        .error_for_status()
+        .map_err(|error| format!("Node.js release schedule returned an error: {error}"))?
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|error| format!("Unable to read Node.js release schedule: {error}"))?;
+    let schedule = schedule
+        .as_object()
+        .ok_or_else(|| "Node.js release schedule has an invalid format".to_string())?;
 
     let mut versions = releases
         .into_iter()
         .filter(|release| !release.version.is_empty() && !release.date.is_empty())
         .map(|release| {
-            format!("{} ({})", release.version, node_channel(&release.lts))
+            let channel = node_channel(&release, schedule);
+            format!("{} ({channel})", release.version)
         })
         .collect::<Vec<_>>();
     versions.sort_by(|left, right| {
@@ -59,6 +118,14 @@ async fn get_node_versions() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 async fn get_php_versions() -> Result<Vec<String>, String> {
+    let support_cycles = reqwest::get("https://endoflife.date/api/php.json")
+        .await
+        .map_err(|error| format!("Unable to fetch PHP support schedule: {error}"))?
+        .error_for_status()
+        .map_err(|error| format!("PHP support schedule returned an error: {error}"))?
+        .json::<Vec<PhpSupportCycle>>()
+        .await
+        .map_err(|error| format!("Unable to read PHP support schedule: {error}"))?;
     let mut versions = std::collections::HashSet::new();
     for branch in ["8", "7", "5", "4", "3"] {
         let url = format!(
@@ -76,7 +143,8 @@ async fn get_php_versions() -> Result<Vec<String>, String> {
         versions.extend(
             releases
                 .into_keys()
-                .filter(|version| semver::Version::parse(version).is_ok()),
+                .filter(|version| semver::Version::parse(version).is_ok())
+                .map(|version| format!("{version} ({})", php_channel(&version, &support_cycles))),
         );
     }
 

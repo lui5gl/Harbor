@@ -48,11 +48,27 @@
       selectedVersion = installedCatalog[0] ?? "";
     }
   });
-  let installedCatalog = $derived(versions.filter((version) => installedVersions.includes(version)));
-  let downloadableCatalog = $derived(versions.filter((version) => !installedVersions.includes(version)));
+  let installedCatalog = $derived(versions.filter((version) => installedVersions.includes(getVersionNumber(version))));
+  let downloadableCatalog = $derived(versions.filter((version) => !installedVersions.includes(getVersionNumber(version))));
   let filteredDownloadCatalog = $derived(downloadSearchValue === ""
     ? downloadableCatalog
     : downloadableCatalog.filter((version) => version.toLowerCase().includes(downloadSearchValue.toLowerCase())));
+
+  function getVersionParts(version: string) {
+    const match = version.match(/^(.*) \((.*)\)$/);
+    if (!match) {
+      return { number: version, channel: "" };
+    }
+    return { number: match[1], channel: match[2] };
+  }
+
+  function getVersionNumber(version: string) {
+    return getVersionParts(version).number;
+  }
+
+  function isInstalled(version: string) {
+    return installedVersions.includes(getVersionNumber(version));
+  }
 
   onMount(() => {
     if (serviceName === "Apache") {
@@ -86,7 +102,7 @@
   }
 
   async function toggleService() {
-    if (serviceName !== "Apache" || !installedVersions.includes(selectedVersion)) {
+    if (serviceName !== "Apache" || !isInstalled(selectedVersion)) {
       return;
     }
     downloadError = "";
@@ -136,9 +152,9 @@
       <span class="meta-value">{servicePort}</span>
     </div>
     {#if serviceName === "PHP"}
-      <div class={`runtime-state${installedVersions.includes(selectedVersion) ? " ready" : ""}`}>
+      <div class={`runtime-state${isInstalled(selectedVersion) ? " ready" : ""}`}>
         <span class="status-indicator" aria-hidden="true"></span>
-        <span>{installedVersions.includes(selectedVersion) ? "Ready" : "Not installed"}</span>
+        <span>{isInstalled(selectedVersion) ? "Ready" : "Not installed"}</span>
       </div>
     {/if}
   </div>
@@ -178,7 +194,15 @@
               {#each installedCatalog as version (version)}
                 <Combobox.Item class="version-item" value={version} label={version}>
                   {#snippet children({ selected })}
-                    <span>{version}</span>
+                    {@const versionParts = getVersionParts(version)}
+                    <span class="version-item-label">
+                      <span>{versionParts.number}</span>
+                      {#if versionParts.channel}
+                        <span class={`version-channel ${versionParts.channel.startsWith("EOL") ? "version-channel-eol" : versionParts.channel.startsWith("LTS") ? "version-channel-lts" : versionParts.channel.startsWith("Security") ? "version-channel-security" : "version-channel-current"}`}>
+                          {versionParts.channel.replace("LTS - ", "LTS · ")}
+                        </span>
+                      {/if}
+                    </span>
                     {#if selected}
                       <Check size={16} strokeWidth={2} aria-hidden="true" />
                     {/if}
@@ -226,7 +250,15 @@
           <Combobox.Viewport>
             {#each filteredDownloadCatalog as version (version)}
               <Combobox.Item class="version-item" value={version} label={version} onclick={() => requestInstall(version)}>
-                <span>{version}</span>
+                {@const versionParts = getVersionParts(version)}
+                <span class="version-item-label">
+                  <span>{versionParts.number}</span>
+                  {#if versionParts.channel}
+                    <span class={`version-channel ${versionParts.channel.startsWith("EOL") ? "version-channel-eol" : versionParts.channel.startsWith("LTS") ? "version-channel-lts" : versionParts.channel.startsWith("Active") ? "version-channel-active" : versionParts.channel.startsWith("Security") ? "version-channel-security" : "version-channel-current"}`}>
+                      {versionParts.channel.replace("LTS - ", "LTS · ")}
+                    </span>
+                  {/if}
+                </span>
                 <Download size={16} strokeWidth={2} aria-hidden="true" />
               </Combobox.Item>
             {:else}
@@ -628,6 +660,42 @@
     align-items: center;
     display: inline-flex;
     gap: 10px;
+    min-width: 0;
+  }
+
+  .version-channel {
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 20px;
+    padding: 0 7px;
+    text-transform: uppercase;
+  }
+
+  .version-channel-current {
+    background: #edf4ff;
+    color: #3568a8;
+  }
+
+  .version-channel-lts {
+    background: #eaf7f0;
+    color: #28734a;
+  }
+
+  .version-channel-security {
+    background: #fff7e6;
+    color: #9a6700;
+  }
+
+  .version-channel-active {
+    background: #e8f7f8;
+    color: #18727a;
+  }
+
+  .version-channel-eol {
+    background: #fff0ed;
+    color: #a33c2c;
   }
 
   .download-status-dot {

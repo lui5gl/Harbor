@@ -69,15 +69,16 @@
     }
 
     async function configurePhpAlias(version: string): Promise<void> {
-      await invoke<string>("configure_php_cli_alias", { version });
+      await invoke<string>("configure_php_cli_alias", { version: version.split(" ")[0] });
     }
 
     async function installVersion(serviceName: string, version: string): Promise<void> {
       if (serviceName !== "PHP") {
         return;
       }
-      await invoke<string>("install_php", { version });
-      await configurePhpAlias(version);
+      const installableVersion = version.split(" ")[0];
+      await invoke<string>("install_php", { version: installableVersion });
+      await configurePhpAlias(installableVersion);
       const installedVersions = await getInstalledVersions(serviceName);
       services = services.map((service) => service.name === serviceName
         ? { ...service, installedVersions }
