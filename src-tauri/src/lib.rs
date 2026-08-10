@@ -199,6 +199,19 @@ fn get_installed_versions(service: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+fn remove_runtime(service: String, version: String) -> Result<(), String> {
+    let parsed_version = semver::Version::parse(version.trim_start_matches('v'))
+        .map_err(|_| format!("Invalid {service} version: {version}"))?;
+    let normalized_version = parsed_version.to_string();
+    let runtime_directory = runtime_paths::runtime_directory(&service)?;
+    let target_directory = runtime_directory.join(&normalized_version);
+    if !target_directory.is_dir() {
+        return Err(format!("{service} {normalized_version} is not installed"));
+    }
+    std::fs::remove_dir_all(&target_directory).map_err(format_io_error)
+}
+
+#[tauri::command]
 fn initialize_harbor_workspace() -> Result<String, String> {
     runtime_paths::initialize_workspace()
         .map(|path| path.to_string_lossy().into_owned())
@@ -258,6 +271,77 @@ async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, S
     Ok(target_directory.to_string_lossy().into_owned())
 }
 
+async fn download_archive(
+    app: &tauri::AppHandle,
+    service: &'static str,
+    version: &str,
+    url: &str,
+) -> Result<Vec<u8>, String> {
+    let response = reqwest::get(url)
+        .await
+        .map_err(|error| format!("Unable to download {service} {version}: {error}"))?
+        .error_for_status()
+        .map_err(|error| format!("No Windows archive was found for {service} {version}: {error}"))?;
+    let total_bytes = response.content_length().unwrap_or_default();
+    let mut downloaded_bytes = 0_u64;
+    let mut archive = Vec::new();
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|error| format!("Unable to read {service} {version} download: {error}"))?;
+        downloaded_bytes += chunk.len() as u64;
+        archive.extend_from_slice(&chunk);
+        let progress = if total_bytes == 0 { 0 } else { ((downloaded_bytes * 100) / total_bytes).min(100) as u8 };
+        let _ = tauri::Emitter::emit(app, "runtime-download-progress", DownloadProgress { service, version, progress });
+    }
+    Ok(archive)
+}
+
+#[tauri::command]
+async fn install_node(app: tauri::AppHandle, version: String) -> Result<String, String> {
+    let parsed_version = semver::Version::parse(version.trim_start_matches('v'))
+        .map_err(|_| format!("Invalid Node.js version: {version}"))?;
+    let version = parsed_version.to_string();
+    let target_directory = runtime_paths::node_path(&version);
+    if target_directory.join("node.exe").is_file() {
+        return Ok(target_directory.to_string_lossy().into_owned());
+    }
+    if target_directory.exists() {
+        std::fs::remove_dir_all(&target_directory).map_err(format_io_error)?;
+    }
+    let archive_url = format!("https://nodejs.org/dist/v{version}/node-v{version}-win-x64.zip");
+    let archive = download_archive(&app, "Node.js", &version, &archive_url).await?;
+    std::fs::create_dir_all(&target_directory).map_err(format_io_error)?;
+    if let Err(error) = extract_zip(&archive, &target_directory) {
+        let _ = std::fs::remove_dir_all(&target_directory);
+        return Err(format!("Unable to extract Node.js {version}: {error}"));
+    }
+    let extracted_directory = target_directory.join(format!("node-v{version}-win-x64"));
+    if let Err(error) = flatten_directory(&extracted_directory, &target_directory) {
+        let _ = std::fs::remove_dir_all(&target_directory);
+        return Err(format!("Unable to prepare Node.js {version}: {error}"));
+    }
+    let _ = std::fs::remove_dir_all(extracted_directory);
+    let _ = tauri::Emitter::emit(&app, "runtime-download-progress", DownloadProgress { service: "Node.js", version: &version, progress: 100 });
+    Ok(target_directory.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+async fn install_apache(app: tauri::AppHandle, version: String) -> Result<String, String> {
+    let parsed_version = semver::Version::parse(version.trim_start_matches('v'))
+        .map_err(|_| format!("Invalid Apache version: {version}"))?;
+    let version = parsed_version.to_string();
+    let target_directory = runtime_paths::runtime_path("apache", &version);
+    if target_directory.is_dir() { return Ok(target_directory.to_string_lossy().into_owned()); }
+    let archive_url = format!("https://www.apachelounge.com/download/VS17/binaries/httpd-{version}-win64-VS17.zip");
+    let archive = download_archive(&app, "Apache", &version, &archive_url).await?;
+    std::fs::create_dir_all(&target_directory).map_err(format_io_error)?;
+    extract_zip(&archive, &target_directory)?;
+    let extracted_directory = target_directory.join("Apache24");
+    flatten_directory(&extracted_directory, &target_directory)?;
+    let _ = std::fs::remove_dir_all(extracted_directory);
+    Ok(target_directory.to_string_lossy().into_owned())
+}
+
 #[derive(serde::Serialize, Clone)]
 struct DownloadProgress<'a> {
     service: &'static str,
@@ -289,6 +373,16 @@ fn extract_zip(archive: &[u8], target_directory: &std::path::Path) -> Result<(),
         }
         let mut output = std::fs::File::create(output_path).map_err(format_io_error)?;
         io::copy(&mut entry, &mut output).map_err(format_io_error)?;
+    }
+    Ok(())
+}
+
+fn flatten_directory(source: &std::path::Path, target: &std::path::Path) -> Result<(), String> {
+    if !source.is_dir() { return Err(format!("Archive has an unexpected directory layout: {}", source.display())); }
+    for entry in std::fs::read_dir(source).map_err(format_io_error)? {
+        let entry = entry.map_err(format_io_error)?;
+        let destination = target.join(entry.file_name());
+        std::fs::rename(entry.path(), destination).map_err(format_io_error)?;
     }
     Ok(())
 }
@@ -423,8 +517,11 @@ pub fn run() {
             get_php_versions,
             get_apache_versions,
             get_installed_versions,
+            remove_runtime,
             initialize_harbor_workspace,
             install_php,
+            install_node,
+            install_apache,
             start_php,
             stop_php,
             get_php_status,

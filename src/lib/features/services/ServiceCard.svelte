@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronDown, Check, Download, Play, Search, Square } from "@lucide/svelte";
+  import { ChevronDown, Check, Download, Play, Search, Square, Trash2 } from "@lucide/svelte";
   import { listen } from "@tauri-apps/api/event";
   import { Button, Combobox } from "bits-ui";
   import { onMount } from "svelte";
@@ -10,6 +10,7 @@
     versions: string[];
     installedVersions: string[];
     onInstall: (version: string) => Promise<void>;
+    onRemove: (version: string) => Promise<void>;
     onStart: (version: string) => Promise<void>;
     onStop: () => Promise<void>;
     getStatus: () => Promise<boolean>;
@@ -23,6 +24,7 @@
     versions,
     installedVersions,
     onInstall,
+    onRemove,
     onStart,
     onStop,
     getStatus,
@@ -39,6 +41,8 @@
   let installingVersion = $state("");
   let downloadProgress = $state(0);
   let pendingVersion = $state("");
+  let pendingRemovalVersion = $state("");
+  let removalConfirmation = $state("");
   let downloadError = $state("");
   let isRunning = $state(false);
   let serviceRole = $derived(serviceName === "Apache" ? "Web server" : "Runtime");
@@ -63,7 +67,7 @@
   }
 
   function getVersionNumber(version: string) {
-    return getVersionParts(version).number;
+    return getVersionParts(version).number.trimStart().replace(/^v/, "");
   }
 
   function isInstalled(version: string) {
@@ -76,7 +80,7 @@
     }
     let unlisten: (() => void) | undefined;
     void listen<{ service: string; version: string; progress: number }>("runtime-download-progress", (event) => {
-      if (event.payload.service === serviceName && event.payload.version === installingVersion) {
+      if (event.payload.service === serviceName && event.payload.version === getVersionNumber(installingVersion)) {
         downloadProgress = event.payload.progress;
       }
     }).then((cleanup) => (unlisten = cleanup));
@@ -84,7 +88,7 @@
   });
 
   async function installVersion(version: string) {
-    installingVersion = version;
+    installingVersion = getVersionNumber(version);
     downloadProgress = 0;
     downloadError = "";
     try {
@@ -98,7 +102,29 @@
   }
 
   function requestInstall(version: string) {
+    downloadError = "";
     pendingVersion = version;
+  }
+
+  function requestRemoval(version: string) {
+    downloadError = "";
+    removalConfirmation = "";
+    pendingRemovalVersion = version;
+  }
+
+  async function removeVersion() {
+    if (removalConfirmation !== "CONFIRMAR") {
+      downloadError = "Escribe CONFIRMAR para eliminar esta versión";
+      return;
+    }
+    try {
+      await onRemove(pendingRemovalVersion);
+      if (selectedVersion === pendingRemovalVersion) selectedVersion = "";
+      pendingRemovalVersion = "";
+      removalConfirmation = "";
+    } catch (error) {
+      downloadError = error instanceof Error ? error.message : String(error);
+    }
   }
 
   async function toggleService() {
@@ -206,6 +232,9 @@
                     {#if selected}
                       <Check size={16} strokeWidth={2} aria-hidden="true" />
                     {/if}
+                    <button class="remove-version-button" type="button" aria-label={`Remove ${version}`} onclick={(event) => { event.stopPropagation(); requestRemoval(version); }}>
+                      <Trash2 size={15} strokeWidth={2} aria-hidden="true" />
+                    </button>
                   {/snippet}
                 </Combobox.Item>
               {/each}
@@ -290,6 +319,27 @@
       <div class="modal-actions">
         <Button.Root class="modal-cancel" type="button" onclick={() => (pendingVersion = "")}>Cancel</Button.Root>
         <Button.Root class="modal-confirm" type="button" onclick={() => { const version = pendingVersion; pendingVersion = ""; void installVersion(version); }}>Confirm</Button.Root>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if pendingRemovalVersion}
+  <div class="modal-backdrop">
+    <div class="download-modal" role="dialog" aria-modal="true" aria-labelledby={`${serviceTitleId}-remove-title`}>
+      <h3 id={`${serviceTitleId}-remove-title`}>Eliminar {serviceName} {getVersionNumber(pendingRemovalVersion)}?</h3>
+      <p>Se borrará permanentemente la versión instalada y sus archivos.</p>
+      <label class="confirmation-label" for={`${serviceTitleId}-remove-confirmation`}>Escribe CONFIRMAR</label>
+      <input
+        id={`${serviceTitleId}-remove-confirmation`}
+        class="confirmation-input"
+        bind:value={removalConfirmation}
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <div class="modal-actions">
+        <Button.Root class="modal-cancel" type="button" onclick={() => (pendingRemovalVersion = "")}>Cancelar</Button.Root>
+        <Button.Root class="modal-confirm modal-danger" type="button" onclick={() => void removeVersion()}>Eliminar</Button.Root>
       </div>
     </div>
   </div>
@@ -411,6 +461,10 @@
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
   :global(.modal-cancel), :global(.modal-confirm) { border: 1px solid var(--color-boulder-200); border-radius: 6px; padding: 8px 14px; }
   :global(.modal-confirm) { background: var(--color-east-bay-500); color: #ffffff; }
+  :global(.modal-danger) { background: #a33c2c; }
+  .confirmation-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .confirmation-input { border: 1px solid var(--color-boulder-200); border-radius: 6px; box-sizing: border-box; font: inherit; padding: 9px 10px; width: 100%; }
+  .confirmation-input:focus { border-color: #a33c2c; outline: 2px solid rgb(163 60 44 / 18%); }
 
   .service-identity {
     align-items: center;
@@ -654,6 +708,24 @@
   :global(.version-item[data-highlighted]) {
     background: var(--color-east-bay-50);
     color: var(--color-east-bay-800);
+  }
+
+  .remove-version-button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: var(--color-boulder-500);
+    cursor: pointer;
+    display: inline-flex;
+    flex-shrink: 0;
+    justify-content: center;
+    padding: 4px;
+  }
+
+  .remove-version-button:hover {
+    background: #fff0ed;
+    color: #a33c2c;
   }
 
   .version-item-label {

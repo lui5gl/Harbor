@@ -73,17 +73,28 @@
     }
 
     async function installVersion(serviceName: string, version: string): Promise<void> {
-      if (serviceName !== "PHP") {
-        return;
-      }
-      const installableVersion = version.split(" ")[0];
-      await invoke<string>("install_php", { version: installableVersion });
-      await configurePhpAlias(installableVersion);
+      const installableVersion = version.replace(/ \(.*\)$/, "");
+      const commandByService = { PHP: "install_php", "Node.js": "install_node", Apache: "install_apache" } as const;
+      const command = commandByService[serviceName as keyof typeof commandByService];
+      if (!command) throw new Error(`Unsupported service: ${serviceName}`);
+      await invoke<string>(command, { version: installableVersion });
+      if (serviceName === "PHP") await configurePhpAlias(installableVersion);
       const installedVersions = await getInstalledVersions(serviceName);
       services = services.map((service) => service.name === serviceName
         ? { ...service, installedVersions }
         : service);
       selectedVersions = { ...selectedVersions, [serviceName]: version };
+    }
+
+    async function removeVersion(serviceName: string, version: string): Promise<void> {
+      await invoke("remove_runtime", {
+        service: serviceName,
+        version: version.replace(/ \(.*\)$/, "")
+      });
+      const installedVersions = await getInstalledVersions(serviceName);
+      services = services.map((service) => service.name === serviceName
+        ? { ...service, installedVersions }
+        : service);
     }
 
     async function startService(serviceName: string, version: string): Promise<void> {
@@ -141,6 +152,7 @@
         versions={service.versions}
         installedVersions={service.installedVersions}
         onInstall={(version) => installVersion(service.name, version)}
+        onRemove={(version) => removeVersion(service.name, version)}
         onStart={(version) => startService(service.name, version)}
         onStop={() => stopService(service.name)}
         getStatus={() => getServiceStatus(service.name)}
