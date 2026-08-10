@@ -23,6 +23,7 @@
         serviceDescription={service.description}
         serviceIconPath={service.iconPath}
         versions={service.versions}
+        installedVersions={service.installedVersions}
       />
     {/each}
   </section>

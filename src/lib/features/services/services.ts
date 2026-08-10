@@ -5,6 +5,7 @@ export type ServiceDefinition = {
   description: string;
   iconPath: string;
   versions: string[];
+  installedVersions: string[];
 };
 
 const nodeVersions = [
@@ -28,18 +29,21 @@ export const serviceDefinitions: ServiceDefinition[] = [
     name: "Apache",
     description: "Web server",
     iconPath: siApache.path,
-    versions: apacheVersions
+    versions: apacheVersions,
+    installedVersions: ["2.4.63"]
   },
   {
     name: "PHP",
     description: "Server-side scripting language",
     iconPath: siPhp.path,
-    versions: phpVersions
+    versions: phpVersions,
+    installedVersions: ["8.4.10"]
   },
   {
     name: "Node.js",
     description: "Runtime environment",
     iconPath: siNodedotjs.path,
-    versions: nodeVersions
+    versions: nodeVersions,
+    installedVersions: ["v24.4.1 (Current)"]
   }
 ];

@@ -6,18 +6,22 @@
     serviceDescription: string;
     serviceIconPath: string;
     versions: string[];
+    installedVersions: string[];
   };
 
   let {
     serviceName,
     serviceDescription,
     serviceIconPath,
-    versions
+    versions,
+    installedVersions
   }: ServiceCardProps = $props();
   let serviceTitleId = $derived(`${serviceName.toLowerCase().replaceAll(" ", "-")}-service-title`);
 
   let selectedVersion = $state("");
   let searchValue = $state("");
+  let versionAnchor = $state<HTMLDivElement | null>(null);
+  let isVersionMenuOpen = $state(false);
   $effect(() => {
     if (!versions.includes(selectedVersion)) {
       selectedVersion = versions[0] ?? "";
@@ -26,8 +30,8 @@
   let filteredVersions = $derived(searchValue === ""
     ? versions
     : versions.filter((version) => version.toLowerCase().includes(searchValue.toLowerCase())));
-  let installedVersions = $derived(filteredVersions.filter((version) => version === selectedVersion));
-  let downloadableVersions = $derived(filteredVersions.filter((version) => version !== selectedVersion));
+  let visibleInstalledVersions = $derived(filteredVersions.filter((version) => installedVersions.includes(version)));
+  let downloadableVersions = $derived(filteredVersions.filter((version) => !installedVersions.includes(version)));
 </script>
 
 <article class="service-card" aria-labelledby={serviceTitleId}>
@@ -48,17 +52,20 @@
       type="single"
       items={versions.map((version) => ({ value: version, label: version }))}
       bind:value={selectedVersion}
+      bind:open={isVersionMenuOpen}
       onOpenChangeComplete={(isOpen) => {
         if (!isOpen) searchValue = "";
       }}
     >
-      <Combobox.Trigger class="version-button" aria-label={`Select ${serviceName} version`}>
-        <span>{selectedVersion}</span>
-        <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
-      </Combobox.Trigger>
+      <div class="version-anchor" bind:this={versionAnchor}>
+        <Combobox.Trigger class={`version-button${isVersionMenuOpen ? " version-button-open" : ""}`} aria-label={`Select ${serviceName} version`}>
+          <span>{selectedVersion}</span>
+          <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
+        </Combobox.Trigger>
+      </div>
 
       <Combobox.Portal>
-        <Combobox.Content class="version-content" customAnchor=".version-button" sideOffset={6}>
+        <Combobox.Content class="version-content" customAnchor={versionAnchor} sideOffset={0}>
           <div class="version-search-row">
             <Search class="version-search-icon" size={16} strokeWidth={2} aria-hidden="true" />
             <Combobox.Input
@@ -69,9 +76,9 @@
             />
           </div>
           <Combobox.Viewport>
-            {#if installedVersions.length > 0}
+            {#if visibleInstalledVersions.length > 0}
               <div class="version-content-heading">Instaladas</div>
-              {#each installedVersions as version (version)}
+              {#each visibleInstalledVersions as version (version)}
                 <Combobox.Item class="version-item" value={version} label={version}>
                   {#snippet children({ selected })}
                     <span>{version}</span>
@@ -96,7 +103,7 @@
                   {/snippet}
                 </Combobox.Item>
               {/each}
-            {:else if installedVersions.length === 0}
+            {:else if visibleInstalledVersions.length === 0}
               <span class="version-empty">No versions found</span>
             {/if}
           </Combobox.Viewport>
@@ -176,7 +183,7 @@
     flex-shrink: 0;
     gap: 8px;
     justify-content: flex-end;
-    width: 400px;
+    width: auto;
   }
 
   :global(.version-button),
@@ -208,16 +215,27 @@
     padding: 0 14px;
   }
 
+  :global(.version-button-open) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: var(--color-boulder-200);
+  }
+
+  .version-anchor {
+    width: 300px;
+  }
+
   :global(.version-content) {
     background: #ffffff;
     border: 1px solid var(--color-boulder-200);
-    border-radius: 7px;
-    box-shadow: 0 8px 24px rgb(11 11 11 / 12%);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 10px 24px rgb(11 11 11 / 14%);
     box-sizing: border-box;
     max-height: 320px;
-    min-width: var(--bits-select-anchor-width);
+    min-width: var(--bits-combobox-anchor-width);
     overflow-y: auto;
-    padding: 8px 4px;
+    padding: 6px 4px 8px;
+    width: var(--bits-combobox-anchor-width);
     z-index: 10;
   }
 
@@ -233,7 +251,7 @@
     align-items: center;
     border-radius: 4px;
     color: var(--color-boulder-950);
-    cursor: default;
+    cursor: pointer;
     display: flex;
     font: inherit;
     justify-content: space-between;
