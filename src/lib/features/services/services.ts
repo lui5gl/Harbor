@@ -11,21 +11,21 @@ export type ServiceDefinition = {
 export const serviceDefinitions: ServiceDefinition[] = [
   {
     name: "Apache",
-    description: "Web server",
+    description: "Local web server",
     iconPath: siApache.path,
     versions: [],
     installedVersions: []
   },
   {
     name: "PHP",
-    description: "Server-side scripting language",
+    description: "PHP runtime",
     iconPath: siPhp.path,
     versions: [],
     installedVersions: []
   },
   {
     name: "Node.js",
-    description: "Runtime environment",
+    description: "JavaScript runtime",
     iconPath: siNodedotjs.path,
     versions: [],
     installedVersions: []

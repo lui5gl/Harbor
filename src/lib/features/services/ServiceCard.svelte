@@ -1,12 +1,19 @@
 <script lang="ts">
-  import { ChevronDown, Check, Download, Play, Search } from "@lucide/svelte";
+  import { ChevronDown, Check, Download, Play, Search, Square } from "@lucide/svelte";
+  import { listen } from "@tauri-apps/api/event";
   import { Button, Combobox } from "bits-ui";
+  import { onMount } from "svelte";
   type ServiceCardProps = {
     serviceName: string;
     serviceDescription: string;
     serviceIconPath: string;
     versions: string[];
     installedVersions: string[];
+    onInstall: (version: string) => Promise<void>;
+    onStart: (version: string) => Promise<void>;
+    onStop: () => Promise<void>;
+    getStatus: () => Promise<boolean>;
+    onVersionSelect: (version: string) => Promise<void>;
   };
 
   let {
@@ -14,24 +21,96 @@
     serviceDescription,
     serviceIconPath,
     versions,
-    installedVersions
+    installedVersions,
+    onInstall,
+    onStart,
+    onStop,
+    getStatus,
+    onVersionSelect
   }: ServiceCardProps = $props();
   let serviceTitleId = $derived(`${serviceName.toLowerCase().replaceAll(" ", "-")}-service-title`);
 
   let selectedVersion = $state("");
   let searchValue = $state("");
-  let versionAnchor = $state<HTMLDivElement | null>(null);
+  let downloadSearchValue = $state("");
+  let downloadAnchor = $state<HTMLDivElement | null>(null);
   let isVersionMenuOpen = $state(false);
+  let isDownloadMenuOpen = $state(false);
+  let installingVersion = $state("");
+  let downloadProgress = $state(0);
+  let pendingVersion = $state("");
+  let downloadError = $state("");
+  let isRunning = $state(false);
+  let serviceRole = $derived(serviceName === "Apache" ? "Web server" : "Runtime");
+  let servicePort = $derived(serviceName === "Apache" ? "HTTP :8080" : "CLI");
   $effect(() => {
-    if (!versions.includes(selectedVersion)) {
-      selectedVersion = versions[0] ?? "";
+    if (!installedCatalog.includes(selectedVersion)) {
+      selectedVersion = installedCatalog[0] ?? "";
     }
   });
-  let filteredVersions = $derived(searchValue === ""
-    ? versions
-    : versions.filter((version) => version.toLowerCase().includes(searchValue.toLowerCase())));
-  let visibleInstalledVersions = $derived(filteredVersions.filter((version) => installedVersions.includes(version)));
-  let downloadableVersions = $derived(filteredVersions.filter((version) => !installedVersions.includes(version)));
+  let installedCatalog = $derived(versions.filter((version) => installedVersions.includes(version)));
+  let downloadableCatalog = $derived(versions.filter((version) => !installedVersions.includes(version)));
+  let filteredDownloadCatalog = $derived(downloadSearchValue === ""
+    ? downloadableCatalog
+    : downloadableCatalog.filter((version) => version.toLowerCase().includes(downloadSearchValue.toLowerCase())));
+
+  onMount(() => {
+    if (serviceName === "Apache") {
+      void getStatus().then((status) => (isRunning = status));
+    }
+    let unlisten: (() => void) | undefined;
+    void listen<{ service: string; version: string; progress: number }>("runtime-download-progress", (event) => {
+      if (event.payload.service === serviceName && event.payload.version === installingVersion) {
+        downloadProgress = event.payload.progress;
+      }
+    }).then((cleanup) => (unlisten = cleanup));
+    return () => unlisten?.();
+  });
+
+  async function installVersion(version: string) {
+    installingVersion = version;
+    downloadProgress = 0;
+    downloadError = "";
+    try {
+      await onInstall(version);
+    } catch (error) {
+      downloadError = error instanceof Error ? error.message : String(error);
+    } finally {
+      installingVersion = "";
+      downloadProgress = 0;
+    }
+  }
+
+  function requestInstall(version: string) {
+    pendingVersion = version;
+  }
+
+  async function toggleService() {
+    if (serviceName !== "Apache" || !installedVersions.includes(selectedVersion)) {
+      return;
+    }
+    downloadError = "";
+    try {
+      if (isRunning) {
+        await onStop();
+        isRunning = false;
+        return;
+      }
+      await onStart(selectedVersion);
+      isRunning = true;
+    } catch (error) {
+      downloadError = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  async function handleVersionSelect(version: string) {
+    selectedVersion = version;
+    try {
+      await onVersionSelect(version);
+    } catch (error) {
+      downloadError = error instanceof Error ? error.message : String(error);
+    }
+  }
 </script>
 
 <article class="service-card" aria-labelledby={serviceTitleId}>
@@ -43,29 +122,48 @@
     </div>
     <div class="service-copy">
       <h2 id={serviceTitleId}>{serviceName}</h2>
-      <p>{serviceDescription}</p>
+      <p>{serviceRole}</p>
     </div>
   </div>
 
-  <div class="service-controls">
+  <div class="service-meta" aria-label={`${serviceName} details`}>
+    <div class="meta-item">
+      <span class="meta-label">Version</span>
+      <span class="meta-value">{selectedVersion || "-"}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Port</span>
+      <span class="meta-value">{servicePort}</span>
+    </div>
+    {#if serviceName === "PHP"}
+      <div class={`runtime-state${installedVersions.includes(selectedVersion) ? " ready" : ""}`}>
+        <span class="status-indicator" aria-hidden="true"></span>
+        <span>{installedVersions.includes(selectedVersion) ? "Ready" : "Not installed"}</span>
+      </div>
+    {/if}
+  </div>
+
+  <div class={`service-controls${serviceName === "Apache" ? "" : " runtime-controls"}`}>
+    <div class="version-control-group" bind:this={downloadAnchor}>
     <Combobox.Root
       type="single"
-      items={versions.map((version) => ({ value: version, label: version }))}
+      items={installedCatalog.map((version) => ({ value: version, label: version }))}
       bind:value={selectedVersion}
+      onValueChange={(value) => value && void handleVersionSelect(value)}
       bind:open={isVersionMenuOpen}
       onOpenChangeComplete={(isOpen) => {
         if (!isOpen) searchValue = "";
       }}
     >
-      <div class="version-anchor" bind:this={versionAnchor}>
-        <Combobox.Trigger class={`version-button${isVersionMenuOpen ? " version-button-open" : ""}`} aria-label={`Select ${serviceName} version`}>
-          <span>{selectedVersion}</span>
+      <div class="version-anchor">
+        <Combobox.Trigger class={`version-button${isVersionMenuOpen ? " version-button-open" : ""}`} aria-label={`Select installed ${serviceName} version`}>
+          <span>{selectedVersion || "No version selected"}</span>
           <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
         </Combobox.Trigger>
       </div>
 
       <Combobox.Portal>
-        <Combobox.Content class="version-content" customAnchor={versionAnchor} sideOffset={0}>
+        <Combobox.Content class="version-content" customAnchor={downloadAnchor} sideOffset={0}>
           <div class="version-search-row">
             <Search class="version-search-icon" size={16} strokeWidth={2} aria-hidden="true" />
             <Combobox.Input
@@ -76,9 +174,8 @@
             />
           </div>
           <Combobox.Viewport>
-            {#if visibleInstalledVersions.length > 0}
-              <div class="version-content-heading">Instaladas</div>
-              {#each visibleInstalledVersions as version (version)}
+            {#if installedCatalog.length > 0}
+              {#each installedCatalog as version (version)}
                 <Combobox.Item class="version-item" value={version} label={version}>
                   {#snippet children({ selected })}
                     <span>{version}</span>
@@ -88,34 +185,87 @@
                   {/snippet}
                 </Combobox.Item>
               {/each}
-            {/if}
-
-            {#if downloadableVersions.length > 0}
-              <div class="version-content-heading">Descargar</div>
-              {#each downloadableVersions as version (version)}
-                <Combobox.Item class="version-item" value={version} label={version}>
-                  {#snippet children({ selected })}
-                    <span class="version-item-label">
-                      <span class="download-status-dot" aria-hidden="true"></span>
-                      <span>{version}</span>
-                    </span>
-                    <Download class="download-version-icon" size={16} strokeWidth={2} aria-hidden="true" />
-                  {/snippet}
-                </Combobox.Item>
-              {/each}
-            {:else if visibleInstalledVersions.length === 0}
-              <span class="version-empty">No versions found</span>
+            {:else}
+              <span class="version-empty">No installed versions</span>
             {/if}
           </Combobox.Viewport>
         </Combobox.Content>
       </Combobox.Portal>
     </Combobox.Root>
 
-    <Button.Root class="start-button" type="button" aria-label={`Start ${serviceName}`}>
-      <Play size={18} strokeWidth={1.8} aria-hidden="true" />
-    </Button.Root>
+    <Combobox.Root
+      type="single"
+      items={downloadableCatalog.map((version) => ({ value: version, label: version }))}
+      bind:open={isDownloadMenuOpen}
+      onOpenChangeComplete={(isOpen) => {
+        if (!isOpen) downloadSearchValue = "";
+      }}
+    >
+      <div class="download-anchor">
+        <Combobox.Trigger class="download-selected-button" aria-label={`Download ${serviceName} version`}>
+          {#if installingVersion}
+            <span class="download-progress" style={`--download-progress: ${downloadProgress * 3.6}deg`} aria-label={`${downloadProgress}% downloaded`}>
+              <span>{downloadProgress}%</span>
+            </span>
+          {:else}
+            <Download size={16} strokeWidth={2} aria-hidden="true" />
+          {/if}
+        </Combobox.Trigger>
+      </div>
+      <Combobox.Portal>
+        <Combobox.Content class="version-content download-content" customAnchor={downloadAnchor} sideOffset={0}>
+          <div class="version-search-row">
+            <Search class="version-search-icon" size={16} strokeWidth={2} aria-hidden="true" />
+            <Combobox.Input
+              class="version-search"
+              oninput={(event) => (downloadSearchValue = event.currentTarget.value)}
+              placeholder="Search versions"
+              aria-label={`Search downloadable ${serviceName} versions`}
+            />
+          </div>
+          <Combobox.Viewport>
+            {#each filteredDownloadCatalog as version (version)}
+              <Combobox.Item class="version-item" value={version} label={version} onclick={() => requestInstall(version)}>
+                <span>{version}</span>
+                <Download size={16} strokeWidth={2} aria-hidden="true" />
+              </Combobox.Item>
+            {:else}
+              <span class="version-empty">No downloadable versions found</span>
+            {/each}
+          </Combobox.Viewport>
+        </Combobox.Content>
+      </Combobox.Portal>
+    </Combobox.Root>
+    </div>
+
+    {#if serviceName === "Apache"}
+      <Button.Root class={`start-button${isRunning ? " running" : ""}`} type="button" aria-label={`${isRunning ? "Stop" : "Start"} ${serviceName}`} onclick={() => void toggleService()}>
+        {#if isRunning}
+          <Square size={16} strokeWidth={1.8} aria-hidden="true" />
+        {:else}
+          <Play size={18} strokeWidth={1.8} aria-hidden="true" />
+        {/if}
+      </Button.Root>
+    {/if}
   </div>
 </article>
+
+{#if pendingVersion}
+  <div class="modal-backdrop">
+    <div class="download-modal" role="dialog" aria-modal="true" aria-labelledby={`${serviceTitleId}-download-title`}>
+      <h3 id={`${serviceTitleId}-download-title`}>Download {serviceName} {pendingVersion}?</h3>
+      <p>The runtime will be installed in the Harbor runtimes folder.</p>
+      <div class="modal-actions">
+        <Button.Root class="modal-cancel" type="button" onclick={() => (pendingVersion = "")}>Cancel</Button.Root>
+        <Button.Root class="modal-confirm" type="button" onclick={() => { const version = pendingVersion; pendingVersion = ""; void installVersion(version); }}>Confirm</Button.Root>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if downloadError}
+  <div class="download-error" role="alert">{downloadError}</div>
+{/if}
 
 <style>
   .service-card {
@@ -124,12 +274,111 @@
     border: 1px solid var(--color-boulder-200);
     border-radius: 12px;
     box-sizing: border-box;
-    display: flex;
-    gap: 32px;
-    justify-content: space-between;
+    display: grid;
+    gap: 28px;
+    grid-template-columns: minmax(260px, 1fr) minmax(280px, 320px) minmax(340px, 420px);
     min-height: 92px;
     padding: 18px 28px;
   }
+
+  .service-meta {
+    align-items: center;
+    display: grid;
+    flex-shrink: 0;
+    gap: 24px;
+    grid-template-columns: 1fr 1fr 1fr;
+    min-width: 0;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 76px;
+  }
+
+  .meta-label {
+    color: var(--color-boulder-600);
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .meta-value {
+    color: var(--color-boulder-950);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .runtime-state {
+    align-items: center;
+    color: var(--color-boulder-600);
+    display: flex;
+    font-size: 12px;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .runtime-state.ready {
+    color: var(--color-east-bay-700);
+  }
+
+  .status-indicator {
+    background: currentColor;
+    border-radius: 50%;
+    height: 7px;
+    width: 7px;
+  }
+
+  .download-progress {
+    align-items: center;
+    background: conic-gradient(var(--color-east-bay-500) var(--download-progress), var(--color-boulder-200) 0deg);
+    border-radius: 50%;
+    display: inline-flex;
+    height: 24px;
+    justify-content: center;
+    position: relative;
+    width: 24px;
+  }
+
+  .download-progress::after {
+    background: #ffffff;
+    border-radius: 50%;
+    content: "";
+    inset: 3px;
+    position: absolute;
+  }
+
+  .download-progress span {
+    font-size: 7px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .modal-backdrop {
+    align-items: center;
+    background: rgb(11 11 11 / 35%);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    position: fixed;
+    z-index: 20;
+  }
+
+  .download-modal {
+    background: #ffffff;
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgb(11 11 11 / 20%);
+    max-width: 360px;
+    padding: 24px;
+    width: calc(100% - 32px);
+  }
+
+  .download-modal h3 { margin: 0; }
+  .download-modal p { margin: 10px 0 20px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  :global(.modal-cancel), :global(.modal-confirm) { border: 1px solid var(--color-boulder-200); border-radius: 6px; padding: 8px 14px; }
+  :global(.modal-confirm) { background: var(--color-east-bay-500); color: #ffffff; }
 
   .service-identity {
     align-items: center;
@@ -181,9 +430,84 @@
     align-items: center;
     display: flex;
     flex-shrink: 0;
-    gap: 8px;
-    justify-content: flex-end;
-    width: auto;
+    gap: 0;
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .version-control-group {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .runtime-controls :global(.version-button) {
+    flex: 1;
+  }
+
+  .service-controls > :global([data-combobox-root]) {
+    display: flex;
+  }
+
+  .service-controls .version-anchor {
+    flex: 1;
+  }
+
+  .service-controls :global(.version-button) {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .download-anchor {
+    display: flex;
+    width: 40px;
+  }
+
+  @media (max-width: 840px) {
+    .service-card {
+      align-items: flex-start;
+      flex-wrap: wrap;
+      grid-template-columns: minmax(220px, 1fr) auto;
+    }
+
+    .service-meta {
+      margin-left: 68px;
+      order: 3;
+      width: calc(100% - 68px);
+    }
+
+    .service-controls {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .runtime-controls {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .service-card {
+      gap: 16px;
+      grid-template-columns: 1fr auto;
+      padding: 16px;
+    }
+
+    .service-meta {
+      gap: 12px;
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-left: 0;
+      width: 100%;
+    }
+
+    .meta-value {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   :global(.version-button),
@@ -211,7 +535,7 @@
     appearance: none;
     border-radius: 7px;
     justify-content: space-between;
-    width: 300px;
+    width: 100%;
     padding: 0 14px;
   }
 
@@ -222,7 +546,29 @@
   }
 
   .version-anchor {
-    width: 300px;
+    align-items: center;
+    display: flex;
+    flex: 1;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  :global(.download-selected-button) {
+    align-items: center;
+    background: var(--color-boulder-50);
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 0 7px 7px 0;
+    color: var(--color-east-bay-700);
+    display: inline-flex;
+    flex-shrink: 0;
+    height: 40px;
+    justify-content: center;
+    width: 40px;
+  }
+
+  :global(.download-selected-button:hover) {
+    background: var(--color-east-bay-50);
+    border-color: var(--color-east-bay-200);
   }
 
   :global(.version-content) {
@@ -237,6 +583,11 @@
     padding: 6px 4px 8px;
     width: var(--bits-combobox-anchor-width);
     z-index: 10;
+  }
+
+  :global(.download-content) {
+    min-width: var(--bits-combobox-anchor-width);
+    width: var(--bits-combobox-anchor-width);
   }
 
   .version-content-heading {

@@ -1,7 +1,14 @@
 mod runtime_config;
 mod runtime_paths;
 
-use std::io;
+use std::io::{self, Cursor};
+use std::process::{Child, Command};
+use std::sync::{Mutex, OnceLock};
+
+use futures_util::StreamExt;
+
+static PHP_PROCESS: OnceLock<Mutex<Option<Child>>> = OnceLock::new();
+const PHP_FASTCGI_ADDRESS: &str = "127.0.0.1:9070";
 
 #[derive(serde::Deserialize, serde::Serialize)]
 struct NodeRelease {
@@ -106,6 +113,118 @@ async fn get_apache_versions() -> Result<Vec<String>, String> {
     Ok(versions)
 }
 
+#[tauri::command]
+fn get_installed_versions(service: String) -> Result<Vec<String>, String> {
+    let runtime_directory = runtime_paths::runtime_directory(&service)?;
+    if !runtime_directory.is_dir() {
+        return Ok(Vec::new());
+    }
+
+    let mut versions = std::fs::read_dir(runtime_directory)
+        .map_err(format_io_error)?
+        .filter_map(Result::ok)
+        .filter(|entry| entry.path().is_dir())
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .collect::<Vec<_>>();
+    versions.sort_by(|left, right| compare_versions(left, right));
+    Ok(versions)
+}
+
+#[tauri::command]
+fn initialize_harbor_workspace() -> Result<String, String> {
+    runtime_paths::initialize_workspace()
+        .map(|path| path.to_string_lossy().into_owned())
+        .map_err(format_io_error)
+}
+
+#[tauri::command]
+async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, String> {
+    let parsed_version = semver::Version::parse(&version)
+        .map_err(|_| format!("Invalid PHP version: {version}"))?;
+    if parsed_version.major < 8 {
+        return Err("Automatic Windows installation currently supports PHP 8.x binaries only".to_string());
+    }
+
+    let target_directory = runtime_paths::php_path(&version);
+    if target_directory.is_dir() {
+        return Ok(target_directory.to_string_lossy().into_owned());
+    }
+
+    let archive_urls = [
+        format!("https://windows.php.net/downloads/releases/archives/php-{version}-Win32-vs17-x64.zip"),
+        format!("https://windows.php.net/downloads/releases/archives/php-{version}-Win32-vs16-x64.zip"),
+    ];
+    let mut response = None;
+    for archive_url in archive_urls {
+        let candidate = reqwest::get(archive_url).await;
+        if let Ok(candidate) = candidate {
+            if candidate.status().is_success() {
+                response = Some(candidate);
+                break;
+            }
+        }
+    }
+    let response = response.ok_or_else(|| format!("No official Windows PHP archive was found for {version}"))?;
+    let total_bytes = response.content_length().unwrap_or_default();
+    let mut downloaded_bytes = 0_u64;
+    let mut archive = Vec::new();
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|error| format!("Unable to read PHP {version} download: {error}"))?;
+        downloaded_bytes += chunk.len() as u64;
+        archive.extend_from_slice(&chunk);
+        let progress = if total_bytes == 0 {
+            1
+        } else {
+            ((downloaded_bytes * 100) / total_bytes).min(100) as u8
+        };
+        let _ = tauri::Emitter::emit(&app, "runtime-download-progress", DownloadProgress { service: "PHP", version: &version, progress });
+    }
+
+    std::fs::create_dir_all(&target_directory).map_err(format_io_error)?;
+    if let Err(error) = extract_zip(&archive, &target_directory) {
+        let _ = std::fs::remove_dir_all(&target_directory);
+        return Err(error);
+    }
+    let _ = tauri::Emitter::emit(&app, "runtime-download-progress", DownloadProgress { service: "PHP", version: &version, progress: 100 });
+    Ok(target_directory.to_string_lossy().into_owned())
+}
+
+#[derive(serde::Serialize, Clone)]
+struct DownloadProgress<'a> {
+    service: &'static str,
+    version: &'a str,
+    progress: u8,
+}
+
+fn extract_zip(archive: &[u8], target_directory: &std::path::Path) -> Result<(), String> {
+    let mut zip = zip::ZipArchive::new(Cursor::new(archive))
+        .map_err(|error| format!("Unable to open PHP archive: {error}"))?;
+    for index in 0..zip.len() {
+        let mut entry = zip
+            .by_index(index)
+            .map_err(|error| format!("Unable to read PHP archive: {error}"))?;
+        let entry_path = std::path::Path::new(entry.name());
+        if entry_path
+            .components()
+            .any(|component| matches!(component, std::path::Component::ParentDir))
+        {
+            return Err("PHP archive contains an unsafe path".to_string());
+        }
+        let output_path = target_directory.join(entry_path);
+        if entry.is_dir() {
+            std::fs::create_dir_all(output_path).map_err(format_io_error)?;
+            continue;
+        }
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent).map_err(format_io_error)?;
+        }
+        let mut output = std::fs::File::create(output_path).map_err(format_io_error)?;
+        io::copy(&mut entry, &mut output).map_err(format_io_error)?;
+    }
+    Ok(())
+}
+
 fn compare_versions(left: &str, right: &str) -> std::cmp::Ordering {
     let left_version = semver::Version::parse(left.trim_start_matches('v'));
     let right_version = semver::Version::parse(right.trim_start_matches('v'));
@@ -133,6 +252,95 @@ fn set_active_node_version(version: String) -> Result<String, String> {
     Ok(node_path.to_string_lossy().into_owned())
 }
 
+#[tauri::command]
+fn start_php(version: String) -> Result<String, String> {
+    let php_binary = runtime_paths::php_path(&version).join("php-cgi.exe");
+    if !php_binary.is_file() {
+        return Err(format!("PHP {version} is not installed correctly: php-cgi.exe was not found"));
+    }
+
+    let process_slot = PHP_PROCESS.get_or_init(|| Mutex::new(None));
+    let mut process = process_slot
+        .lock()
+        .map_err(|_| "Unable to access PHP process state".to_string())?;
+    if process.as_mut().is_some_and(|child| child.try_wait().ok().flatten().is_none()) {
+        return Ok(PHP_FASTCGI_ADDRESS.to_string());
+    }
+
+    let child = Command::new(php_binary)
+        .args(["-b", PHP_FASTCGI_ADDRESS])
+        .current_dir(runtime_paths::php_path(&version))
+        .spawn()
+        .map_err(|error| format!("Unable to start PHP {version}: {error}"))?;
+    *process = Some(child);
+    Ok(PHP_FASTCGI_ADDRESS.to_string())
+}
+
+#[tauri::command]
+fn stop_php() -> Result<(), String> {
+    let process_slot = PHP_PROCESS.get_or_init(|| Mutex::new(None));
+    let mut process = process_slot
+        .lock()
+        .map_err(|_| "Unable to access PHP process state".to_string())?;
+    if let Some(mut child) = process.take() {
+        child
+            .kill()
+            .map_err(|error| format!("Unable to stop PHP: {error}"))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn get_php_status() -> Result<bool, String> {
+    let process_slot = PHP_PROCESS.get_or_init(|| Mutex::new(None));
+    let mut process = process_slot
+        .lock()
+        .map_err(|_| "Unable to access PHP process state".to_string())?;
+    let is_running = process
+        .as_mut()
+        .is_some_and(|child| child.try_wait().ok().flatten().is_none());
+    if !is_running {
+        *process = None;
+    }
+    Ok(is_running)
+}
+
+#[tauri::command]
+fn get_php_cli_path(version: String) -> Result<String, String> {
+    let php_binary = runtime_paths::php_path(&version).join("php.exe");
+    if !php_binary.is_file() {
+        return Err(format!("PHP {version} CLI executable was not found"));
+    }
+    Ok(php_binary.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn configure_php_cli_alias(version: String) -> Result<String, String> {
+    let php_binary = runtime_paths::php_path(&version).join("php.exe");
+    if !php_binary.is_file() {
+        return Err(format!("PHP {version} CLI executable was not found"));
+    }
+
+    runtime_paths::initialize_workspace().map_err(format_io_error)?;
+    let alias_contents = format!("@echo off\r\n\"{}\" %*\r\n", php_binary.display());
+    std::fs::write(runtime_paths::php_alias_path(), alias_contents).map_err(format_io_error)?;
+
+    let bin_path = runtime_paths::bin_directory().to_string_lossy().into_owned();
+    let script = format!(
+        "$current = [Environment]::GetEnvironmentVariable('Path', 'User'); $parts = @($current -split ';' | Where-Object {{ $_ -and ($_ -ne '{}') }}); [Environment]::SetEnvironmentVariable('Path', (($parts + '{}') -join ';'), 'User')",
+        bin_path.replace('\'', "''"),
+        bin_path.replace('\'', "''")
+    );
+    let status = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &script])
+        .status()
+        .map_err(|error| format!("Unable to update the user PATH: {error}"))?;
+    if !status.success() {
+        return Err("Unable to update the user PATH".to_string());
+    }
+    Ok(bin_path)
+}
+
 fn format_io_error(error: io::Error) -> String {
     format!("Unable to update Harbor runtime configuration: {error}")
 }
@@ -146,6 +354,14 @@ pub fn run() {
             get_node_versions,
             get_php_versions,
             get_apache_versions,
+            get_installed_versions,
+            initialize_harbor_workspace,
+            install_php,
+            start_php,
+            stop_php,
+            get_php_status,
+            get_php_cli_path,
+            configure_php_cli_alias,
             set_active_node_version
         ])
         .run(tauri::generate_context!())
