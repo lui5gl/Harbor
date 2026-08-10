@@ -1,4 +1,8 @@
 <script lang="ts">
+  import "@fontsource/inter/400.css";
+  import "@fontsource/inter/500.css";
+  import "@fontsource/inter/600.css";
+  import "@fontsource/inter/700.css";
   import NavigationBar from "$lib/features/navigation/NavigationBar.svelte";
 
   let { children } = $props();
@@ -43,7 +47,7 @@
   :global(body) {
     background: var(--color-boulder-50);
     color: var(--color-boulder-950);
-    font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+    font-family: "Inter", sans-serif;
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
