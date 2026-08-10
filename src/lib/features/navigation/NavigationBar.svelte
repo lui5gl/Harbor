@@ -20,8 +20,8 @@
 <style>
   .navigation-bar {
     align-items: center;
-    background: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
+    background: var(--color-boulder-50);
+    border-bottom: 1px solid var(--color-boulder-200);
     box-sizing: border-box;
     display: flex;
     flex-shrink: 0;
@@ -37,17 +37,17 @@
   }
 
   .brand {
-    color: #0f172a;
+    color: var(--color-boulder-950);
     gap: 0.625rem;
     text-decoration: none;
   }
 
   .brand-mark {
     align-items: center;
-    background: #eef2ff;
-    border: 1px solid #e0e7ff;
+    background: var(--color-east-bay-50);
+    border: 1px solid var(--color-east-bay-100);
     border-radius: 8px;
-    color: #4f46e5;
+    color: var(--color-east-bay-700);
     display: flex;
     height: 32px;
     justify-content: center;
@@ -67,7 +67,7 @@
   }
 
   .brand-subtitle {
-    color: #94a3b8;
+    color: var(--color-boulder-500);
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.04em;
