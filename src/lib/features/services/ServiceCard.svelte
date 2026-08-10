@@ -1,40 +1,44 @@
 <script lang="ts">
   import { ChevronDown, Check, Download, Play, Search } from "@lucide/svelte";
   import { Button, Combobox } from "bits-ui";
-  import { siNodedotjs } from "simple-icons";
+  type ServiceCardProps = {
+    serviceName: string;
+    serviceDescription: string;
+    serviceIconPath: string;
+    versions: string[];
+  };
 
-  const serviceName = "Node.js";
-  const serviceDescription = "Runtime environment";
-  const versions = [
-    "v24.4.1 (Current)",
-    "v24.3.0 (Current)",
-    "v22.17.1 (LTS)",
-    "v22.16.0 (LTS)",
-    "v22.15.1 (LTS)",
-    "v20.19.4 (LTS)",
-    "v20.19.3 (LTS)",
-    "v20.18.3 (LTS)",
-    "v18.20.8 (LTS)",
-    "v18.20.7 (LTS)"
-  ];
-  let selectedVersion = versions[2];
-  let searchValue = "";
-  $: filteredVersions = searchValue === ""
+  let {
+    serviceName,
+    serviceDescription,
+    serviceIconPath,
+    versions
+  }: ServiceCardProps = $props();
+  let serviceTitleId = $derived(`${serviceName.toLowerCase().replaceAll(" ", "-")}-service-title`);
+
+  let selectedVersion = $state("");
+  let searchValue = $state("");
+  $effect(() => {
+    if (!versions.includes(selectedVersion)) {
+      selectedVersion = versions[0] ?? "";
+    }
+  });
+  let filteredVersions = $derived(searchValue === ""
     ? versions
-    : versions.filter((version) => version.toLowerCase().includes(searchValue.toLowerCase()));
-  $: installedVersions = filteredVersions.filter((version) => version === selectedVersion);
-  $: downloadableVersions = filteredVersions.filter((version) => version !== selectedVersion);
+    : versions.filter((version) => version.toLowerCase().includes(searchValue.toLowerCase())));
+  let installedVersions = $derived(filteredVersions.filter((version) => version === selectedVersion));
+  let downloadableVersions = $derived(filteredVersions.filter((version) => version !== selectedVersion));
 </script>
 
-<article class="service-card" aria-labelledby="node-service-title">
+<article class="service-card" aria-labelledby={serviceTitleId}>
   <div class="service-identity">
     <div class="service-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" role="img">
-        <path d={siNodedotjs.path} />
+        <path d={serviceIconPath} />
       </svg>
     </div>
     <div class="service-copy">
-      <h2 id="node-service-title">{serviceName}</h2>
+      <h2 id={serviceTitleId}>{serviceName}</h2>
       <p>{serviceDescription}</p>
     </div>
   </div>
@@ -99,10 +103,6 @@
         </Combobox.Content>
       </Combobox.Portal>
     </Combobox.Root>
-
-    <Button.Root class="download-button" type="button" aria-label={`Download ${serviceName} ${selectedVersion}`}>
-      <Download size={17} strokeWidth={1.8} aria-hidden="true" />
-    </Button.Root>
 
     <Button.Root class="start-button" type="button" aria-label={`Start ${serviceName}`}>
       <Play size={18} strokeWidth={1.8} aria-hidden="true" />
@@ -180,7 +180,6 @@
   }
 
   :global(.version-button),
-  :global(.download-button),
   :global(.start-button) {
     align-items: center;
     background: var(--color-boulder-50);
@@ -195,7 +194,6 @@
   }
 
   :global(.version-button:hover),
-  :global(.download-button:hover),
   :global(.start-button:hover) {
     background: var(--color-east-bay-50);
     border-color: var(--color-east-bay-200);
@@ -308,7 +306,6 @@
     padding: 9px;
   }
 
-  :global(.download-button),
   :global(.start-button) {
     border-radius: 7px;
     width: 40px;

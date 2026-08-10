@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { Plus } from "@lucide/svelte";
-  import { Button } from "bits-ui";
   import ServiceCard from "$lib/features/services/ServiceCard.svelte";
+  import { serviceDefinitions } from "$lib/features/services/services";
 </script>
 
 <svelte:head>
@@ -15,14 +14,17 @@
       <p>Manage your local development environments.</p>
     </div>
 
-    <Button.Root class="add-service-button" type="button">
-      <Plus size={18} strokeWidth={2} aria-hidden="true" />
-      <span>Add Service</span>
-    </Button.Root>
   </section>
 
   <section class="service-list" aria-label="Available services">
-    <ServiceCard />
+    {#each serviceDefinitions as service (service.name)}
+      <ServiceCard
+        serviceName={service.name}
+        serviceDescription={service.description}
+        serviceIconPath={service.iconPath}
+        versions={service.versions}
+      />
+    {/each}
   </section>
 </main>
 
@@ -48,6 +50,8 @@
   }
 
   .service-list {
+    display: grid;
+    gap: 12px;
     margin-top: 32px;
     max-width: 1120px;
     margin-left: auto;
@@ -71,34 +75,6 @@
     margin: 8px 0 0;
   }
 
-  :global(.add-service-button) {
-    align-items: center;
-    background: var(--color-east-bay-700);
-    border: 1px solid var(--color-east-bay-700);
-    border-radius: 10px;
-    box-sizing: border-box;
-    color: var(--color-boulder-50);
-    display: inline-flex;
-    flex-shrink: 0;
-    font: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    gap: 10px;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0 18px;
-    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
-  }
-
-  :global(.add-service-button:hover) {
-    background: var(--color-east-bay-800);
-    border-color: var(--color-east-bay-800);
-  }
-
-  :global(.add-service-button:active) {
-    transform: translateY(1px);
-  }
-
   @media (max-width: 560px) {
     .services-page {
       padding: 20px 16px;
@@ -109,8 +85,5 @@
       flex-direction: column;
     }
 
-    :global(.add-service-button) {
-      align-self: flex-start;
-    }
   }
 </style>
