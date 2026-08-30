@@ -1,7 +1,11 @@
 <script lang="ts">
-  import { Anchor } from "@lucide/svelte";
+  import { Anchor, Boxes, KeyRound } from "@lucide/svelte";
 
   const applicationName = "Harbor";
+  const navigationItems = [
+    { href: "/services", label: "Services", icon: Boxes },
+    { href: "/secrets", label: "Secrets", icon: KeyRound }
+  ];
 </script>
 
 <header class="navigation-bar" data-tauri-drag-region>
@@ -15,6 +19,14 @@
     </span>
   </a>
 
+  <nav class="navigation-links" aria-label="Primary navigation">
+    {#each navigationItems as item (item.href)}
+      <a class="navigation-link" href={item.href} data-tauri-drag-region="false">
+        <item.icon size={16} strokeWidth={1.9} aria-hidden="true" />
+        <span>{item.label}</span>
+      </a>
+    {/each}
+  </nav>
 </header>
 
 <style>
@@ -60,6 +72,30 @@
     gap: 7px;
   }
 
+  .navigation-links {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+  }
+
+  .navigation-link {
+    align-items: center;
+    border-radius: 6px;
+    color: var(--color-boulder-600);
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 7px;
+    min-height: 34px;
+    padding: 0 10px;
+    text-decoration: none;
+  }
+
+  .navigation-link:hover {
+    background: var(--color-boulder-100);
+    color: var(--color-boulder-950);
+  }
+
   .brand-name {
     font-size: 15px;
     font-weight: 650;
@@ -80,6 +116,14 @@
     }
 
     .brand-subtitle {
+      display: none;
+    }
+
+    .navigation-link {
+      padding: 0 7px;
+    }
+
+    .navigation-link span {
       display: none;
     }
   }

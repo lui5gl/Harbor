@@ -3,6 +3,7 @@
   import "@fontsource/inter/500.css";
   import "@fontsource/inter/600.css";
   import "@fontsource/inter/700.css";
+  import NavigationBar from "$lib/features/navigation/NavigationBar.svelte";
   import StatusBar from "$lib/features/status-bar/StatusBar.svelte";
 
   let { children } = $props();
@@ -13,6 +14,7 @@
 </svelte:head>
 
 <div class="application-shell">
+  <NavigationBar />
   <div class="application-content">
     {@render children()}
   </div>
