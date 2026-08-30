@@ -509,18 +509,24 @@ fn format_io_error(error: io::Error) -> String {
 }
 
 #[tauri::command]
-fn load_secret_profiles() -> Result<secrets_config::SecretsConfiguration, String> {
-    secrets_config::load()
+async fn load_secret_profiles() -> Result<secrets_config::SecretsConfiguration, String> {
+    tauri::async_runtime::spawn_blocking(secrets_config::load)
+        .await
+        .map_err(|error| format!("Unable to load secret profiles: {error}"))?
 }
 
 #[tauri::command]
-fn save_secret_profiles(configuration: secrets_config::SecretsConfiguration) -> Result<(), String> {
-    secrets_config::save(configuration)
+async fn save_secret_profiles(configuration: secrets_config::SecretsConfiguration) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || secrets_config::save(configuration))
+        .await
+        .map_err(|error| format!("Unable to save secret profiles: {error}"))?
 }
 
 #[tauri::command]
-fn activate_secret_profile_for_powershell(profile_id: u64) -> Result<(), String> {
-    secrets_config::activate_powershell_profile(profile_id)
+async fn activate_secret_profile_for_powershell(profile_id: u64) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || secrets_config::activate_powershell_profile(profile_id))
+        .await
+        .map_err(|error| format!("Unable to activate secret profile: {error}"))?
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
