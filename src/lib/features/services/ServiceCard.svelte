@@ -267,13 +267,14 @@
       }}
     >
       <div class="download-anchor">
-        <Combobox.Trigger class="download-selected-button" aria-label={`Download ${serviceName} version`} disabled={Boolean(installingVersion)}>
+        <Combobox.Trigger class="download-selected-button" aria-label={`Install another ${serviceName} version`} disabled={Boolean(installingVersion)}>
           {#if installingVersion}
             <span class="download-progress" style={`--download-progress: ${downloadProgress * 3.6}deg`} aria-label={`${downloadProgress}% downloaded`}>
               <span>{downloadProgress}%</span>
             </span>
           {:else}
             <Download size={16} strokeWidth={2} aria-hidden="true" />
+            <span>Install another version</span>
           {/if}
         </Combobox.Trigger>
       </div>
