@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { Check, Copy, Ellipsis, Eye, EyeOff, Pencil, Plus, Trash2 } from "@lucide/svelte";
+  import { Check, Copy, Ellipsis, Eye, EyeOff, FileUp, Pencil, Plus, Trash2 } from "@lucide/svelte";
   import { Button, DropdownMenu, ScrollArea, Tooltip } from "bits-ui";
+  import ImportVariablesDialog from "./ImportVariablesDialog.svelte";
   import ProfileSettingsDialog from "./ProfileSettingsDialog.svelte";
   import type { Profile, Secret } from "./types";
 
@@ -11,6 +12,7 @@
     onSaveSettings: (name: string, isProduction: boolean) => void;
     onRequestDeleteProfile: () => void;
     onAddVariable: () => void;
+    onImportVariables: (variables: { key: string; value: string }[], replaceAll: boolean) => void;
     onUpdateVariable: (secretId: number, field: "key" | "value", value: string) => void;
     onRequestDeleteVariable: (secretId: number) => void;
     onUseProfile: () => void;
@@ -23,6 +25,7 @@
     onSaveSettings,
     onRequestDeleteProfile,
     onAddVariable,
+    onImportVariables,
     onUpdateVariable,
     onRequestDeleteVariable,
     onUseProfile
@@ -32,6 +35,7 @@
   let copiedSecretId = $state<number | null>(null);
   let isProfileActionsOpen = $state(false);
   let isSettingsDialogOpen = $state(false);
+  let isImportDialogOpen = $state(false);
 
   function toggleSecretVisibility(secretId: number) {
     revealedSecretIds = revealedSecretIds.includes(secretId)
@@ -99,11 +103,22 @@
       <h3>Environment variables</h3>
       <p>Values remain hidden until you choose to reveal them.</p>
     </div>
-    <Button.Root class="secondary-button" type="button" onclick={onAddVariable}>
-      <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
-      <span>Add variable</span>
-    </Button.Root>
+    <div class="variables-header-actions">
+      <Button.Root class="secondary-button" type="button" onclick={() => (isImportDialogOpen = true)}>
+        <FileUp size={15} strokeWidth={2.2} aria-hidden="true" />
+        <span>Import (.env)</span>
+      </Button.Root>
+      <Button.Root class="secondary-button" type="button" onclick={onAddVariable}>
+        <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
+        <span>Add variable</span>
+      </Button.Root>
+    </div>
   </div>
+
+  <ImportVariablesDialog
+    bind:open={isImportDialogOpen}
+    onImport={onImportVariables}
+  />
 
   <ScrollArea.Root class="variables-scroll-area" type="auto">
     <ScrollArea.Viewport class="variables-table" aria-label="Environment variables">
@@ -200,7 +215,8 @@
   .variables-header,
   .editor-footer,
   .profile-actions,
-  .row-actions {
+  .row-actions,
+  .variables-header-actions {
     align-items: center;
     display: flex;
   }
@@ -209,6 +225,10 @@
   .variables-header,
   .editor-footer {
     justify-content: space-between;
+  }
+
+  .variables-header-actions {
+    gap: 8px;
   }
 
   .eyebrow {

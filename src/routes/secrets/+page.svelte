@@ -44,6 +44,7 @@
   let isProductionDialogOpen = $state(false);
   let isProfileDeletionDialogOpen = $state(false);
   let isVariableDeletionDialogOpen = $state(false);
+  let isSelfEmitting = false;
   let saveTimer: number | undefined;
 
   let selectedProfile = $derived(profiles.find((profile) => profile.id === selectedProfileId));
@@ -52,14 +53,18 @@
     void loadConfiguration();
 
     const handleFocus = () => {
-      void loadConfiguration();
+      if (!isSaving && !isSelfEmitting) {
+        void loadConfiguration();
+      }
     };
     window.addEventListener("focus", handleFocus);
 
     let unlisten: (() => void) | undefined;
     if (isNativeApp) {
       listen("secrets-updated", () => {
-        void loadConfiguration();
+        if (!isSaving && !isSelfEmitting) {
+          void loadConfiguration();
+        }
       }).then((fn) => {
         unlisten = fn;
       });
@@ -83,9 +88,30 @@
 
     try {
       const configuration = await loadProfilesWithTimeout();
-      profiles = configuration.profiles.length > 0 ? configuration.profiles : structuredClone(starterProfiles);
+      const loadedProfiles = configuration.profiles.length > 0 ? configuration.profiles : structuredClone(starterProfiles);
+
+      // Preserve uncommitted draft rows in local view if present
+      if (profiles.length > 0 && selectedProfileId !== null) {
+        const currentProfile = profiles.find((p) => p.id === selectedProfileId);
+        const draftSecrets = currentProfile?.secrets.filter((s) => s.key.trim().length === 0) ?? [];
+        if (draftSecrets.length > 0) {
+          profiles = loadedProfiles.map((p) => {
+            if (p.id === selectedProfileId) {
+              return { ...p, secrets: [...p.secrets, ...draftSecrets] };
+            }
+            return p;
+          });
+        } else {
+          profiles = loadedProfiles;
+        }
+      } else {
+        profiles = loadedProfiles;
+      }
+
       activeProfileId = configuration.activeProfileId ?? profiles[0]?.id ?? null;
-      selectedProfileId = activeProfileId ?? profiles[0]?.id ?? null;
+      if (selectedProfileId === null) {
+        selectedProfileId = activeProfileId ?? profiles[0]?.id ?? null;
+      }
       nextProfileId = Math.max(0, ...profiles.map((profile) => profile.id)) + 1;
       nextSecretId = Math.max(0, ...profiles.flatMap((profile) => profile.secrets.map((secret) => secret.id))) + 1;
     } catch (error) {
@@ -151,7 +177,11 @@
       };
 
       await invoke("save_secret_profiles", { configuration: configurationToSave });
+      isSelfEmitting = true;
       await emit("secrets-updated");
+      window.setTimeout(() => {
+        isSelfEmitting = false;
+      }, 300);
     } catch (error) {
       persistenceError = error instanceof Error ? error.message : String(error);
     } finally {
@@ -175,9 +205,11 @@
     scheduleSave();
   }
 
-  function updateSelectedProfile(update: (profile: Profile) => Profile) {
+  function updateSelectedProfile(update: (profile: Profile) => Profile, shouldSave = true) {
     profiles = profiles.map((profile) => profile.id === selectedProfileId ? update(profile) : profile);
-    scheduleSave();
+    if (shouldSave) {
+      scheduleSave();
+    }
   }
 
   function removeSelectedProfile() {
@@ -214,6 +246,43 @@
     }
     pendingVariableDeletionId = null;
     isVariableDeletionDialogOpen = false;
+  }
+
+  function importVariables(imported: { key: string; value: string }[], replaceAll: boolean) {
+    if (!selectedProfile) return;
+
+    updateSelectedProfile((profile) => {
+      if (replaceAll) {
+        const newSecrets = imported.map((item) => ({
+          id: nextSecretId++,
+          key: item.key,
+          value: item.value
+        }));
+        return { ...profile, secrets: newSecrets };
+      }
+
+      const updatedSecrets = [...profile.secrets];
+      for (const item of imported) {
+        const existingIndex = updatedSecrets.findIndex(
+          (s) => s.key.toUpperCase() === item.key.toUpperCase()
+        );
+        if (existingIndex >= 0) {
+          updatedSecrets[existingIndex] = {
+            ...updatedSecrets[existingIndex],
+            key: item.key,
+            value: item.value
+          };
+        } else {
+          updatedSecrets.push({
+            id: nextSecretId++,
+            key: item.key,
+            value: item.value
+          });
+        }
+      }
+
+      return { ...profile, secrets: updatedSecrets };
+    });
   }
 
   async function requestActivation(profile: Profile) {
@@ -294,7 +363,8 @@
           isActive={activeProfileId === selectedProfile.id}
           onSaveSettings={(name, isProduction) => updateSelectedProfile((profile) => ({ ...profile, name, isProduction }))}
           onRequestDeleteProfile={requestProfileDeletion}
-          onAddVariable={() => updateSelectedProfile((profile) => ({ ...profile, secrets: [...profile.secrets, { id: nextSecretId++, key: "", value: "" }] }))}
+          onAddVariable={() => updateSelectedProfile((profile) => ({ ...profile, secrets: [...profile.secrets, { id: nextSecretId++, key: "", value: "" }] }), false)}
+          onImportVariables={importVariables}
           onUpdateVariable={(secretId, field, value) => updateSelectedProfile((profile) => ({ ...profile, secrets: profile.secrets.map((secret) => secret.id === secretId ? { ...secret, [field]: value } : secret) }))}
           onRequestDeleteVariable={requestVariableDeletion}
           onUseProfile={() => void requestActivation(selectedProfile)}
