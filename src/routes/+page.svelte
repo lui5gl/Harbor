@@ -6,6 +6,7 @@
   let services = $state<ServiceDefinition[]>(serviceDefinitions);
   let catalogError = $state("");
   let selectedVersions = $state<Record<string, string>>({});
+  let isLoadingCatalog = $state(true);
 
   $effect(() => {
     void initializeWorkspace();
@@ -21,6 +22,7 @@
   }
 
   async function loadServiceVersions() {
+    isLoadingCatalog = true;
     catalogError = "";
     const catalogRequests = [
       ["Node.js", "get_node_versions"],
@@ -58,6 +60,7 @@
     if (failures.length > 0) {
       catalogError = `Unable to load runtime versions: ${failures.join(" | ")}`;
     }
+    isLoadingCatalog = false;
   }
 
     async function getCatalog(command: string): Promise<string[]> {
@@ -136,11 +139,17 @@
       <h1 id="services-title">Services</h1>
       <p>Manage your local development environments.</p>
     </div>
-
+    <button class="refresh-button" type="button" onclick={() => void loadServiceVersions()} disabled={isLoadingCatalog}>
+      {isLoadingCatalog ? "Loading..." : "Refresh catalog"}
+    </button>
   </section>
 
   {#if catalogError}
     <p class="catalog-error" role="alert">{catalogError}</p>
+  {/if}
+
+  {#if isLoadingCatalog && services.every((service) => service.versions.length === 0)}
+    <div class="catalog-loading" role="status">Loading runtime catalogs...</div>
   {/if}
 
   <section class="service-list" aria-label="Available services">
@@ -177,6 +186,31 @@
     max-width: 1120px;
     margin: 0 auto;
     width: 100%;
+  }
+
+  .refresh-button {
+    background: var(--color-east-bay-950);
+    border: 0;
+    border-radius: 7px;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 36px;
+    padding: 0 14px;
+  }
+
+  .refresh-button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+
+  .catalog-loading {
+    color: var(--color-boulder-600);
+    margin: 28px auto 0;
+    max-width: 1120px;
+    text-align: center;
   }
 
   .heading-group {

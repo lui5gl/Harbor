@@ -43,6 +43,7 @@
   let pendingVersion = $state("");
   let pendingRemovalVersion = $state("");
   let removalConfirmation = $state("");
+  let isRemoving = $state(false);
   let downloadError = $state("");
   let isRunning = $state(false);
   let serviceRole = $derived(serviceName === "Apache" ? "Web server" : "Runtime");
@@ -117,6 +118,7 @@
       downloadError = "Escribe CONFIRMAR para eliminar esta versión";
       return;
     }
+    isRemoving = true;
     try {
       await onRemove(pendingRemovalVersion);
       if (selectedVersion === pendingRemovalVersion) selectedVersion = "";
@@ -124,6 +126,8 @@
       removalConfirmation = "";
     } catch (error) {
       downloadError = error instanceof Error ? error.message : String(error);
+    } finally {
+      isRemoving = false;
     }
   }
 
@@ -199,7 +203,15 @@
     >
       <div class="version-anchor">
         <Combobox.Trigger class={`version-button${isVersionMenuOpen ? " version-button-open" : ""}`} aria-label={`Select installed ${serviceName} version`}>
-          <span>{selectedVersion || "No version selected"}</span>
+          {#if selectedVersion}
+            {@const selectedParts = getVersionParts(selectedVersion)}
+            <span class="selected-version-label">
+              <span>{selectedParts.number}</span>
+              {#if selectedParts.channel}<span class="selected-version-channel">{selectedParts.channel.replace("LTS - ", "LTS · ")}</span>{/if}
+            </span>
+          {:else}
+            <span>No version selected</span>
+          {/if}
           <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
         </Combobox.Trigger>
       </div>
@@ -255,7 +267,7 @@
       }}
     >
       <div class="download-anchor">
-        <Combobox.Trigger class="download-selected-button" aria-label={`Download ${serviceName} version`}>
+        <Combobox.Trigger class="download-selected-button" aria-label={`Download ${serviceName} version`} disabled={Boolean(installingVersion)}>
           {#if installingVersion}
             <span class="download-progress" style={`--download-progress: ${downloadProgress * 3.6}deg`} aria-label={`${downloadProgress}% downloaded`}>
               <span>{downloadProgress}%</span>
@@ -339,7 +351,7 @@
       />
       <div class="modal-actions">
         <Button.Root class="modal-cancel" type="button" onclick={() => (pendingRemovalVersion = "")}>Cancelar</Button.Root>
-        <Button.Root class="modal-confirm modal-danger" type="button" onclick={() => void removeVersion()}>Eliminar</Button.Root>
+        <Button.Root class="modal-confirm modal-danger" type="button" disabled={isRemoving} onclick={() => void removeVersion()}>{isRemoving ? "Eliminando..." : "Eliminar"}</Button.Root>
       </div>
     </div>
   </div>
@@ -629,6 +641,25 @@
     justify-content: space-between;
     width: 100%;
     padding: 0 14px;
+  }
+
+  .selected-version-label {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .selected-version-channel {
+    background: var(--color-east-bay-100);
+    border-radius: 999px;
+    color: var(--color-east-bay-800);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 20px;
+    padding: 0 7px;
+    text-transform: uppercase;
   }
 
   :global(.version-button-open) {
