@@ -5,11 +5,22 @@ mod secrets_config;
 use std::io::{self, Cursor};
 use std::process::{Child, Command};
 use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 use futures_util::StreamExt;
 
 static PHP_PROCESS: OnceLock<Mutex<Option<Child>>> = OnceLock::new();
 const PHP_FASTCGI_ADDRESS: &str = "127.0.0.1:9070";
+
+struct CacheEntry<T> {
+    data: T,
+    timestamp: Instant,
+}
+
+static PHP_VERSIONS_CACHE: OnceLock<Mutex<Option<CacheEntry<Vec<String>>>>> = OnceLock::new();
+static NODE_VERSIONS_CACHE: OnceLock<Mutex<Option<CacheEntry<Vec<String>>>>> = OnceLock::new();
+static APACHE_VERSIONS_CACHE: OnceLock<Mutex<Option<CacheEntry<Vec<String>>>>> = OnceLock::new();
+const CACHE_TTL: Duration = Duration::from_secs(30 * 60);
 
 #[derive(serde::Deserialize, serde::Serialize)]
 struct NodeRelease {
@@ -69,39 +80,63 @@ fn node_channel(release: &NodeRelease, schedule: &serde_json::Map<String, serde_
 
 #[tauri::command]
 async fn get_node_versions() -> Result<Vec<String>, String> {
-    let client = reqwest::Client::new();
-    let releases = client
-        .get("https://nodejs.org/download/release/index.json")
-        .send()
-        .await
-        .map_err(|error| format!("Unable to fetch Node.js releases: {error}"))?
-        .error_for_status()
-        .map_err(|error| format!("Node.js release catalog returned an error: {error}"))?
-        .json::<Vec<NodeRelease>>()
-        .await
-        .map_err(|error| format!("Unable to read Node.js release catalog: {error}"))?;
-    let schedule = client
-        .get("https://raw.githubusercontent.com/nodejs/Release/main/schedule.json")
-        .send()
-        .await
-        .map_err(|error| format!("Unable to fetch Node.js release schedule: {error}"))?
-        .error_for_status()
-        .map_err(|error| format!("Node.js release schedule returned an error: {error}"))?
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|error| format!("Unable to read Node.js release schedule: {error}"))?;
-    let schedule = schedule
-        .as_object()
-        .ok_or_else(|| "Node.js release schedule has an invalid format".to_string())?;
+    let cache_slot = NODE_VERSIONS_CACHE.get_or_init(|| Mutex::new(None));
+    if let Ok(guard) = cache_slot.lock() {
+        if let Some(entry) = &*guard {
+            if entry.timestamp.elapsed() < CACHE_TTL {
+                return Ok(entry.data.clone());
+            }
+        }
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(7))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let releases_fut = async {
+        client
+            .get("https://nodejs.org/download/release/index.json")
+            .send()
+            .await
+            .map_err(|error| format!("Unable to fetch Node.js releases: {error}"))?
+            .error_for_status()
+            .map_err(|error| format!("Node.js release catalog returned an error: {error}"))?
+            .json::<Vec<NodeRelease>>()
+            .await
+            .map_err(|error| format!("Unable to read Node.js release catalog: {error}"))
+    };
+
+    let schedule_fut = async {
+        client
+            .get("https://raw.githubusercontent.com/nodejs/Release/main/schedule.json")
+            .send()
+            .await
+            .map_err(|error| format!("Unable to fetch Node.js release schedule: {error}"))?
+            .error_for_status()
+            .map_err(|error| format!("Node.js release schedule returned an error: {error}"))?
+            .json::<serde_json::Value>()
+            .await
+            .map_err(|error| format!("Unable to read Node.js release schedule: {error}"))
+    };
+
+    let (releases_res, schedule_res) = futures_util::future::join(releases_fut, schedule_fut).await;
+
+    let releases = releases_res?;
+    let schedule = schedule_res?;
+    let schedule_obj = schedule.as_object();
 
     let mut versions = releases
         .into_iter()
         .filter(|release| !release.version.is_empty() && !release.date.is_empty())
         .map(|release| {
-            let channel = node_channel(&release, schedule);
+            let channel = schedule_obj
+                .map(|s| node_channel(&release, s))
+                .unwrap_or_else(|| "Current".to_string());
             format!("{} ({channel})", release.version)
         })
         .collect::<Vec<_>>();
+
     versions.sort_by(|left, right| {
         let left_version = left.split(' ').next().unwrap_or_default();
         let right_version = right.split(' ').next().unwrap_or_default();
@@ -114,49 +149,122 @@ async fn get_node_versions() -> Result<Vec<String>, String> {
             (Ok(_), Err(_)) => std::cmp::Ordering::Less,
         }
     });
+
+    if !versions.is_empty() {
+        if let Ok(mut guard) = cache_slot.lock() {
+            *guard = Some(CacheEntry {
+                data: versions.clone(),
+                timestamp: Instant::now(),
+            });
+        }
+    }
+
     Ok(versions)
 }
 
 #[tauri::command]
 async fn get_php_versions() -> Result<Vec<String>, String> {
-    let support_cycles = reqwest::get("https://endoflife.date/api/php.json")
-        .await
-        .map_err(|error| format!("Unable to fetch PHP support schedule: {error}"))?
-        .error_for_status()
-        .map_err(|error| format!("PHP support schedule returned an error: {error}"))?
-        .json::<Vec<PhpSupportCycle>>()
-        .await
-        .map_err(|error| format!("Unable to read PHP support schedule: {error}"))?;
-    let mut versions = std::collections::HashSet::new();
-    for branch in ["8", "7", "5", "4", "3"] {
-        let url = format!(
-            "https://www.php.net/releases/index.php?json=1&version={branch}&max=1000"
-        );
-        let releases = reqwest::get(url)
-            .await
-            .map_err(|error| format!("Unable to fetch PHP releases: {error}"))?
-            .error_for_status()
-            .map_err(|error| format!("PHP release catalog returned an error: {error}"))?
-            .json::<std::collections::HashMap<String, serde_json::Value>>()
-            .await
-            .map_err(|error| format!("Unable to read PHP release catalog: {error}"))?;
+    let cache_slot = PHP_VERSIONS_CACHE.get_or_init(|| Mutex::new(None));
+    if let Ok(guard) = cache_slot.lock() {
+        if let Some(entry) = &*guard {
+            if entry.timestamp.elapsed() < CACHE_TTL {
+                return Ok(entry.data.clone());
+            }
+        }
+    }
 
-        versions.extend(
-            releases
-                .into_keys()
-                .filter(|version| semver::Version::parse(version).is_ok())
-                .map(|version| format!("{version} ({})", php_channel(&version, &support_cycles))),
-        );
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(7))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let support_cycles_fut = async {
+        client
+            .get("https://endoflife.date/api/php.json")
+            .send()
+            .await
+            .map_err(|error| format!("Unable to fetch PHP support schedule: {error}"))?
+            .error_for_status()
+            .map_err(|error| format!("PHP support schedule returned an error: {error}"))?
+            .json::<Vec<PhpSupportCycle>>()
+            .await
+            .map_err(|error| format!("Unable to read PHP support schedule: {error}"))
+    };
+
+    let branches = ["8", "7", "5"];
+    let branch_futs = branches.iter().map(|branch| {
+        let client = client.clone();
+        async move {
+            let url = format!(
+                "https://www.php.net/releases/index.php?json=1&version={branch}&max=1000"
+            );
+            client
+                .get(url)
+                .send()
+                .await
+                .map_err(|error| format!("Unable to fetch PHP releases: {error}"))?
+                .error_for_status()
+                .map_err(|error| format!("PHP release catalog returned an error: {error}"))?
+                .json::<std::collections::HashMap<String, serde_json::Value>>()
+                .await
+                .map_err(|error| format!("Unable to read PHP release catalog: {error}"))
+        }
+    });
+
+    let (support_cycles_res, branch_results) = futures_util::future::join(
+        support_cycles_fut,
+        futures_util::future::join_all(branch_futs),
+    )
+    .await;
+
+    let support_cycles = support_cycles_res.unwrap_or_default();
+    let mut versions = std::collections::HashSet::new();
+
+    for branch_res in branch_results {
+        if let Ok(releases) = branch_res {
+            for (version, _) in releases {
+                if semver::Version::parse(&version).is_ok() {
+                    let channel = php_channel(&version, &support_cycles);
+                    versions.insert(format!("{version} ({channel})"));
+                }
+            }
+        }
     }
 
     let mut versions = versions.into_iter().collect::<Vec<_>>();
     versions.sort_by(|left, right| compare_versions(left, right));
+
+    if !versions.is_empty() {
+        if let Ok(mut guard) = cache_slot.lock() {
+            *guard = Some(CacheEntry {
+                data: versions.clone(),
+                timestamp: Instant::now(),
+            });
+        }
+    }
+
     Ok(versions)
 }
 
 #[tauri::command]
 async fn get_apache_versions() -> Result<Vec<String>, String> {
-    let index = reqwest::get("https://downloads.apache.org/httpd/")
+    let cache_slot = APACHE_VERSIONS_CACHE.get_or_init(|| Mutex::new(None));
+    if let Ok(guard) = cache_slot.lock() {
+        if let Some(entry) = &*guard {
+            if entry.timestamp.elapsed() < CACHE_TTL {
+                return Ok(entry.data.clone());
+            }
+        }
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(7))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let index = client
+        .get("https://downloads.apache.org/httpd/")
+        .send()
         .await
         .map_err(|error| format!("Unable to fetch Apache releases: {error}"))?
         .error_for_status()
@@ -179,6 +287,16 @@ async fn get_apache_versions() -> Result<Vec<String>, String> {
         .collect::<Vec<_>>();
     versions.sort_by(|left, right| compare_versions(left, right));
     versions.dedup();
+
+    if !versions.is_empty() {
+        if let Ok(mut guard) = cache_slot.lock() {
+            *guard = Some(CacheEntry {
+                data: versions.clone(),
+                timestamp: Instant::now(),
+            });
+        }
+    }
+
     Ok(versions)
 }
 
@@ -219,34 +337,90 @@ fn initialize_harbor_workspace() -> Result<String, String> {
         .map_err(format_io_error)
 }
 
-#[tauri::command]
-async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, String> {
-    let parsed_version = semver::Version::parse(&version)
-        .map_err(|_| format!("Invalid PHP version: {version}"))?;
-    if parsed_version.major < 8 {
-        return Err("Automatic Windows installation currently supports PHP 8.x binaries only".to_string());
-    }
-
-    let target_directory = runtime_paths::php_path(&version);
-    if target_directory.is_dir() {
-        return Ok(target_directory.to_string_lossy().into_owned());
-    }
-
-    let archive_urls = [
-        format!("https://windows.php.net/downloads/releases/archives/php-{version}-Win32-vs17-x64.zip"),
-        format!("https://windows.php.net/downloads/releases/archives/php-{version}-Win32-vs16-x64.zip"),
+fn generate_php_archive_urls(version: &str) -> Vec<String> {
+    let base_dirs = [
+        "https://windows.php.net/downloads/releases",
+        "https://windows.php.net/downloads/releases/archives",
     ];
-    let mut response = None;
-    for archive_url in archive_urls {
-        let candidate = reqwest::get(archive_url).await;
-        if let Ok(candidate) = candidate {
-            if candidate.status().is_success() {
-                response = Some(candidate);
-                break;
+
+    let major = version.split('.').next().unwrap_or("8");
+    let toolchains: &[&str] = match major {
+        "8" => &["vs17", "vs16", "VC15", "vc15", "VC14"],
+        "7" => &["vc15", "VC15", "vc14", "VC14", "vs16"],
+        "5" => &["VC11", "vc11", "VC9", "vc9"],
+        _ => &["vs17", "vs16", "vc15", "vc14", "vc11", "vc9"],
+    };
+
+    let archs = ["x64", "x86"];
+
+    let mut urls = Vec::new();
+    for base in base_dirs {
+        for toolchain in toolchains {
+            for arch in archs {
+                urls.push(format!("{base}/php-{version}-Win32-{toolchain}-{arch}.zip"));
+                urls.push(format!("{base}/php-{version}-nts-Win32-{toolchain}-{arch}.zip"));
             }
         }
     }
-    let response = response.ok_or_else(|| format!("No official Windows PHP archive was found for {version}"))?;
+    urls
+}
+
+#[tauri::command]
+async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, String> {
+    let parsed_version = semver::Version::parse(version.trim_start_matches('v'))
+        .map_err(|_| format!("Invalid PHP version: {version}"))?;
+    let version = parsed_version.to_string();
+
+    let target_directory = runtime_paths::php_path(&version);
+    if target_directory.join("php.exe").is_file() {
+        return Ok(target_directory.to_string_lossy().into_owned());
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let candidate_urls = generate_php_archive_urls(&version);
+    let mut verified_url: Option<String> = None;
+
+    for chunk in candidate_urls.chunks(8) {
+        let requests = chunk.iter().map(|url| {
+            let client = client.clone();
+            let url_str = url.clone();
+            async move {
+                if let Ok(res) = client.head(&url_str).send().await {
+                    if res.status().is_success() {
+                        return Some(url_str);
+                    }
+                }
+                None
+            }
+        });
+        let results = futures_util::future::join_all(requests).await;
+        for res in results {
+            if let Some(valid_url) = res {
+                verified_url = Some(valid_url);
+                break;
+            }
+        }
+        if verified_url.is_some() {
+            break;
+        }
+    }
+
+    let target_url = verified_url.ok_or_else(|| {
+        format!("No official Windows PHP archive was found on windows.php.net for {version}")
+    })?;
+
+    let response = client
+        .get(&target_url)
+        .send()
+        .await
+        .map_err(|error| format!("Unable to download PHP {version}: {error}"))?
+        .error_for_status()
+        .map_err(|error| format!("Download server returned an error: {error}"))?;
+
     let total_bytes = response.content_length().unwrap_or_default();
     let mut downloaded_bytes = 0_u64;
     let mut archive = Vec::new();
@@ -260,7 +434,15 @@ async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, S
         } else {
             ((downloaded_bytes * 100) / total_bytes).min(100) as u8
         };
-        let _ = tauri::Emitter::emit(&app, "runtime-download-progress", DownloadProgress { service: "PHP", version: &version, progress });
+        let _ = tauri::Emitter::emit(
+            &app,
+            "runtime-download-progress",
+            DownloadProgress {
+                service: "PHP",
+                version: &version,
+                progress,
+            },
+        );
     }
 
     std::fs::create_dir_all(&target_directory).map_err(format_io_error)?;
@@ -268,7 +450,15 @@ async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, S
         let _ = std::fs::remove_dir_all(&target_directory);
         return Err(error);
     }
-    let _ = tauri::Emitter::emit(&app, "runtime-download-progress", DownloadProgress { service: "PHP", version: &version, progress: 100 });
+    let _ = tauri::Emitter::emit(
+        &app,
+        "runtime-download-progress",
+        DownloadProgress {
+            service: "PHP",
+            version: &version,
+            progress: 100,
+        },
+    );
     Ok(target_directory.to_string_lossy().into_owned())
 }
 
@@ -405,6 +595,11 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
+fn get_active_runtimes() -> Result<runtime_config::ActiveRuntimes, String> {
+    runtime_config::read_active_runtimes().map_err(format_io_error)
+}
+
+#[tauri::command]
 fn set_active_node_version(version: String) -> Result<String, String> {
     let node_path = runtime_paths::node_path(&version);
     if !node_path.is_dir() {
@@ -413,6 +608,29 @@ fn set_active_node_version(version: String) -> Result<String, String> {
 
     runtime_config::write_active_node_version(&version).map_err(format_io_error)?;
     Ok(node_path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn set_active_php_version(version: String) -> Result<String, String> {
+    let php_path = runtime_paths::php_path(&version);
+    if !php_path.is_dir() {
+        return Err(format!("PHP version is not installed: {version}"));
+    }
+
+    configure_php_cli_alias(version.clone())?;
+    runtime_config::write_active_php_version(&version).map_err(format_io_error)?;
+    Ok(php_path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn set_active_apache_version(version: String) -> Result<String, String> {
+    let apache_path = runtime_paths::runtime_path("apache", &version);
+    if !apache_path.is_dir() {
+        return Err(format!("Apache version is not installed: {version}"));
+    }
+
+    runtime_config::write_active_apache_version(&version).map_err(format_io_error)?;
+    Ok(apache_path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
@@ -426,8 +644,11 @@ fn start_php(version: String) -> Result<String, String> {
     let mut process = process_slot
         .lock()
         .map_err(|_| "Unable to access PHP process state".to_string())?;
-    if process.as_mut().is_some_and(|child| child.try_wait().ok().flatten().is_none()) {
-        return Ok(PHP_FASTCGI_ADDRESS.to_string());
+
+    // Terminate existing process if already running so we can switch version cleanly
+    if let Some(mut existing_child) = process.take() {
+        let _ = existing_child.kill();
+        let _ = existing_child.wait();
     }
 
     let child = Command::new(php_binary)
@@ -489,17 +710,13 @@ fn configure_php_cli_alias(version: String) -> Result<String, String> {
     std::fs::write(runtime_paths::php_alias_path(), alias_contents).map_err(format_io_error)?;
 
     let bin_path = runtime_paths::bin_directory().to_string_lossy().into_owned();
-    let script = format!(
-        "$current = [Environment]::GetEnvironmentVariable('Path', 'User'); $parts = @($current -split ';' | Where-Object {{ $_ -and ($_ -ne '{}') }}); [Environment]::SetEnvironmentVariable('Path', (($parts + '{}') -join ';'), 'User')",
-        bin_path.replace('\'', "''"),
-        bin_path.replace('\'', "''")
-    );
-    let status = Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &script])
-        .status()
-        .map_err(|error| format!("Unable to update the user PATH: {error}"))?;
-    if !status.success() {
-        return Err("Unable to update the user PATH".to_string());
+    if let Ok(env_key) = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER).open_subkey_with_flags("Environment", winreg::enums::KEY_READ | winreg::enums::KEY_WRITE) {
+        let current_path: String = env_key.get_value("Path").unwrap_or_default();
+        let parts: Vec<&str> = current_path.split(';').filter(|p| !p.trim().is_empty() && *p != bin_path).collect();
+        let mut new_parts = parts;
+        new_parts.push(&bin_path);
+        let new_path = new_parts.join(";");
+        let _ = env_key.set_value("Path", &new_path);
     }
     Ok(bin_path)
 }
@@ -529,8 +746,19 @@ async fn activate_secret_profile_for_powershell(profile_id: u64) -> Result<(), S
         .map_err(|error| format!("Unable to activate secret profile: {error}"))?
 }
 
+static IS_EXITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn perform_app_exit(app: &tauri::AppHandle) {
+    IS_EXITING.store(true, std::sync::atomic::Ordering::SeqCst);
+    let _ = stop_php();
+    app.exit(0);
+}
+
 #[tauri::command]
 fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(quick_window) = app.get_webview_window("quick-tray") {
+        let _ = quick_window.hide();
+    }
     if let Some(main_window) = app.get_webview_window("main") {
         let _ = main_window.show();
         let _ = main_window.unminimize();
@@ -553,9 +781,7 @@ fn toggle_quick_tray(app: tauri::AppHandle) -> Result<(), String> {
         if quick_window.is_visible().unwrap_or(false) {
             let _ = quick_window.hide();
         } else {
-            let _ = quick_window.show();
-            let _ = quick_window.unminimize();
-            let _ = quick_window.set_focus();
+            show_or_toggle_quick_window(&app);
         }
     }
     Ok(())
@@ -563,7 +789,7 @@ fn toggle_quick_tray(app: tauri::AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 fn exit_app(app: tauri::AppHandle) {
-    app.exit(0);
+    perform_app_exit(&app);
 }
 
 use tauri::{
@@ -580,8 +806,8 @@ fn show_or_toggle_quick_window(app: &tauri::AppHandle) {
             if let Ok(Some(monitor)) = quick_window.primary_monitor() {
                 let size = monitor.size();
                 let scale_factor = monitor.scale_factor();
-                let win_width = (390.0 * scale_factor) as i32;
-                let win_height = (520.0 * scale_factor) as i32;
+                let win_width = (400.0 * scale_factor) as i32;
+                let win_height = (540.0 * scale_factor) as i32;
                 let x = (size.width as i32) - win_width - (16.0 * scale_factor) as i32;
                 let y = (size.height as i32) - win_height - (56.0 * scale_factor) as i32;
                 let _ = quick_window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
@@ -599,7 +825,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let show_main_item = MenuItem::with_id(app, "open_main", "Abrir Harbor", true, None::<&str>)?;
-            let quick_env_item = MenuItem::with_id(app, "open_quick_env", "Variables de Entorno...", true, None::<&str>)?;
+            let quick_env_item = MenuItem::with_id(app, "open_quick_env", "Acceso Rápido (Bandeja)...", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", "Salir de Harbor", true, None::<&str>)?;
 
@@ -619,17 +845,13 @@ pub fn run() {
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open_main" => {
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.unminimize();
-                            let _ = window.set_focus();
-                        }
+                        let _ = show_main_window(app.clone());
                     }
                     "open_quick_env" => {
                         show_or_toggle_quick_window(app);
                     }
                     "quit" => {
-                        app.exit(0);
+                        perform_app_exit(app);
                     }
                     _ => {}
                 })
@@ -654,9 +876,19 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
+            match event {
+                WindowEvent::CloseRequested { api, .. } => {
+                    if !IS_EXITING.load(std::sync::atomic::Ordering::SeqCst) {
+                        api.prevent_close();
+                        let _ = window.hide();
+                    }
+                }
+                WindowEvent::Focused(false) => {
+                    if window.label() == "quick-tray" {
+                        let _ = window.hide();
+                    }
+                }
+                _ => {}
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -665,6 +897,7 @@ pub fn run() {
             get_php_versions,
             get_apache_versions,
             get_installed_versions,
+            get_active_runtimes,
             remove_runtime,
             initialize_harbor_workspace,
             install_php,
@@ -676,6 +909,8 @@ pub fn run() {
             get_php_cli_path,
             configure_php_cli_alias,
             set_active_node_version,
+            set_active_php_version,
+            set_active_apache_version,
             load_secret_profiles,
             save_secret_profiles,
             activate_secret_profile_for_powershell,

@@ -12,11 +12,10 @@
   let isProduction = $state(false);
   let isPhpRunning = $state(false);
 
-  async function updateStatus() {
+  async function updateSecretsStatus() {
     if (!isNativeApp) {
       activeProfileName = "Pruebas";
       isProduction = false;
-      isPhpRunning = false;
       return;
     }
 
@@ -31,9 +30,15 @@
         isProduction = false;
       }
     } catch {
-      // Ignorado en polling secundario
+      // Ignored in background refresh
     }
+  }
 
+  async function updatePhpStatus() {
+    if (!isNativeApp) {
+      isPhpRunning = false;
+      return;
+    }
     try {
       isPhpRunning = await invoke<boolean>("get_php_status");
     } catch {
@@ -42,21 +47,25 @@
   }
 
   onMount(() => {
-    void updateStatus();
+    void updateSecretsStatus();
+    void updatePhpStatus();
 
-    const handleFocus = () => void updateStatus();
+    const handleFocus = () => {
+      void updateSecretsStatus();
+      void updatePhpStatus();
+    };
     window.addEventListener("focus", handleFocus);
 
     let unlisten: (() => void) | undefined;
     if (isNativeApp) {
       listen("secrets-updated", () => {
-        void updateStatus();
+        void updateSecretsStatus();
       }).then((fn) => {
         unlisten = fn;
       });
     }
 
-    const intervalHandle = window.setInterval(updateStatus, pollIntervalMs);
+    const intervalHandle = window.setInterval(updatePhpStatus, pollIntervalMs);
 
     return () => {
       window.removeEventListener("focus", handleFocus);

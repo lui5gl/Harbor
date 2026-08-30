@@ -46,8 +46,13 @@
   let isRemoving = $state(false);
   let downloadError = $state("");
   let isRunning = $state(false);
-  let serviceRole = $derived(serviceName === "Apache" ? "Web server" : "Runtime");
-  let servicePort = $derived(serviceName === "Apache" ? "HTTP :8080" : "CLI");
+  let canStartStop = $derived(serviceName === "PHP" || serviceName === "Apache");
+  let serviceRole = $derived(
+    serviceName === "PHP" ? "FastCGI / CLI" : serviceName === "Apache" ? "Web server" : "Runtime"
+  );
+  let servicePort = $derived(
+    serviceName === "PHP" ? "FastCGI :9070" : serviceName === "Apache" ? "HTTP :8080" : "CLI"
+  );
   $effect(() => {
     if (!installedCatalog.includes(selectedVersion)) {
       selectedVersion = installedCatalog[0] ?? "";
@@ -76,7 +81,7 @@
   }
 
   onMount(() => {
-    if (serviceName === "Apache") {
+    if (canStartStop) {
       void getStatus().then((status) => (isRunning = status));
     }
     let unlisten: (() => void) | undefined;
@@ -132,7 +137,7 @@
   }
 
   async function toggleService() {
-    if (serviceName !== "Apache" || !isInstalled(selectedVersion)) {
+    if (!canStartStop || !isInstalled(selectedVersion)) {
       return;
     }
     downloadError = "";
@@ -153,6 +158,9 @@
     selectedVersion = version;
     try {
       await onVersionSelect(version);
+      if (isRunning && serviceName === "PHP") {
+        await onStart(version);
+      }
     } catch (error) {
       downloadError = error instanceof Error ? error.message : String(error);
     }
@@ -189,7 +197,7 @@
     {/if}
   </div>
 
-  <div class={`service-controls${serviceName === "Apache" ? "" : " runtime-controls"}`}>
+  <div class={`service-controls${canStartStop ? "" : " runtime-controls"}`}>
     <div class="version-control-group" bind:this={downloadAnchor}>
     <Combobox.Root
       type="single"
@@ -312,8 +320,14 @@
     </Combobox.Root>
     </div>
 
-    {#if serviceName === "Apache"}
-      <Button.Root class={`start-button${isRunning ? " running" : ""}`} type="button" aria-label={`${isRunning ? "Stop" : "Start"} ${serviceName}`} onclick={() => void toggleService()}>
+    {#if canStartStop}
+      <Button.Root
+        class={`start-button${isRunning ? " running" : ""}`}
+        type="button"
+        aria-label={`${isRunning ? "Stop" : "Start"} ${serviceName}`}
+        disabled={!isInstalled(selectedVersion)}
+        onclick={() => void toggleService()}
+      >
         {#if isRunning}
           <Square size={16} strokeWidth={1.8} aria-hidden="true" />
         {:else}

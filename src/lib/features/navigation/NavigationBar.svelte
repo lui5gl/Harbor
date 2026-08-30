@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { Anchor, Boxes, KeyRound } from "@lucide/svelte";
 
   const applicationName = "Harbor";
@@ -9,7 +10,7 @@
 </script>
 
 <header class="navigation-bar" data-tauri-drag-region>
-  <a class="brand" href="/" aria-label={`${applicationName}, inicio`}>
+  <a class="brand" href="/services" aria-label={`${applicationName}, inicio`}>
     <span class="brand-mark" aria-hidden="true">
       <Anchor size={16} strokeWidth={2} />
     </span>
@@ -21,7 +22,13 @@
 
   <nav class="navigation-links" aria-label="Primary navigation">
     {#each navigationItems as item (item.href)}
-      <a class="navigation-link" href={item.href} data-tauri-drag-region="false">
+      {@const isActive = page.url.pathname === item.href || page.url.pathname.startsWith(item.href + "/")}
+      <a
+        class={`navigation-link${isActive ? " active" : ""}`}
+        href={item.href}
+        data-tauri-drag-region="false"
+        aria-current={isActive ? "page" : undefined}
+      >
         <item.icon size={16} strokeWidth={1.9} aria-hidden="true" />
         <span>{item.label}</span>
       </a>
@@ -89,11 +96,17 @@
     min-height: 34px;
     padding: 0 10px;
     text-decoration: none;
+    transition: background-color 150ms ease, color 150ms ease;
   }
 
   .navigation-link:hover {
     background: var(--color-boulder-100);
     color: var(--color-boulder-950);
+  }
+
+  .navigation-link.active {
+    background: var(--color-east-bay-50);
+    color: var(--color-east-bay-700);
   }
 
   .brand-name {
