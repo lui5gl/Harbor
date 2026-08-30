@@ -1,0 +1,65 @@
+name: CI - Windows Quality & Build Check
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate-windows:
+    name: Validate Windows Build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: clippy, rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: TypeScript & Svelte Check
+        run: npm run check
+
+      - name: Build Frontend
+        run: npm run build
+
+      - name: Cargo Format Check
+        working-directory: ./src-tauri
+        run: cargo fmt -- --check
+
+      - name: Cargo Clippy
+        working-directory: ./src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Cargo Test
+        working-directory: ./src-tauri
+        run: cargo test
