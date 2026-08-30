@@ -118,10 +118,39 @@
   async function saveConfiguration() {
     if (!isNativeApp) return;
 
+    // Check for duplicate or invalid non-empty keys before persisting
+    for (const profile of profiles) {
+      const keys = new Set<string>();
+      for (const secret of profile.secrets) {
+        const key = secret.key.trim();
+        if (key.length === 0) continue; // Allow blank draft rows in UI without sending them to backend
+
+        if (!/^[a-zA-Z0-9_]+$/.test(key)) {
+          persistenceError = `Variable "${key}" in ${profile.name} may only use letters, numbers, and underscores`;
+          return;
+        }
+
+        if (keys.has(key.toUpperCase())) {
+          persistenceError = `Variable "${key}" is duplicated in ${profile.name}`;
+          return;
+        }
+        keys.add(key.toUpperCase());
+      }
+    }
+
     isSaving = true;
     persistenceError = "";
+
     try {
-      await invoke("save_secret_profiles", { configuration: { profiles, activeProfileId } });
+      const configurationToSave: SecretsConfiguration = {
+        profiles: profiles.map((profile) => ({
+          ...profile,
+          secrets: profile.secrets.filter((secret) => secret.key.trim().length > 0)
+        })),
+        activeProfileId
+      };
+
+      await invoke("save_secret_profiles", { configuration: configurationToSave });
       await emit("secrets-updated");
     } catch (error) {
       persistenceError = error instanceof Error ? error.message : String(error);
@@ -284,8 +313,9 @@
 <DeleteConfirmationDialog
   bind:open={isProfileDeletionDialogOpen}
   title="Delete this profile?"
-  description={`This removes ${selectedProfile?.name || "the selected profile"} and all of its environment variables.`}
+  description={`This will permanently remove "${selectedProfile?.name || "the selected profile"}" and all associated environment variables.`}
   actionLabel="Delete profile"
+  confirmKeyword={selectedProfile?.isProduction ? "DELETE" : undefined}
   onOpenChange={(open) => { if (!open) pendingProfileDeletionId = null; }}
   onConfirm={confirmProfileDeletion}
 />
