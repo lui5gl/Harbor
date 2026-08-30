@@ -20,8 +20,8 @@
       repeating-linear-gradient(90deg, transparent 0 31px, rgb(36 87 79 / 5%) 31px 32px);
     box-sizing: border-box;
     display: flex;
+    flex: 1;
     justify-content: center;
-    min-height: 100%;
     padding: 32px;
   }
 
