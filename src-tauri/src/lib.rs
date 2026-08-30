@@ -1,5 +1,6 @@
 mod runtime_config;
 mod runtime_paths;
+mod secrets_config;
 
 use std::io::{self, Cursor};
 use std::process::{Child, Command};
@@ -507,6 +508,21 @@ fn format_io_error(error: io::Error) -> String {
     format!("Unable to update Harbor runtime configuration: {error}")
 }
 
+#[tauri::command]
+fn load_secret_profiles() -> Result<secrets_config::SecretsConfiguration, String> {
+    secrets_config::load()
+}
+
+#[tauri::command]
+fn save_secret_profiles(configuration: secrets_config::SecretsConfiguration) -> Result<(), String> {
+    secrets_config::save(configuration)
+}
+
+#[tauri::command]
+fn activate_secret_profile_for_powershell(profile_id: u64) -> Result<(), String> {
+    secrets_config::activate_powershell_profile(profile_id)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -527,7 +543,10 @@ pub fn run() {
             get_php_status,
             get_php_cli_path,
             configure_php_cli_alias,
-            set_active_node_version
+            set_active_node_version,
+            load_secret_profiles,
+            save_secret_profiles,
+            activate_secret_profile_for_powershell
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
