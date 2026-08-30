@@ -52,7 +52,9 @@ pub fn load() -> Result<SecretsConfiguration, String> {
         Ok(contents) => serde_json::from_slice(&contents)
             .map_err(|error| format!("Unable to read saved secret profiles: {error}")),
         Err(keyring::Error::NoEntry) => Ok(SecretsConfiguration::default()),
-        Err(error) => Err(format!("Unable to load secret profiles from the system credential store: {error}")),
+        Err(error) => Err(format!(
+            "Unable to load secret profiles from the system credential store: {error}"
+        )),
     }
 }
 
@@ -86,11 +88,12 @@ fn credential_entry() -> Result<Entry, String> {
 }
 
 fn write(configuration: &SecretsConfiguration) -> Result<(), String> {
-    let contents = serde_json::to_vec(configuration)
-        .map_err(|error| format!("Unable to prepare secret profiles for secure storage: {error}"))?;
-    credential_entry()?
-        .set_secret(&contents)
-        .map_err(|error| format!("Unable to save secret profiles in the system credential store: {error}"))
+    let contents = serde_json::to_vec(configuration).map_err(|error| {
+        format!("Unable to prepare secret profiles for secure storage: {error}")
+    })?;
+    credential_entry()?.set_secret(&contents).map_err(|error| {
+        format!("Unable to save secret profiles in the system credential store: {error}")
+    })
 }
 
 fn validate(configuration: &SecretsConfiguration) -> Result<(), String> {
@@ -114,13 +117,22 @@ fn validate(configuration: &SecretsConfiguration) -> Result<(), String> {
         for variable in &profile.secrets {
             let key = variable.key.trim();
             if key.is_empty() || key.len() > 256 {
-                return Err(format!("Each variable in {name} must have a key between 1 and 256 characters"));
+                return Err(format!(
+                    "Each variable in {name} must have a key between 1 and 256 characters"
+                ));
             }
-            if !key.chars().all(|character| character.is_ascii_alphanumeric() || character == '_') {
-                return Err(format!("Variable {key} in {name} may only use letters, numbers, and underscores"));
+            if !key
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || character == '_')
+            {
+                return Err(format!(
+                    "Variable {key} in {name} may only use letters, numbers, and underscores"
+                ));
             }
             if variable.value.contains('\0') {
-                return Err(format!("Variable {key} in {name} cannot contain a null character"));
+                return Err(format!(
+                    "Variable {key} in {name} cannot contain a null character"
+                ));
             }
             if !variable_ids.insert(variable.id) {
                 return Err(format!("Variable identifiers in {name} must be unique"));
@@ -139,7 +151,10 @@ fn validate(configuration: &SecretsConfiguration) -> Result<(), String> {
     Ok(())
 }
 
-fn publish_user_environment(profile: &EnvironmentProfile, managed_variables: &mut Vec<ManagedEnvironmentVariable>) -> Result<(), String> {
+fn publish_user_environment(
+    profile: &EnvironmentProfile,
+    managed_variables: &mut Vec<ManagedEnvironmentVariable>,
+) -> Result<(), String> {
     let environment = user_environment_key()?;
     let active_variables = profile
         .secrets
@@ -147,7 +162,10 @@ fn publish_user_environment(profile: &EnvironmentProfile, managed_variables: &mu
         .map(|variable| (variable.key.trim().to_uppercase(), variable))
         .collect::<HashMap<_, _>>();
 
-    for managed_variable in managed_variables.iter().filter(|variable| !active_variables.contains_key(&variable.key.to_uppercase())) {
+    for managed_variable in managed_variables
+        .iter()
+        .filter(|variable| !active_variables.contains_key(&variable.key.to_uppercase()))
+    {
         match &managed_variable.previous_value {
             Some(value) => environment.set_value(&managed_variable.key, value),
             None => {
@@ -155,7 +173,12 @@ fn publish_user_environment(profile: &EnvironmentProfile, managed_variables: &mu
                 Ok(())
             }
         }
-        .map_err(|error| format!("Unable to restore the user environment variable {}: {error}", managed_variable.key))?;
+        .map_err(|error| {
+            format!(
+                "Unable to restore the user environment variable {}: {error}",
+                managed_variable.key
+            )
+        })?;
     }
 
     let previous_values = managed_variables
@@ -172,7 +195,9 @@ fn publish_user_environment(profile: &EnvironmentProfile, managed_variables: &mu
             .unwrap_or_else(|| environment.get_value::<String, _>(key).ok());
         environment
             .set_value(key, &variable.value)
-            .map_err(|error| format!("Unable to publish the user environment variable {key}: {error}"))?;
+            .map_err(|error| {
+                format!("Unable to publish the user environment variable {key}: {error}")
+            })?;
         next_managed_variables.push(ManagedEnvironmentVariable {
             key: key.to_owned(),
             previous_value,
@@ -180,13 +205,28 @@ fn publish_user_environment(profile: &EnvironmentProfile, managed_variables: &mu
     }
 
     environment
-        .set_value(HARBOR_MANAGED_ENVIRONMENT_KEYS, &profile.secrets.iter().map(|variable| variable.key.trim()).collect::<Vec<_>>().join(","))
+        .set_value(
+            HARBOR_MANAGED_ENVIRONMENT_KEYS,
+            &profile
+                .secrets
+                .iter()
+                .map(|variable| variable.key.trim())
+                .collect::<Vec<_>>()
+                .join(","),
+        )
         .map_err(|error| format!("Unable to publish Harbor environment metadata: {error}"))?;
     environment
         .set_value(HARBOR_ACTIVE_PROFILE, &profile.name.trim().to_owned())
         .map_err(|error| format!("Unable to publish the active Harbor profile: {error}"))?;
     environment
-        .set_value(HARBOR_PROFILE_IS_PRODUCTION, &if profile.is_production { "1".to_owned() } else { "0".to_owned() })
+        .set_value(
+            HARBOR_PROFILE_IS_PRODUCTION,
+            &if profile.is_production {
+                "1".to_owned()
+            } else {
+                "0".to_owned()
+            },
+        )
         .map_err(|error| format!("Unable to publish Harbor profile metadata: {error}"))?;
     *managed_variables = next_managed_variables;
     Ok(())
@@ -204,7 +244,9 @@ fn install_powershell_profile() -> Result<(), String> {
     let documents_directory = Path::new(&user_profile).join("Documents");
     let block = managed_powershell_block();
     for directory in ["WindowsPowerShell", "PowerShell"] {
-        let profile_path = documents_directory.join(directory).join("Microsoft.PowerShell_profile.ps1");
+        let profile_path = documents_directory
+            .join(directory)
+            .join("Microsoft.PowerShell_profile.ps1");
         install_managed_profile_block(&profile_path, &block)?;
     }
     Ok(())
@@ -216,11 +258,13 @@ fn managed_powershell_block() -> String {
 
 fn install_managed_profile_block(path: &Path, block: &str) -> Result<(), String> {
     if let Some(directory) = path.parent() {
-        fs::create_dir_all(directory)
-            .map_err(|error| format!("Unable to create the PowerShell profile directory: {error}"))?;
+        fs::create_dir_all(directory).map_err(|error| {
+            format!("Unable to create the PowerShell profile directory: {error}")
+        })?;
     }
     let existing = if path.exists() {
-        fs::read_to_string(path).map_err(|error| format!("Unable to read the PowerShell profile: {error}"))?
+        fs::read_to_string(path)
+            .map_err(|error| format!("Unable to read the PowerShell profile: {error}"))?
     } else {
         String::new()
     };
@@ -233,7 +277,11 @@ fn install_managed_profile_block(path: &Path, block: &str) -> Result<(), String>
 
 fn replace_managed_block(existing: &str, block: &str) -> Result<String, String> {
     let Some(start) = existing.find(PROFILE_BLOCK_START) else {
-        return Ok(if existing.trim().is_empty() { block.to_owned() } else { format!("{existing}\r\n\r\n{block}") });
+        return Ok(if existing.trim().is_empty() {
+            block.to_owned()
+        } else {
+            format!("{existing}\r\n\r\n{block}")
+        });
     };
     let end = existing[start..]
         .find(PROFILE_BLOCK_END)

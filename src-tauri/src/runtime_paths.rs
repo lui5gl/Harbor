@@ -36,7 +36,7 @@ pub fn php_path(version: &str) -> PathBuf {
 }
 
 pub fn runtime_directory(service: &str) -> Result<PathBuf, String> {
-    let runtime_name = match service.as_ref() {
+    let runtime_name = match service {
         "Node.js" => "nodejs",
         "PHP" => "php",
         "Apache" => "apache",

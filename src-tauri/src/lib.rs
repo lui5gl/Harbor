@@ -53,7 +53,10 @@ fn php_channel(version: &str, support_cycles: &[PhpSupportCycle]) -> String {
     "EOL".to_string()
 }
 
-fn node_channel(release: &NodeRelease, schedule: &serde_json::Map<String, serde_json::Value>) -> String {
+fn node_channel(
+    release: &NodeRelease,
+    schedule: &serde_json::Map<String, serde_json::Value>,
+) -> String {
     let major_version = release
         .version
         .split('.')
@@ -61,7 +64,9 @@ fn node_channel(release: &NodeRelease, schedule: &serde_json::Map<String, serde_
         .unwrap_or_default()
         .trim_start_matches('v');
     let schedule_key = format!("v{major_version}");
-    let schedule_entry = schedule.get(&schedule_key).and_then(serde_json::Value::as_object);
+    let schedule_entry = schedule
+        .get(&schedule_key)
+        .and_then(serde_json::Value::as_object);
     let today = chrono::Utc::now().date_naive().to_string();
     let is_eol = schedule_entry
         .and_then(|entry| entry.get("eol"))
@@ -72,7 +77,11 @@ fn node_channel(release: &NodeRelease, schedule: &serde_json::Map<String, serde_
         return "EOL".to_string();
     }
 
-    match release.lts.as_str().filter(|name| !name.is_empty() && *name != "false") {
+    match release
+        .lts
+        .as_str()
+        .filter(|name| !name.is_empty() && *name != "false")
+    {
         Some(name) => format!("LTS - {name}"),
         None => "Current".to_string(),
     }
@@ -195,9 +204,8 @@ async fn get_php_versions() -> Result<Vec<String>, String> {
     let branch_futs = branches.iter().map(|branch| {
         let client = client.clone();
         async move {
-            let url = format!(
-                "https://www.php.net/releases/index.php?json=1&version={branch}&max=1000"
-            );
+            let url =
+                format!("https://www.php.net/releases/index.php?json=1&version={branch}&max=1000");
             client
                 .get(url)
                 .send()
@@ -220,13 +228,11 @@ async fn get_php_versions() -> Result<Vec<String>, String> {
     let support_cycles = support_cycles_res.unwrap_or_default();
     let mut versions = std::collections::HashSet::new();
 
-    for branch_res in branch_results {
-        if let Ok(releases) = branch_res {
-            for (version, _) in releases {
-                if semver::Version::parse(&version).is_ok() {
-                    let channel = php_channel(&version, &support_cycles);
-                    versions.insert(format!("{version} ({channel})"));
-                }
+    for releases in branch_results.into_iter().flatten() {
+        for (version, _) in releases {
+            if semver::Version::parse(&version).is_ok() {
+                let channel = php_channel(&version, &support_cycles);
+                versions.insert(format!("{version} ({channel})"));
             }
         }
     }
@@ -277,7 +283,10 @@ async fn get_apache_versions() -> Result<Vec<String>, String> {
         .split("httpd-")
         .skip(1)
         .filter_map(|entry| entry.split(['\"', '\'', '<', '>']).next())
-        .filter(|version| version.starts_with("2.") && (version.ends_with(".tar.gz") || version.ends_with(".tar.bz2")))
+        .filter(|version| {
+            version.starts_with("2.")
+                && (version.ends_with(".tar.gz") || version.ends_with(".tar.bz2"))
+        })
         .map(|version| {
             version
                 .trim_end_matches(".tar.gz")
@@ -358,7 +367,9 @@ fn generate_php_archive_urls(version: &str) -> Vec<String> {
         for toolchain in toolchains {
             for arch in archs {
                 urls.push(format!("{base}/php-{version}-Win32-{toolchain}-{arch}.zip"));
-                urls.push(format!("{base}/php-{version}-nts-Win32-{toolchain}-{arch}.zip"));
+                urls.push(format!(
+                    "{base}/php-{version}-nts-Win32-{toolchain}-{arch}.zip"
+                ));
             }
         }
     }
@@ -398,13 +409,8 @@ async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, S
             }
         });
         let results = futures_util::future::join_all(requests).await;
-        for res in results {
-            if let Some(valid_url) = res {
-                verified_url = Some(valid_url);
-                break;
-            }
-        }
-        if verified_url.is_some() {
+        if let Some(valid_url) = results.into_iter().flatten().next() {
+            verified_url = Some(valid_url);
             break;
         }
     }
@@ -426,14 +432,13 @@ async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, S
     let mut archive = Vec::new();
     let mut stream = response.bytes_stream();
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|error| format!("Unable to read PHP {version} download: {error}"))?;
+        let chunk =
+            chunk.map_err(|error| format!("Unable to read PHP {version} download: {error}"))?;
         downloaded_bytes += chunk.len() as u64;
         archive.extend_from_slice(&chunk);
-        let progress = if total_bytes == 0 {
-            1
-        } else {
-            ((downloaded_bytes * 100) / total_bytes).min(100) as u8
-        };
+        let progress = (downloaded_bytes * 100)
+            .checked_div(total_bytes)
+            .map_or(1, |ratio| ratio.min(100) as u8);
         let _ = tauri::Emitter::emit(
             &app,
             "runtime-download-progress",
@@ -472,17 +477,30 @@ async fn download_archive(
         .await
         .map_err(|error| format!("Unable to download {service} {version}: {error}"))?
         .error_for_status()
-        .map_err(|error| format!("No Windows archive was found for {service} {version}: {error}"))?;
+        .map_err(|error| {
+            format!("No Windows archive was found for {service} {version}: {error}")
+        })?;
     let total_bytes = response.content_length().unwrap_or_default();
     let mut downloaded_bytes = 0_u64;
     let mut archive = Vec::new();
     let mut stream = response.bytes_stream();
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|error| format!("Unable to read {service} {version} download: {error}"))?;
+        let chunk = chunk
+            .map_err(|error| format!("Unable to read {service} {version} download: {error}"))?;
         downloaded_bytes += chunk.len() as u64;
         archive.extend_from_slice(&chunk);
-        let progress = if total_bytes == 0 { 0 } else { ((downloaded_bytes * 100) / total_bytes).min(100) as u8 };
-        let _ = tauri::Emitter::emit(app, "runtime-download-progress", DownloadProgress { service, version, progress });
+        let progress = (downloaded_bytes * 100)
+            .checked_div(total_bytes)
+            .map_or(0, |ratio| ratio.min(100) as u8);
+        let _ = tauri::Emitter::emit(
+            app,
+            "runtime-download-progress",
+            DownloadProgress {
+                service,
+                version,
+                progress,
+            },
+        );
     }
     Ok(archive)
 }
@@ -512,7 +530,15 @@ async fn install_node(app: tauri::AppHandle, version: String) -> Result<String, 
         return Err(format!("Unable to prepare Node.js {version}: {error}"));
     }
     let _ = std::fs::remove_dir_all(extracted_directory);
-    let _ = tauri::Emitter::emit(&app, "runtime-download-progress", DownloadProgress { service: "Node.js", version: &version, progress: 100 });
+    let _ = tauri::Emitter::emit(
+        &app,
+        "runtime-download-progress",
+        DownloadProgress {
+            service: "Node.js",
+            version: &version,
+            progress: 100,
+        },
+    );
     Ok(target_directory.to_string_lossy().into_owned())
 }
 
@@ -522,8 +548,12 @@ async fn install_apache(app: tauri::AppHandle, version: String) -> Result<String
         .map_err(|_| format!("Invalid Apache version: {version}"))?;
     let version = parsed_version.to_string();
     let target_directory = runtime_paths::runtime_path("apache", &version);
-    if target_directory.is_dir() { return Ok(target_directory.to_string_lossy().into_owned()); }
-    let archive_url = format!("https://www.apachelounge.com/download/VS17/binaries/httpd-{version}-win64-VS17.zip");
+    if target_directory.is_dir() {
+        return Ok(target_directory.to_string_lossy().into_owned());
+    }
+    let archive_url = format!(
+        "https://www.apachelounge.com/download/VS17/binaries/httpd-{version}-win64-VS17.zip"
+    );
     let archive = download_archive(&app, "Apache", &version, &archive_url).await?;
     std::fs::create_dir_all(&target_directory).map_err(format_io_error)?;
     extract_zip(&archive, &target_directory)?;
@@ -569,7 +599,12 @@ fn extract_zip(archive: &[u8], target_directory: &std::path::Path) -> Result<(),
 }
 
 fn flatten_directory(source: &std::path::Path, target: &std::path::Path) -> Result<(), String> {
-    if !source.is_dir() { return Err(format!("Archive has an unexpected directory layout: {}", source.display())); }
+    if !source.is_dir() {
+        return Err(format!(
+            "Archive has an unexpected directory layout: {}",
+            source.display()
+        ));
+    }
     for entry in std::fs::read_dir(source).map_err(format_io_error)? {
         let entry = entry.map_err(format_io_error)?;
         let destination = target.join(entry.file_name());
@@ -637,7 +672,9 @@ fn set_active_apache_version(version: String) -> Result<String, String> {
 fn start_php(version: String) -> Result<String, String> {
     let php_binary = runtime_paths::php_path(&version).join("php-cgi.exe");
     if !php_binary.is_file() {
-        return Err(format!("PHP {version} is not installed correctly: php-cgi.exe was not found"));
+        return Err(format!(
+            "PHP {version} is not installed correctly: php-cgi.exe was not found"
+        ));
     }
 
     let process_slot = PHP_PROCESS.get_or_init(|| Mutex::new(None));
@@ -709,10 +746,20 @@ fn configure_php_cli_alias(version: String) -> Result<String, String> {
     let alias_contents = format!("@echo off\r\n\"{}\" %*\r\n", php_binary.display());
     std::fs::write(runtime_paths::php_alias_path(), alias_contents).map_err(format_io_error)?;
 
-    let bin_path = runtime_paths::bin_directory().to_string_lossy().into_owned();
-    if let Ok(env_key) = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER).open_subkey_with_flags("Environment", winreg::enums::KEY_READ | winreg::enums::KEY_WRITE) {
+    let bin_path = runtime_paths::bin_directory()
+        .to_string_lossy()
+        .into_owned();
+    if let Ok(env_key) = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER)
+        .open_subkey_with_flags(
+            "Environment",
+            winreg::enums::KEY_READ | winreg::enums::KEY_WRITE,
+        )
+    {
         let current_path: String = env_key.get_value("Path").unwrap_or_default();
-        let parts: Vec<&str> = current_path.split(';').filter(|p| !p.trim().is_empty() && *p != bin_path).collect();
+        let parts: Vec<&str> = current_path
+            .split(';')
+            .filter(|p| !p.trim().is_empty() && *p != bin_path)
+            .collect();
         let mut new_parts = parts;
         new_parts.push(&bin_path);
         let new_path = new_parts.join(";");
@@ -733,7 +780,9 @@ async fn load_secret_profiles() -> Result<secrets_config::SecretsConfiguration, 
 }
 
 #[tauri::command]
-async fn save_secret_profiles(configuration: secrets_config::SecretsConfiguration) -> Result<(), String> {
+async fn save_secret_profiles(
+    configuration: secrets_config::SecretsConfiguration,
+) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || secrets_config::save(configuration))
         .await
         .map_err(|error| format!("Unable to save secret profiles: {error}"))?
@@ -741,9 +790,11 @@ async fn save_secret_profiles(configuration: secrets_config::SecretsConfiguratio
 
 #[tauri::command]
 async fn activate_secret_profile_for_powershell(profile_id: u64) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || secrets_config::activate_powershell_profile(profile_id))
-        .await
-        .map_err(|error| format!("Unable to activate secret profile: {error}"))?
+    tauri::async_runtime::spawn_blocking(move || {
+        secrets_config::activate_powershell_profile(profile_id)
+    })
+    .await
+    .map_err(|error| format!("Unable to activate secret profile: {error}"))?
 }
 
 static IS_EXITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -810,7 +861,8 @@ fn show_or_toggle_quick_window(app: &tauri::AppHandle) {
                 let win_height = (540.0 * scale_factor) as i32;
                 let x = (size.width as i32) - win_width - (16.0 * scale_factor) as i32;
                 let y = (size.height as i32) - win_height - (56.0 * scale_factor) as i32;
-                let _ = quick_window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+                let _ = quick_window
+                    .set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
             }
             let _ = quick_window.show();
             let _ = quick_window.unminimize();
@@ -824,20 +876,20 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let show_main_item = MenuItem::with_id(app, "open_main", "Abrir Harbor", true, None::<&str>)?;
-            let quick_env_item = MenuItem::with_id(app, "open_quick_env", "Acceso Rápido (Bandeja)...", true, None::<&str>)?;
+            let show_main_item =
+                MenuItem::with_id(app, "open_main", "Abrir Harbor", true, None::<&str>)?;
+            let quick_env_item = MenuItem::with_id(
+                app,
+                "open_quick_env",
+                "Acceso Rápido (Bandeja)...",
+                true,
+                None::<&str>,
+            )?;
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", "Salir de Harbor", true, None::<&str>)?;
 
-            let tray_menu = Menu::with_items(
-                app,
-                &[
-                    &show_main_item,
-                    &quick_env_item,
-                    &sep,
-                    &quit_item,
-                ],
-            )?;
+            let tray_menu =
+                Menu::with_items(app, &[&show_main_item, &quick_env_item, &sep, &quit_item])?;
 
             let mut tray_builder = TrayIconBuilder::with_id("harbor-tray")
                 .tooltip("Harbor - Desktop & Environment Manager")
@@ -875,21 +927,17 @@ pub fn run() {
 
             Ok(())
         })
-        .on_window_event(|window, event| {
-            match event {
-                WindowEvent::CloseRequested { api, .. } => {
-                    if !IS_EXITING.load(std::sync::atomic::Ordering::SeqCst) {
-                        api.prevent_close();
-                        let _ = window.hide();
-                    }
+        .on_window_event(|window, event| match event {
+            WindowEvent::CloseRequested { api, .. } => {
+                if !IS_EXITING.load(std::sync::atomic::Ordering::SeqCst) {
+                    api.prevent_close();
+                    let _ = window.hide();
                 }
-                WindowEvent::Focused(false) => {
-                    if window.label() == "quick-tray" {
-                        let _ = window.hide();
-                    }
-                }
-                _ => {}
             }
+            WindowEvent::Focused(false) if window.label() == "quick-tray" => {
+                let _ = window.hide();
+            }
+            _ => {}
         })
         .invoke_handler(tauri::generate_handler![
             greet,
