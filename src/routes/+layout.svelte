@@ -4,10 +4,13 @@
   import "@fontsource/inter/600.css";
   import "@fontsource/inter/700.css";
   import { Tooltip } from "bits-ui";
+  import { page } from "$app/state";
   import NavigationBar from "$lib/features/navigation/NavigationBar.svelte";
   import StatusBar from "$lib/features/status-bar/StatusBar.svelte";
 
   let { children } = $props();
+
+  let isQuickTray = $derived(page.url.pathname.startsWith("/quick-tray"));
 </script>
 
 <svelte:head>
@@ -15,13 +18,19 @@
 </svelte:head>
 
 <Tooltip.Provider delayDuration={500}>
-  <div class="application-shell">
-    <NavigationBar />
-    <div class="application-content">
+  {#if isQuickTray}
+    <div class="quick-tray-shell">
       {@render children()}
     </div>
-    <StatusBar />
-  </div>
+  {:else}
+    <div class="application-shell">
+      <NavigationBar />
+      <div class="application-content">
+        {@render children()}
+      </div>
+      <StatusBar />
+    </div>
+  {/if}
 </Tooltip.Provider>
 
 <style>
@@ -84,5 +93,15 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+  }
+
+  .quick-tray-shell {
+    background: var(--color-boulder-50);
+    color: var(--color-boulder-950);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 </style>

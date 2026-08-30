@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke, isTauri } from "@tauri-apps/api/core";
+  import { emit, listen } from "@tauri-apps/api/event";
   import { Plus } from "@lucide/svelte";
   import { Button } from "bits-ui";
   import { onMount } from "svelte";
@@ -49,7 +50,26 @@
 
   onMount(() => {
     void loadConfiguration();
-    return () => window.clearTimeout(saveTimer);
+
+    const handleFocus = () => {
+      void loadConfiguration();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    let unlisten: (() => void) | undefined;
+    if (isNativeApp) {
+      listen("secrets-updated", () => {
+        void loadConfiguration();
+      }).then((fn) => {
+        unlisten = fn;
+      });
+    }
+
+    return () => {
+      window.clearTimeout(saveTimer);
+      window.removeEventListener("focus", handleFocus);
+      if (unlisten) unlisten();
+    };
   });
 
   async function loadConfiguration() {
@@ -102,6 +122,7 @@
     persistenceError = "";
     try {
       await invoke("save_secret_profiles", { configuration: { profiles, activeProfileId } });
+      await emit("secrets-updated");
     } catch (error) {
       persistenceError = error instanceof Error ? error.message : String(error);
     } finally {
@@ -193,7 +214,10 @@
         activeProfileId = previousProfileId;
         return;
       }
-      if (isNativeApp) await invoke("activate_secret_profile_for_powershell", { profileId });
+      if (isNativeApp) {
+        await invoke("activate_secret_profile_for_powershell", { profileId });
+        await emit("secrets-updated");
+      }
     } catch (error) {
       persistenceError = error instanceof Error ? error.message : String(error);
       activeProfileId = previousProfileId;

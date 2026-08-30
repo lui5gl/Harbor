@@ -529,10 +529,136 @@ async fn activate_secret_profile_for_powershell(profile_id: u64) -> Result<(), S
         .map_err(|error| format!("Unable to activate secret profile: {error}"))?
 }
 
+#[tauri::command]
+fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(main_window) = app.get_webview_window("main") {
+        let _ = main_window.show();
+        let _ = main_window.unminimize();
+        let _ = main_window.set_focus();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn hide_quick_tray(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(quick_window) = app.get_webview_window("quick-tray") {
+        let _ = quick_window.hide();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn toggle_quick_tray(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(quick_window) = app.get_webview_window("quick-tray") {
+        if quick_window.is_visible().unwrap_or(false) {
+            let _ = quick_window.hide();
+        } else {
+            let _ = quick_window.show();
+            let _ = quick_window.unminimize();
+            let _ = quick_window.set_focus();
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn exit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
+use tauri::{
+    menu::{Menu, MenuItem, PredefinedMenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager, WindowEvent,
+};
+
+fn show_or_toggle_quick_window(app: &tauri::AppHandle) {
+    if let Some(quick_window) = app.get_webview_window("quick-tray") {
+        if quick_window.is_visible().unwrap_or(false) {
+            let _ = quick_window.hide();
+        } else {
+            if let Ok(Some(monitor)) = quick_window.primary_monitor() {
+                let size = monitor.size();
+                let scale_factor = monitor.scale_factor();
+                let win_width = (390.0 * scale_factor) as i32;
+                let win_height = (520.0 * scale_factor) as i32;
+                let x = (size.width as i32) - win_width - (16.0 * scale_factor) as i32;
+                let y = (size.height as i32) - win_height - (56.0 * scale_factor) as i32;
+                let _ = quick_window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+            }
+            let _ = quick_window.show();
+            let _ = quick_window.unminimize();
+            let _ = quick_window.set_focus();
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let show_main_item = MenuItem::with_id(app, "open_main", "Abrir Harbor", true, None::<&str>)?;
+            let quick_env_item = MenuItem::with_id(app, "open_quick_env", "Variables de Entorno...", true, None::<&str>)?;
+            let sep = PredefinedMenuItem::separator(app)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Salir de Harbor", true, None::<&str>)?;
+
+            let tray_menu = Menu::with_items(
+                app,
+                &[
+                    &show_main_item,
+                    &quick_env_item,
+                    &sep,
+                    &quit_item,
+                ],
+            )?;
+
+            let mut tray_builder = TrayIconBuilder::with_id("harbor-tray")
+                .tooltip("Harbor - Desktop & Environment Manager")
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "open_main" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "open_quick_env" => {
+                        show_or_toggle_quick_window(app);
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        show_or_toggle_quick_window(app);
+                    }
+                });
+
+            if let Some(icon) = app.default_window_icon() {
+                tray_builder = tray_builder.icon(icon.clone());
+            }
+
+            tray_builder.build(app)?;
+
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             get_node_versions,
@@ -552,7 +678,11 @@ pub fn run() {
             set_active_node_version,
             load_secret_profiles,
             save_secret_profiles,
-            activate_secret_profile_for_powershell
+            activate_secret_profile_for_powershell,
+            show_main_window,
+            hide_quick_tray,
+            toggle_quick_tray,
+            exit_app
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
