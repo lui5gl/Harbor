@@ -857,8 +857,11 @@ fn show_or_toggle_quick_window(app: &tauri::AppHandle) {
             if let Ok(Some(monitor)) = quick_window.primary_monitor() {
                 let size = monitor.size();
                 let scale_factor = monitor.scale_factor();
-                let win_width = (400.0 * scale_factor) as i32;
-                let win_height = (540.0 * scale_factor) as i32;
+                let (win_width, win_height) = if let Ok(sz) = quick_window.outer_size() {
+                    (sz.width as i32, sz.height as i32)
+                } else {
+                    ((390.0 * scale_factor) as i32, (520.0 * scale_factor) as i32)
+                };
                 let x = (size.width as i32) - win_width - (16.0 * scale_factor) as i32;
                 let y = (size.height as i32) - win_height - (56.0 * scale_factor) as i32;
                 let _ = quick_window
