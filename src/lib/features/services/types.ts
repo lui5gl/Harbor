@@ -9,6 +9,14 @@ export type VersionItem = {
   isInstalled: boolean;
 };
 
+export type PhpStackProfile = {
+  id: string;
+  name: string;
+  phpVersion: string;
+  apacheVersion: string;
+  isDefault?: boolean;
+};
+
 export type PhpWebStackState = {
   activePhpVersion: string | null;
   installedPhpVersions: string[];
