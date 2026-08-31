@@ -4,11 +4,12 @@
 
   type ProductionActivationDialogProps = {
     open: boolean;
+    environmentLabel: string;
     onOpenChange: (open: boolean) => void;
     onConfirm: () => void;
   };
 
-  let { open = $bindable(), onOpenChange, onConfirm }: ProductionActivationDialogProps = $props();
+  let { open = $bindable(), environmentLabel, onOpenChange, onConfirm }: ProductionActivationDialogProps = $props();
 </script>
 
 <AlertDialog.Root bind:open onOpenChange={onOpenChange}>
@@ -16,8 +17,8 @@
     <AlertDialog.Overlay class="modal-backdrop" />
     <AlertDialog.Content class="confirmation-dialog">
       <div class="warning-icon" aria-hidden="true"><ShieldAlert size={22} strokeWidth={2} /></div>
-      <AlertDialog.Title class="confirmation-dialog-title">Activate production profile?</AlertDialog.Title>
-      <AlertDialog.Description class="confirmation-dialog-description">This may connect your development tools to production services. Confirm only when this is intentional.</AlertDialog.Description>
+      <AlertDialog.Title class="confirmation-dialog-title">Activate production environment?</AlertDialog.Title>
+      <AlertDialog.Description class="confirmation-dialog-description">{environmentLabel} will become available to new PowerShell sessions. This may connect development tools to production services.</AlertDialog.Description>
       <div class="dialog-actions">
         <AlertDialog.Cancel class="secondary-button">Cancel</AlertDialog.Cancel>
         <AlertDialog.Action class="primary-button warning-button" onclick={onConfirm}>Activate production</AlertDialog.Action>
@@ -28,20 +29,18 @@
 
 <style>
   :global(.modal-backdrop) {
-    align-items: center;
-    background: rgb(11 11 11 / 35%);
-    display: flex;
+    background: rgb(11 11 11 / 45%);
     inset: 0;
-    justify-content: center;
-    padding: 24px;
     position: fixed;
-    z-index: 10;
+    z-index: 100;
   }
 
   :global(.confirmation-dialog) {
     background: #ffffff;
+    border: 1px solid var(--color-boulder-200);
     border-radius: 8px;
     box-shadow: 0 20px 60px rgb(11 11 11 / 20%);
+    box-sizing: border-box;
     left: 50%;
     max-width: 420px;
     padding: 24px;
@@ -49,7 +48,7 @@
     top: 50%;
     transform: translate(-50%, -50%);
     width: min(calc(100% - 48px), 420px);
-    z-index: 11;
+    z-index: 101;
   }
 
   .warning-icon {

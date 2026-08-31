@@ -20,7 +20,10 @@
   });
 
   function saveSettings() {
-    onSave(draftName, draftIsProduction);
+    onSave(
+      draftName.trim() || "Untitled environment",
+      draftIsProduction
+    );
     open = false;
   }
 </script>
@@ -29,18 +32,25 @@
   <Dialog.Portal>
     <Dialog.Overlay class="modal-backdrop" />
     <Dialog.Content class="profile-settings-dialog" aria-describedby="profile-settings-description">
-      <Dialog.Title class="profile-settings-title">Profile settings</Dialog.Title>
-      <Dialog.Description id="profile-settings-description" class="profile-settings-description">Adjust the profile name and its production protection.</Dialog.Description>
+      <Dialog.Title class="profile-settings-title">Environment settings</Dialog.Title>
+      <Dialog.Description id="profile-settings-description" class="profile-settings-description">
+        Update the selected environment and its production protection.
+      </Dialog.Description>
 
-      <label class="field-label" for="settings-profile-name">Profile name</label>
-      <input id="settings-profile-name" class="text-input" bind:value={draftName} />
+      <label class="field-label" for="settings-profile-name">Environment name</label>
+      <input
+        id="settings-profile-name"
+        class="text-input"
+        placeholder="e.g. Development, Staging, Production"
+        bind:value={draftName}
+      />
 
       <div class="production-setting">
         <span>
-          <strong>Production profile</strong>
-          <small>Requires confirmation before becoming active.</small>
+          <strong>Production environment</strong>
+          <small>Requires confirmation before activation in the shell.</small>
         </span>
-        <Switch.Root class="production-switch" bind:checked={draftIsProduction} aria-label="Production profile">
+        <Switch.Root class="production-switch" bind:checked={draftIsProduction} aria-label="Production environment">
           <Switch.Thumb class="production-switch-thumb" />
         </Switch.Root>
       </div>
@@ -58,20 +68,18 @@
 
 <style>
   :global(.modal-backdrop) {
-    align-items: center;
-    background: rgb(11 11 11 / 35%);
-    display: flex;
+    background: rgb(11 11 11 / 45%);
     inset: 0;
-    justify-content: center;
-    padding: 24px;
     position: fixed;
-    z-index: 10;
+    z-index: 100;
   }
 
   :global(.profile-settings-dialog) {
     background: #ffffff;
+    border: 1px solid var(--color-boulder-200);
     border-radius: 8px;
     box-shadow: 0 20px 60px rgb(11 11 11 / 20%);
+    box-sizing: border-box;
     display: grid;
     gap: 12px;
     left: 50%;
@@ -80,8 +88,8 @@
     position: fixed;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: min(100%, 460px);
-    z-index: 11;
+    width: min(calc(100% - 32px), 460px);
+    z-index: 101;
   }
 
   :global(.profile-settings-title) {

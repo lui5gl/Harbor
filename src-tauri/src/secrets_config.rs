@@ -32,6 +32,14 @@ pub struct EnvironmentProfile {
 }
 
 #[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SecretProject {
+    pub id: u64,
+    pub name: String,
+    pub environments: Vec<EnvironmentProfile>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
 struct ManagedEnvironmentVariable {
     key: String,
     previous_value: Option<String>,
@@ -40,8 +48,23 @@ struct ManagedEnvironmentVariable {
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SecretsConfiguration {
-    pub profiles: Vec<EnvironmentProfile>,
-    pub active_profile_id: Option<u64>,
+    pub projects: Vec<SecretProject>,
+    pub active_environment_id: Option<u64>,
+    #[serde(default)]
+    managed_environment_variables: Vec<ManagedEnvironmentVariable>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StoredSecretsConfiguration {
+    #[serde(default)]
+    projects: Vec<SecretProject>,
+    #[serde(default)]
+    active_environment_id: Option<u64>,
+    #[serde(default)]
+    profiles: Vec<EnvironmentProfile>,
+    #[serde(default)]
+    active_profile_id: Option<u64>,
     #[serde(default)]
     managed_environment_variables: Vec<ManagedEnvironmentVariable>,
 }
@@ -49,8 +72,29 @@ pub struct SecretsConfiguration {
 pub fn load() -> Result<SecretsConfiguration, String> {
     let entry = credential_entry()?;
     match entry.get_secret() {
-        Ok(contents) => serde_json::from_slice(&contents)
-            .map_err(|error| format!("Unable to read saved secret profiles: {error}")),
+        Ok(contents) => {
+            let stored: StoredSecretsConfiguration = serde_json::from_slice(&contents)
+                .map_err(|error| format!("Unable to read saved secret profiles: {error}"))?;
+
+            if !stored.projects.is_empty() || stored.profiles.is_empty() {
+                return Ok(SecretsConfiguration {
+                    projects: stored.projects,
+                    active_environment_id: stored.active_environment_id,
+                    managed_environment_variables: stored.managed_environment_variables,
+                });
+            }
+
+            // Existing profile-only installations become a single project without losing secrets.
+            Ok(SecretsConfiguration {
+                projects: vec![SecretProject {
+                    id: 1,
+                    name: "General".to_string(),
+                    environments: stored.profiles,
+                }],
+                active_environment_id: stored.active_profile_id,
+                managed_environment_variables: stored.managed_environment_variables,
+            })
+        }
         Err(keyring::Error::NoEntry) => Ok(SecretsConfiguration::default()),
         Err(error) => Err(format!(
             "Unable to load secret profiles from the system credential store: {error}"
@@ -70,15 +114,16 @@ pub fn activate_powershell_profile(profile_id: u64) -> Result<(), String> {
     let mut configuration = load()?;
     validate(&configuration)?;
     let profile = configuration
-        .profiles
+        .projects
         .iter()
-        .find(|profile| profile.id == profile_id)
+        .flat_map(|project| project.environments.iter())
+        .find(|environment| environment.id == profile_id)
         .cloned()
         .ok_or_else(|| "The selected profile does not exist".to_string())?;
 
     publish_user_environment(&profile, &mut configuration.managed_environment_variables)?;
     install_powershell_profile()?;
-    configuration.active_profile_id = Some(profile.id);
+    configuration.active_environment_id = Some(profile.id);
     write(&configuration)
 }
 
@@ -97,55 +142,70 @@ fn write(configuration: &SecretsConfiguration) -> Result<(), String> {
 }
 
 fn validate(configuration: &SecretsConfiguration) -> Result<(), String> {
-    let mut profile_ids = HashSet::new();
-    let mut profile_names = HashSet::new();
+    let mut project_ids = HashSet::new();
+    let mut project_names = HashSet::new();
+    let mut environment_ids = HashSet::new();
 
-    for profile in &configuration.profiles {
-        let name = profile.name.trim();
-        if name.is_empty() || name.len() > 80 {
-            return Err("Each profile must have a name between 1 and 80 characters".to_string());
+    for project in &configuration.projects {
+        let project_name = project.name.trim();
+        if project_name.is_empty() || project_name.len() > 80 {
+            return Err("Each project must have a name between 1 and 80 characters".to_string());
         }
-        if !profile_ids.insert(profile.id) {
-            return Err("Profile identifiers must be unique".to_string());
+        if !project_ids.insert(project.id) {
+            return Err("Project identifiers must be unique".to_string());
         }
-        if !profile_names.insert(name.to_lowercase()) {
-            return Err("Profile names must be unique".to_string());
+        if !project_names.insert(project_name.to_lowercase()) {
+            return Err("Project names must be unique".to_string());
         }
 
-        let mut variable_ids = HashSet::new();
-        let mut variable_keys = HashSet::new();
-        for variable in &profile.secrets {
-            let key = variable.key.trim();
-            if key.is_empty() || key.len() > 256 {
-                return Err(format!(
-                    "Each variable in {name} must have a key between 1 and 256 characters"
-                ));
+        let mut environment_names = HashSet::new();
+        for environment in &project.environments {
+            let name = environment.name.trim();
+            if name.is_empty() || name.len() > 80 {
+                return Err("Each environment must have a name between 1 and 80 characters".to_string());
             }
-            if !key
-                .chars()
-                .all(|character| character.is_ascii_alphanumeric() || character == '_')
-            {
-                return Err(format!(
-                    "Variable {key} in {name} may only use letters, numbers, and underscores"
-                ));
+            if !environment_ids.insert(environment.id) {
+                return Err("Environment identifiers must be unique".to_string());
             }
-            if variable.value.contains('\0') {
-                return Err(format!(
-                    "Variable {key} in {name} cannot contain a null character"
-                ));
+            if !environment_names.insert(name.to_lowercase()) {
+                return Err(format!("Environment names in {project_name} must be unique"));
             }
-            if !variable_ids.insert(variable.id) {
-                return Err(format!("Variable identifiers in {name} must be unique"));
-            }
-            if !variable_keys.insert(key.to_uppercase()) {
-                return Err(format!("Variable keys in {name} must be unique"));
+
+            let mut variable_ids = HashSet::new();
+            let mut variable_keys = HashSet::new();
+            for variable in &environment.secrets {
+                let key = variable.key.trim();
+                if key.is_empty() || key.len() > 256 {
+                    return Err(format!(
+                        "Each variable in {name} must have a key between 1 and 256 characters"
+                    ));
+                }
+                if !key
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric() || character == '_')
+                {
+                    return Err(format!(
+                        "Variable {key} in {name} may only use letters, numbers, and underscores"
+                    ));
+                }
+                if variable.value.contains('\0') {
+                    return Err(format!(
+                        "Variable {key} in {name} cannot contain a null character"
+                    ));
+                }
+                if !variable_ids.insert(variable.id) {
+                    return Err(format!("Variable identifiers in {name} must be unique"));
+                }
+                if !variable_keys.insert(key.to_uppercase()) {
+                    return Err(format!("Variable keys in {name} must be unique"));
+                }
             }
         }
     }
 
-    if let Some(active_profile_id) = configuration.active_profile_id {
-        if !profile_ids.contains(&active_profile_id) {
-            return Err("The active profile must exist".to_string());
+    if let Some(active_environment_id) = configuration.active_environment_id {
+        if !environment_ids.contains(&active_environment_id) {
+            return Err("The active environment must exist".to_string());
         }
     }
     Ok(())

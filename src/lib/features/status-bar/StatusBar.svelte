@@ -14,17 +14,24 @@
 
   async function updateSecretsStatus() {
     if (!isNativeApp) {
-      activeProfileName = "Pruebas";
+      activeProfileName = "General / Development";
       isProduction = false;
       return;
     }
 
     try {
       const config = await invoke<SecretsConfiguration>("load_secret_profiles");
-      const active = config.profiles.find((p) => p.id === config.activeProfileId);
-      if (active) {
-        activeProfileName = active.name || "Untitled";
-        isProduction = active.isProduction;
+      let activeEnv: { name: string; isProduction: boolean; projectName: string } | null = null;
+      for (const project of config.projects) {
+        const env = project.environments.find((e) => e.id === config.activeEnvironmentId);
+        if (env) {
+          activeEnv = { name: env.name, isProduction: env.isProduction, projectName: project.name };
+          break;
+        }
+      }
+      if (activeEnv) {
+        activeProfileName = `${activeEnv.projectName} / ${activeEnv.name}`;
+        isProduction = activeEnv.isProduction;
       } else {
         activeProfileName = null;
         isProduction = false;

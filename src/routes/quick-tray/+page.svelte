@@ -34,7 +34,8 @@
   } from "bits-ui";
   import { onMount } from "svelte";
   import type {
-    Profile,
+    Environment,
+    Project,
     Secret,
     SecretsConfiguration,
   } from "$lib/features/secrets/types";
@@ -44,22 +45,28 @@
     selectedVersion: string;
   };
 
-  const starterProfiles: Profile[] = [
+  const starterProjects: Project[] = [
     {
       id: 1,
-      name: "Pruebas",
-      isProduction: false,
-      secrets: [
-        { id: 1, key: "API_URL", value: "https://api-pruebas.example.test" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Production",
-      isProduction: true,
-      secrets: [
-        { id: 2, key: "API_URL", value: "https://api.example.com" },
-        { id: 3, key: "API_TOKEN", value: "replace-with-a-secret" },
+      name: "General",
+      environments: [
+        {
+          id: 1,
+          name: "Development",
+          isProduction: false,
+          secrets: [
+            { id: 1, key: "API_URL", value: "https://api-dev.example.test" },
+          ],
+        },
+        {
+          id: 2,
+          name: "Production",
+          isProduction: true,
+          secrets: [
+            { id: 2, key: "API_URL", value: "https://api.example.com" },
+            { id: 3, key: "API_TOKEN", value: "replace-with-a-secret" },
+          ],
+        },
       ],
     },
   ];
@@ -68,10 +75,10 @@
   let currentTab = $state<"secrets" | "services">("secrets");
 
   // Secrets state
-  let profiles = $state<Profile[]>([]);
-  let activeProfileId = $state<number | null>(null);
-  let selectedProfileId = $state<number | null>(null);
-  let selectedProfileIdStr = $state<string>("");
+  let projects = $state<Project[]>([]);
+  let activeEnvironmentId = $state<number | null>(null);
+  let selectedEnvironmentId = $state<number | null>(null);
+  let selectedEnvironmentIdStr = $state<string>("");
   let searchQuery = $state("");
   let revealedSecretIds = $state<number[]>([]);
   let copiedId = $state<string | null>(null);
@@ -95,28 +102,52 @@
   let formValue = $state("");
   let formError = $state("");
 
-  // Profile Dialog State
-  let isProfileDialogOpen = $state(false);
-  let newProfileName = $state("");
-  let newProfileIsProduction = $state(false);
+  // Environment Dialog State
+  let isEnvironmentDialogOpen = $state(false);
+  let newEnvironmentName = $state("");
+  let newEnvironmentIsProduction = $state(false);
 
   // Confirmations
   let isProductionDialogOpen = $state(false);
   let isDeleteVariableDialogOpen = $state(false);
   let pendingDeleteSecretId = $state<number | null>(null);
 
-  let selectedProfile = $derived(
-    profiles.find((p) => p.id === selectedProfileId),
+  type FlatEnvironment = {
+    id: number;
+    name: string;
+    displayName: string;
+    projectName: string;
+    projectId: number;
+    isProduction: boolean;
+    secrets: Secret[];
+  };
+
+  let flatEnvironments = $derived.by<FlatEnvironment[]>(() => {
+    return projects.flatMap((project) =>
+      project.environments.map((env) => ({
+        id: env.id,
+        name: env.name,
+        displayName: `${project.name} / ${env.name}`,
+        projectName: project.name,
+        projectId: project.id,
+        isProduction: env.isProduction,
+        secrets: env.secrets,
+      })),
+    );
+  });
+
+  let selectedEnvironment = $derived(
+    flatEnvironments.find((e) => e.id === selectedEnvironmentId),
   );
-  let isCurrentProfileActive = $derived(
-    selectedProfile ? selectedProfile.id === activeProfileId : false,
+  let isCurrentEnvironmentActive = $derived(
+    selectedEnvironment ? selectedEnvironment.id === activeEnvironmentId : false,
   );
 
   let filteredSecrets = $derived.by(() => {
-    if (!selectedProfile) return [];
+    if (!selectedEnvironment) return [];
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return selectedProfile.secrets;
-    return selectedProfile.secrets.filter(
+    if (!query) return selectedEnvironment.secrets;
+    return selectedEnvironment.secrets.filter(
       (s) =>
         s.key.toLowerCase().includes(query) ||
         s.value.toLowerCase().includes(query),
@@ -124,8 +155,8 @@
   });
 
   $effect(() => {
-    if (selectedProfileId !== null) {
-      selectedProfileIdStr = String(selectedProfileId);
+    if (selectedEnvironmentId !== null) {
+      selectedEnvironmentIdStr = String(selectedEnvironmentId);
     }
   });
 
@@ -163,9 +194,9 @@
 
   async function loadConfiguration() {
     if (!isNativeApp) {
-      profiles = structuredClone(starterProfiles);
-      activeProfileId = profiles[0]?.id ?? null;
-      selectedProfileId = activeProfileId;
+      projects = structuredClone(starterProjects);
+      activeEnvironmentId = projects[0]?.environments[0]?.id ?? null;
+      selectedEnvironmentId = activeEnvironmentId;
       isLoading = false;
       return;
     }
@@ -174,17 +205,17 @@
       const configuration = await invoke<SecretsConfiguration>(
         "load_secret_profiles",
       );
-      profiles =
-        configuration.profiles.length > 0
-          ? configuration.profiles
-          : structuredClone(starterProfiles);
-      activeProfileId =
-        configuration.activeProfileId ?? profiles[0]?.id ?? null;
+      projects =
+        configuration.projects.length > 0
+          ? configuration.projects
+          : structuredClone(starterProjects);
+      activeEnvironmentId =
+        configuration.activeEnvironmentId ?? flatEnvironments[0]?.id ?? null;
       if (
-        selectedProfileId === null ||
-        !profiles.some((p) => p.id === selectedProfileId)
+        selectedEnvironmentId === null ||
+        !flatEnvironments.some((p) => p.id === selectedEnvironmentId)
       ) {
-        selectedProfileId = activeProfileId ?? profiles[0]?.id ?? null;
+        selectedEnvironmentId = activeEnvironmentId ?? flatEnvironments[0]?.id ?? null;
       }
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : String(error);
@@ -246,16 +277,16 @@
   function handleProfileSelect(val: string) {
     const num = Number(val);
     if (!isNaN(num)) {
-      selectedProfileId = num;
+      selectedEnvironmentId = num;
     }
   }
 
   async function saveConfiguration(
-    updatedProfiles: Profile[],
+    updatedProjects: Project[],
     updatedActiveId: number | null,
   ) {
-    profiles = updatedProfiles;
-    activeProfileId = updatedActiveId;
+    projects = updatedProjects;
+    activeEnvironmentId = updatedActiveId;
     if (!isNativeApp) return;
 
     isSaving = true;
@@ -263,8 +294,8 @@
     try {
       await invoke("save_secret_profiles", {
         configuration: {
-          profiles: updatedProfiles,
-          activeProfileId: updatedActiveId,
+          projects: updatedProjects,
+          activeEnvironmentId: updatedActiveId,
         },
       });
       await emit("secrets-updated");
@@ -277,28 +308,28 @@
   }
 
   function handleActivationRequest() {
-    if (!selectedProfile) return;
+    if (!selectedEnvironment) return;
     if (
-      selectedProfile.isProduction &&
-      selectedProfile.id !== activeProfileId
+      selectedEnvironment.isProduction &&
+      selectedEnvironment.id !== activeEnvironmentId
     ) {
       isProductionDialogOpen = true;
       return;
     }
-    void executeActivation(selectedProfile.id);
+    void executeActivation(selectedEnvironment.id);
   }
 
-  async function executeActivation(profileId: number) {
+  async function executeActivation(environmentId: number) {
     isActivating = true;
     errorMessage = "";
     isProductionDialogOpen = false;
     try {
-      await saveConfiguration(profiles, profileId);
+      await saveConfiguration(projects, environmentId);
       if (isNativeApp) {
-        await invoke("activate_secret_profile_for_powershell", { profileId });
+        await invoke("activate_secret_profile_for_powershell", { profileId: environmentId });
         await emit("secrets-updated");
       }
-      flashStatus("Perfil activado en el sistema");
+      flashStatus("Entorno activado en el sistema");
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : String(error);
     } finally {
@@ -357,42 +388,50 @@
       formError = "Solo letras, números y guiones bajos";
       return;
     }
-    if (!selectedProfile) return;
+    if (!selectedEnvironment) return;
 
-    const duplicate = selectedProfile.secrets.find(
+    const duplicate = selectedEnvironment.secrets.find(
       (s) =>
         s.key.toUpperCase() === key.toUpperCase() && s.id !== editingSecretId,
     );
     if (duplicate) {
-      formError = `La variable ${key} ya existe en este perfil`;
+      formError = `La variable ${key} ya existe en este entorno`;
       return;
     }
 
     let updatedSecrets: Secret[];
     if (editingSecretId !== null) {
-      updatedSecrets = selectedProfile.secrets.map((s) =>
+      updatedSecrets = selectedEnvironment.secrets.map((s) =>
         s.id === editingSecretId ? { ...s, key, value: formValue } : s,
       );
     } else {
       const nextId =
-        Math.max(0, ...profiles.flatMap((p) => p.secrets.map((s) => s.id))) + 1;
+        Math.max(
+          0,
+          ...projects.flatMap((p) =>
+            p.environments.flatMap((e) => e.secrets.map((s) => s.id)),
+          ),
+        ) + 1;
       updatedSecrets = [
-        ...selectedProfile.secrets,
+        ...selectedEnvironment.secrets,
         { id: nextId, key, value: formValue },
       ];
     }
 
-    const updatedProfiles = profiles.map((p) =>
-      p.id === selectedProfileId ? { ...p, secrets: updatedSecrets } : p,
-    );
+    const updatedProjects = projects.map((p) => ({
+      ...p,
+      environments: p.environments.map((e) =>
+        e.id === selectedEnvironmentId ? { ...e, secrets: updatedSecrets } : e,
+      ),
+    }));
 
     isVariableDialogOpen = false;
-    await saveConfiguration(updatedProfiles, activeProfileId);
+    await saveConfiguration(updatedProjects, activeEnvironmentId);
 
-    if (selectedProfile.id === activeProfileId && isNativeApp) {
+    if (selectedEnvironment.id === activeEnvironmentId && isNativeApp) {
       try {
         await invoke("activate_secret_profile_for_powershell", {
-          profileId: activeProfileId,
+          profileId: activeEnvironmentId,
         });
       } catch {
         // non-blocking
@@ -406,23 +445,26 @@
   }
 
   async function confirmDeleteVariable() {
-    if (pendingDeleteSecretId === null || !selectedProfile) return;
+    if (pendingDeleteSecretId === null || !selectedEnvironment) return;
     const secretId = pendingDeleteSecretId;
     pendingDeleteSecretId = null;
     isDeleteVariableDialogOpen = false;
 
-    const updatedSecrets = selectedProfile.secrets.filter(
+    const updatedSecrets = selectedEnvironment.secrets.filter(
       (s) => s.id !== secretId,
     );
-    const updatedProfiles = profiles.map((p) =>
-      p.id === selectedProfileId ? { ...p, secrets: updatedSecrets } : p,
-    );
-    await saveConfiguration(updatedProfiles, activeProfileId);
+    const updatedProjects = projects.map((p) => ({
+      ...p,
+      environments: p.environments.map((e) =>
+        e.id === selectedEnvironmentId ? { ...e, secrets: updatedSecrets } : e,
+      ),
+    }));
+    await saveConfiguration(updatedProjects, activeEnvironmentId);
 
-    if (selectedProfile.id === activeProfileId && isNativeApp) {
+    if (selectedEnvironment.id === activeEnvironmentId && isNativeApp) {
       try {
         await invoke("activate_secret_profile_for_powershell", {
-          profileId: activeProfileId,
+          profileId: activeEnvironmentId,
         });
       } catch {
         // non-blocking
@@ -430,26 +472,40 @@
     }
   }
 
-  function openCreateProfileDialog() {
-    newProfileName = "";
-    newProfileIsProduction = false;
-    isProfileDialogOpen = true;
+  function openCreateEnvironmentDialog() {
+    newEnvironmentName = "";
+    newEnvironmentIsProduction = false;
+    isEnvironmentDialogOpen = true;
   }
 
-  async function saveNewProfile() {
-    const name = newProfileName.trim();
+  async function saveNewEnvironment() {
+    const name = newEnvironmentName.trim();
     if (!name) return;
-    const nextId = Math.max(0, ...profiles.map((p) => p.id)) + 1;
-    const newProfile: Profile = {
+    const nextId =
+      Math.max(
+        0,
+        ...projects.flatMap((p) => p.environments.map((e) => e.id)),
+      ) + 1;
+    const newEnv: Environment = {
       id: nextId,
       name,
-      isProduction: newProfileIsProduction,
+      isProduction: newEnvironmentIsProduction,
       secrets: [],
     };
-    const updatedProfiles = [...profiles, newProfile];
-    selectedProfileId = nextId;
-    isProfileDialogOpen = false;
-    await saveConfiguration(updatedProfiles, activeProfileId);
+
+    const targetProject = projects.find((p) =>
+      p.environments.some((e) => e.id === selectedEnvironmentId),
+    ) ?? projects[0];
+
+    const updatedProjects = projects.map((p) =>
+      p.id === targetProject.id
+        ? { ...p, environments: [...p.environments, newEnv] }
+        : p,
+    );
+
+    selectedEnvironmentId = nextId;
+    isEnvironmentDialogOpen = false;
+    await saveConfiguration(updatedProjects, activeEnvironmentId);
   }
 
   // Service operations
@@ -600,27 +656,27 @@
       {/if}
 
       {#if currentTab === "secrets"}
-        <!-- Profile Selector & Activation Toolbar -->
+        <!-- Environment Selector & Activation Toolbar -->
         <section class="profile-toolbar">
           <div class="profile-select-group">
             <Select.Root
               type="single"
-              bind:value={selectedProfileIdStr}
+              bind:value={selectedEnvironmentIdStr}
               onValueChange={handleProfileSelect}
             >
               <Select.Trigger
                 class="profile-select-trigger"
-                aria-label="Seleccionar perfil"
+                aria-label="Seleccionar entorno"
               >
                 <div class="select-label-wrapper">
-                  {#if isCurrentProfileActive}
-                    <span class="active-dot" title="Perfil activo en el sistema"
+                  {#if isCurrentEnvironmentActive}
+                    <span class="active-dot" title="Entorno activo en el sistema"
                     ></span>
                   {/if}
                   <span class="select-profile-name"
-                    >{selectedProfile?.name || "Seleccionar perfil"}</span
+                    >{selectedEnvironment?.displayName || "Seleccionar entorno"}</span
                   >
-                  {#if selectedProfile?.isProduction}
+                  {#if selectedEnvironment?.isProduction}
                     <span class="prod-tag">Prod</span>
                   {/if}
                 </div>
@@ -634,22 +690,22 @@
                   align="start"
                 >
                   <Select.Viewport class="profile-select-viewport">
-                    {#each profiles as profile (profile.id)}
-                      {@const isProfileActive = profile.id === activeProfileId}
+                    {#each flatEnvironments as env (env.id)}
+                      {@const isEnvActive = env.id === activeEnvironmentId}
                       <Select.Item
                         class="profile-select-item"
-                        value={String(profile.id)}
-                        label={profile.name}
+                        value={String(env.id)}
+                        label={env.displayName}
                       >
                         {#snippet children({ selected })}
                           <div class="item-left">
-                            {#if isProfileActive}
+                            {#if isEnvActive}
                               <span class="active-dot"></span>
                             {:else}
                               <span class="dot-placeholder"></span>
                             {/if}
-                            <span class="item-name">{profile.name}</span>
-                            {#if profile.isProduction}
+                            <span class="item-name">{env.displayName}</span>
+                            {#if env.isProduction}
                               <span class="prod-tag">Prod</span>
                             {/if}
                           </div>
@@ -671,8 +727,8 @@
             <Button.Root
               class="secondary-button new-profile-btn"
               type="button"
-              onclick={openCreateProfileDialog}
-              title="Crear nuevo perfil"
+              onclick={openCreateEnvironmentDialog}
+              title="Crear nuevo entorno"
             >
               <Plus size={14} strokeWidth={2.2} />
               <span>Nuevo</span>
@@ -681,14 +737,14 @@
 
           <!-- Activation status and action button -->
           <div class="activation-row">
-            {#if isCurrentProfileActive}
+            {#if isCurrentEnvironmentActive}
               <div class="active-status-tag">
                 <span class="active-pulse"></span>
-                <span>Perfil activo en el sistema</span>
+                <span>Entorno activo en el sistema</span>
               </div>
             {:else}
               <div class="inactive-status-row">
-                <span class="inactive-label">Este perfil no está activo</span>
+                <span class="inactive-label">Este entorno no está activo</span>
                 <Button.Root
                   class="activate-action-btn"
                   type="button"
@@ -696,7 +752,7 @@
                   onclick={handleActivationRequest}
                 >
                   <Play size={11} strokeWidth={2.2} />
-                  <span>{isActivating ? "Activando..." : "Activar perfil"}</span>
+                  <span>{isActivating ? "Activando..." : "Activar en shell"}</span>
                 </Button.Root>
               </div>
             {/if}
@@ -736,12 +792,12 @@
 
         <!-- Variables List -->
         <div class="secrets-container">
-          {#if !selectedProfile || selectedProfile.secrets.length === 0}
+          {#if !selectedEnvironment || selectedEnvironment.secrets.length === 0}
             <div class="empty-state">
               <div class="empty-icon"><KeyRound size={22} strokeWidth={1.8} /></div>
               <p class="empty-title">Sin variables de entorno</p>
               <p class="empty-subtitle">
-                Agrega variables a este perfil para administrarlas en el sistema.
+                Agrega variables a este entorno para administrarlas en el sistema.
               </p>
               <Button.Root
                 class="secondary-button"
@@ -888,8 +944,8 @@
           <div class="footer-status">
             <span class="footer-indicator"></span>
             <span
-              >{selectedProfile ? selectedProfile.secrets.length : 0}
-              {selectedProfile?.secrets.length === 1
+              >{selectedEnvironment ? selectedEnvironment.secrets.length : 0}
+              {selectedEnvironment?.secrets.length === 1
                 ? "variable"
                 : "variables"}</span
             >
@@ -1067,7 +1123,7 @@
           id="variable-dialog-desc"
           class="dialog-description"
         >
-          Define la clave y el valor para el perfil seleccionado.
+          Define la clave y el valor para el entorno seleccionado.
         </Dialog.Description>
       </div>
 
@@ -1115,8 +1171,8 @@
   </Dialog.Portal>
 </Dialog.Root>
 
-<!-- Bits-UI Dialog: Create Profile -->
-<Dialog.Root bind:open={isProfileDialogOpen}>
+<!-- Bits-UI Dialog: Create Environment -->
+<Dialog.Root bind:open={isEnvironmentDialogOpen}>
   <Dialog.Portal>
     <Dialog.Overlay class="modal-backdrop" />
     <Dialog.Content
@@ -1124,8 +1180,7 @@
       aria-describedby="profile-dialog-desc"
     >
       <div class="dialog-header">
-        <Dialog.Title class="dialog-title">Nuevo perfil de entorno</Dialog.Title
-        >
+        <Dialog.Title class="dialog-title">Nuevo entorno</Dialog.Title>
         <Dialog.Description id="profile-dialog-desc" class="dialog-description">
           Crea un entorno aislado para gestionar sus variables.
         </Dialog.Description>
@@ -1134,13 +1189,13 @@
       <div class="dialog-form-fields">
         <div class="field-group">
           <label class="field-label" for="dialog-prof-name"
-            >Nombre del perfil</label
+            >Nombre del entorno</label
           >
           <input
             id="dialog-prof-name"
             class="dialog-text-input"
             placeholder="EJ: Staging, Local, QA"
-            bind:value={newProfileName}
+            bind:value={newEnvironmentName}
           />
         </div>
 
@@ -1153,7 +1208,7 @@
           </div>
           <Switch.Root
             class="production-switch"
-            bind:checked={newProfileIsProduction}
+            bind:checked={newEnvironmentIsProduction}
           >
             <Switch.Thumb class="production-switch-thumb" />
           </Switch.Root>
@@ -1165,10 +1220,10 @@
         <Button.Root
           class="primary-button btn-sm"
           type="button"
-          onclick={saveNewProfile}
+          onclick={saveNewEnvironment}
         >
           <Check size={14} strokeWidth={2.2} />
-          <span>Crear perfil</span>
+          <span>Crear entorno</span>
         </Button.Root>
       </div>
     </Dialog.Content>
@@ -1184,7 +1239,7 @@
         <ShieldAlert size={22} strokeWidth={2.2} />
       </div>
       <AlertDialog.Title class="dialog-title"
-        >¿Activar perfil de producción?</AlertDialog.Title
+        >¿Activar entorno de producción?</AlertDialog.Title
       >
       <AlertDialog.Description class="dialog-description">
         Esto cargará las variables de producción en el sistema y en PowerShell.
@@ -1197,38 +1252,39 @@
         <AlertDialog.Action
           class="primary-button btn-sm warning-action-btn"
           onclick={() =>
-            selectedProfile && executeActivation(selectedProfile.id)}
+            selectedEnvironment && executeActivation(selectedEnvironment.id)}
         >
-          Activar producción
+          <span>Activar producción</span>
         </AlertDialog.Action>
       </div>
     </AlertDialog.Content>
   </AlertDialog.Portal>
 </AlertDialog.Root>
 
-<!-- Bits-UI AlertDialog: Delete Variable -->
+<!-- Bits-UI AlertDialog: Delete Variable Confirmation -->
 <AlertDialog.Root bind:open={isDeleteVariableDialogOpen}>
   <AlertDialog.Portal>
     <AlertDialog.Overlay class="modal-backdrop" />
     <AlertDialog.Content class="dialog-content confirmation-dialog">
-      <div class="danger-icon-wrapper" aria-hidden="true">
-        <AlertTriangle size={22} strokeWidth={2.2} />
+      <div class="warning-icon-wrapper danger" aria-hidden="true">
+        <Trash2 size={22} strokeWidth={2.2} />
       </div>
       <AlertDialog.Title class="dialog-title"
-        >Eliminar variable</AlertDialog.Title
+        >¿Eliminar variable?</AlertDialog.Title
       >
       <AlertDialog.Description class="dialog-description">
-        ¿Deseas eliminar permanentemente esta variable del perfil?
+        Esta acción eliminará la variable del entorno. Esta acción no se
+        puede deshacer.
       </AlertDialog.Description>
       <div class="dialog-footer">
         <AlertDialog.Cancel class="secondary-button btn-sm"
           >Cancelar</AlertDialog.Cancel
         >
         <AlertDialog.Action
-          class="danger-button btn-sm"
+          class="primary-button btn-sm danger-action-btn"
           onclick={confirmDeleteVariable}
         >
-          Eliminar
+          <span>Eliminar</span>
         </AlertDialog.Action>
       </div>
     </AlertDialog.Content>

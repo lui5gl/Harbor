@@ -4,16 +4,20 @@ export type Secret = {
   value: string;
 };
 
-export type Profile = {
+export type Environment = {
   id: number;
   name: string;
   isProduction: boolean;
   secrets: Secret[];
 };
 
-export type SecretsConfiguration = {
-  profiles: Profile[];
-  activeProfileId: number | null;
+export type Project = {
+  id: number;
+  name: string;
+  environments: Environment[];
 };
 
-export type ProfileSort = "manual" | "production" | "name";
+export type SecretsConfiguration = {
+  projects: Project[];
+  activeEnvironmentId: number | null;
+};
