@@ -843,6 +843,40 @@ fn exit_app(app: tauri::AppHandle) {
     perform_app_exit(&app);
 }
 
+#[tauri::command]
+async fn open_directory(path: String) -> Result<(), String> {
+    let target = std::path::PathBuf::from(&path);
+    if !target.exists() {
+        let _ = std::fs::create_dir_all(&target);
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to open explorer: {e}"))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to open directory: {e}"))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("Failed to open directory: {e}"))?;
+    }
+
+    Ok(())
+}
+
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -968,7 +1002,8 @@ pub fn run() {
             show_main_window,
             hide_quick_tray,
             toggle_quick_tray,
-            exit_app
+            exit_app,
+            open_directory
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

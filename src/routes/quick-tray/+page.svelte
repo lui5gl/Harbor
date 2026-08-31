@@ -1246,13 +1246,7 @@
     overflow: hidden;
     user-select: none;
     box-sizing: border-box;
-    font-family:
-      "Inter",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      sans-serif;
+    font-family: var(--font-sans);
     font-size: 13px;
   }
 

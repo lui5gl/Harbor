@@ -1,8 +1,6 @@
 <script lang="ts">
-  import "@fontsource/inter/400.css";
-  import "@fontsource/inter/500.css";
-  import "@fontsource/inter/600.css";
-  import "@fontsource/inter/700.css";
+  import "@fontsource-variable/geist";
+  import "@fontsource-variable/geist-mono";
   import { Tooltip } from "bits-ui";
   import { page } from "$app/state";
   import NavigationBar from "$lib/features/navigation/NavigationBar.svelte";
@@ -35,6 +33,9 @@
 
 <style>
   :global(:root) {
+    --font-sans: "Geist Variable", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
     --color-east-bay-50: #f4f6fa;
     --color-east-bay-100: #e5e9f4;
     --color-east-bay-200: #d1d9ec;
@@ -63,12 +64,18 @@
   :global(body) {
     background: var(--color-boulder-50);
     color: var(--color-boulder-950);
-    font-family: "Inter", sans-serif;
+    font-family: var(--font-sans);
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     margin: 0;
     min-height: 100%;
+  }
+
+  :global(code),
+  :global(pre),
+  :global(kbd) {
+    font-family: var(--font-mono);
   }
 
   :global(button),

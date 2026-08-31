@@ -4,7 +4,9 @@
     Check,
     ChevronDown,
     Download,
+    ExternalLink,
     Folder,
+    FolderOpen,
     Globe,
     Layers,
     Loader2,
@@ -18,6 +20,8 @@
     X
   } from "@lucide/svelte";
   import { Button, Dialog, Select, Separator, Tooltip } from "bits-ui";
+  import { openUrl } from "@tauri-apps/plugin-opener";
+  import { invoke, isTauri } from "@tauri-apps/api/core";
   import DeleteRuntimeDialog from "./DeleteRuntimeDialog.svelte";
   import InstallVersionDialog from "./InstallVersionDialog.svelte";
   import {
@@ -285,6 +289,28 @@
       pendingDelete = null;
     }
   }
+
+  async function handleOpenUrl(url: string) {
+    try {
+      if (isTauri()) {
+        await openUrl(url);
+      } else {
+        window.open(url, "_blank");
+      }
+    } catch (err) {
+      console.error("Error al abrir URL:", err);
+    }
+  }
+
+  async function handleOpenPath(path: string) {
+    try {
+      if (isTauri()) {
+        await invoke("open_directory", { path });
+      }
+    } catch (err) {
+      console.error("Error al abrir ruta:", err);
+    }
+  }
 </script>
 
 <section class="editor-panel" aria-labelledby="web-stack-title">
@@ -356,7 +382,15 @@
         <Globe size={14} strokeWidth={2} class="overview-icon" />
         <span class="overview-label">URL Local</span>
       </div>
-      <span class="overview-value">http://localhost</span>
+      <button
+        type="button"
+        class="overview-link-button"
+        onclick={() => void handleOpenUrl("http://localhost")}
+        title="Abrir http://localhost en el navegador"
+      >
+        <span class="overview-value">http://localhost</span>
+        <ExternalLink size={13} strokeWidth={2} class="overview-action-icon" aria-hidden="true" />
+      </button>
     </div>
 
     <div class="overview-divider" aria-hidden="true"></div>
@@ -366,7 +400,15 @@
         <Folder size={14} strokeWidth={2} class="overview-icon" />
         <span class="overview-label">Carpeta Web (Document Root)</span>
       </div>
-      <span class="overview-value">C:\Harbor\www</span>
+      <button
+        type="button"
+        class="overview-link-button"
+        onclick={() => void handleOpenPath("C:\\Harbor\\www")}
+        title="Abrir C:\Harbor\www en el explorador de archivos"
+      >
+        <span class="overview-value">C:\Harbor\www</span>
+        <FolderOpen size={13} strokeWidth={2} class="overview-action-icon" aria-hidden="true" />
+      </button>
     </div>
 
     <div class="overview-divider" aria-hidden="true"></div>
@@ -913,9 +955,47 @@
     text-transform: uppercase;
   }
 
+  .overview-link-button {
+    align-items: center;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 6px;
+    margin: 0;
+    max-width: 100%;
+    outline: none;
+    padding: 0;
+    text-align: left;
+  }
+
+  .overview-link-button:hover .overview-value {
+    color: var(--color-east-bay-700);
+    text-decoration: underline;
+  }
+
+  .overview-link-button:hover :global(.overview-action-icon) {
+    color: var(--color-east-bay-700);
+    transform: translate(1px, -1px);
+  }
+
+  .overview-link-button:focus-visible {
+    outline: 2px solid var(--color-east-bay-400);
+    outline-offset: 2px;
+  }
+
+  :global(.overview-action-icon) {
+    color: var(--color-boulder-400);
+    flex-shrink: 0;
+    transition: color 0.15s ease, transform 0.15s ease;
+  }
+
   .overview-value {
     color: var(--color-boulder-900);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 13px;
     font-weight: 600;
     overflow: hidden;
@@ -1165,7 +1245,7 @@
     align-items: center;
     border-radius: 4px;
     display: inline-flex;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 11.5px;
     font-weight: 600;
     gap: 5px;
