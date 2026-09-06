@@ -19,13 +19,13 @@
     actionLabel = "Delete",
     confirmKeyword,
     onOpenChange,
-    onConfirm
+    onConfirm,
   }: DeleteConfirmationDialogProps = $props();
 
   let inputValue = $state("");
   let hasTypedConfirmation = $derived(Boolean(confirmKeyword));
   let isMatch = $derived(
-    !hasTypedConfirmation || inputValue.trim().toUpperCase() === confirmKeyword?.toUpperCase()
+    !hasTypedConfirmation || inputValue.trim().toUpperCase() === confirmKeyword?.toUpperCase(),
   );
 
   $effect(() => {
@@ -79,7 +79,9 @@
             class="btn-delete"
             type="submit"
             disabled={!isMatch}
-            onclick={() => { if (isMatch) onConfirm(); }}
+            onclick={() => {
+              if (isMatch) onConfirm();
+            }}
           >
             <Trash2 size={14} strokeWidth={2} aria-hidden="true" />
             <span>{actionLabel}</span>
@@ -202,7 +204,9 @@
     height: 34px;
     outline: none;
     padding: 0 10px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
     width: 100%;
   }
 
@@ -232,7 +236,10 @@
     height: 34px;
     justify-content: center;
     padding: 0 14px;
-    transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+    transition:
+      background 0.12s ease,
+      border-color 0.12s ease,
+      opacity 0.12s ease;
   }
 
   :global(.btn-cancel) {

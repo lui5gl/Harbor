@@ -1,12 +1,5 @@
 <script lang="ts">
-  import {
-    Check,
-    Download,
-    HardDrive,
-    Plus,
-    Terminal,
-    Trash2
-  } from "@lucide/svelte";
+  import { Check, Download, HardDrive, Plus, Terminal, Trash2 } from "@lucide/svelte";
   import { Button } from "bits-ui";
   import DeleteRuntimeDialog from "./DeleteRuntimeDialog.svelte";
   import InstallVersionDialog from "./InstallVersionDialog.svelte";
@@ -35,15 +28,13 @@
     installError,
     onSelectNodeVersion,
     onInstallNodeVersion,
-    onDeleteNodeVersion
+    onDeleteNodeVersion,
   }: NodeRuntimeEditorProps = $props();
 
   let isInstallDialogOpen = $state(false);
   let pendingDeleteVersion = $state<string | null>(null);
 
-  let cleanActiveVersion = $derived(
-    activeNodeVersion ? cleanVersion(activeNodeVersion) : null
-  );
+  let cleanActiveVersion = $derived(activeNodeVersion ? cleanVersion(activeNodeVersion) : null);
 
   function requestDelete(version: string) {
     pendingDeleteVersion = cleanVersion(version);
@@ -98,7 +89,10 @@
         </div>
         <div>
           <h3>Installed Node.js Versions</h3>
-          <p>The selected active version is written to Harbor runtime config and available for CLI operations.</p>
+          <p>
+            The selected active version is written to Harbor runtime config and available for CLI
+            operations.
+          </p>
         </div>
       </div>
     </div>
@@ -120,7 +114,7 @@
         {#each installedNodeVersions as nodeVer (nodeVer)}
           {@const isActive = cleanVersion(nodeVer) === cleanActiveVersion}
           {@const versionMeta = parseVersionString(
-            availableNodeVersions.find((v) => cleanVersion(v) === cleanVersion(nodeVer)) ?? nodeVer
+            availableNodeVersions.find((v) => cleanVersion(v) === cleanVersion(nodeVer)) ?? nodeVer,
           )}
           <div class={`runtime-row${isActive ? " is-active" : ""}`}>
             <div class="runtime-info">
@@ -188,7 +182,9 @@
   {installProgress}
   {installingVersion}
   {installError}
-  onOpenChange={(open) => { isInstallDialogOpen = open; }}
+  onOpenChange={(open) => {
+    isInstallDialogOpen = open;
+  }}
   onInstall={(version) => void onInstallNodeVersion(version)}
 />
 
@@ -196,7 +192,9 @@
   open={Boolean(pendingDeleteVersion)}
   serviceLabel="Node.js"
   version={pendingDeleteVersion ?? ""}
-  onOpenChange={(open) => { if (!open) pendingDeleteVersion = null; }}
+  onOpenChange={(open) => {
+    if (!open) pendingDeleteVersion = null;
+  }}
   onConfirm={confirmDelete}
 />
 
@@ -445,7 +443,9 @@
     font-size: 11.5px;
     font-weight: 600;
     padding: 5px 10px;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   .btn-activate:hover {
@@ -464,7 +464,9 @@
     height: 28px;
     justify-content: center;
     padding: 0;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
     width: 28px;
   }
 

@@ -4,12 +4,13 @@ export const es = {
     secrets: "Secretos",
     settings: "Configuración",
     primaryNavigation: "Navegación principal",
-    home: "Harbor, inicio"
+    home: "Harbor, inicio",
   },
   settings: {
     eyebrow: "Preferencias de la aplicación",
     title: "Configuración",
-    description: "Ajusta cómo se inicia Harbor, cómo permanece disponible y cómo recuerda tu espacio de trabajo.",
+    description:
+      "Ajusta cómo se inicia Harbor, cómo permanece disponible y cómo recuerda tu espacio de trabajo.",
     behavior: "Comportamiento",
     behaviorDescription: "Elige qué hace Harbor mientras trabajas.",
     language: "Idioma",
@@ -34,15 +35,16 @@ export const es = {
     enabled: "Activado",
     disabled: "Desactivado",
     optional: "opcional",
-    proxyHint: "Usa un proxy HTTP o HTTPS. Las credenciales se guardan junto a las preferencias locales.",
+    proxyHint:
+      "Usa un proxy HTTP o HTTPS. Las credenciales se guardan junto a las preferencias locales.",
     directConnection: "El tráfico de Harbor se conecta directamente a Internet.",
     reset: "Restablecer",
     save: "Guardar cambios",
     saved: "Guardado",
     errors: {
       proxyHostRequired: "Introduce el host del proxy.",
-      proxyPortInvalid: "Introduce un puerto de proxy válido entre 1 y 65535."
-    }
+      proxyPortInvalid: "Introduce un puerto de proxy válido entre 1 y 65535.",
+    },
   },
   common: {
     host: "Host",
@@ -59,12 +61,13 @@ export const es = {
     version: "versión",
     versions: "versiones",
     loading: "Cargando...",
-    clear: "Limpiar"
+    clear: "Limpiar",
   },
   services: {
     eyebrow: "Entorno local",
     title: "Servicios y runtimes",
-    description: "Administra runtimes locales, versiones activas y el Web Stack integrado de PHP y Apache.",
+    description:
+      "Administra runtimes locales, versiones activas y el Web Stack integrado de PHP y Apache.",
     refreshing: "Actualizando...",
     refreshCatalog: "Actualizar catálogo",
     loading: "Cargando servicios y catálogos de runtimes...",
@@ -77,12 +80,13 @@ export const es = {
     running: "En ejecución",
     installed: "instaladas",
     version: "versión",
-    versions: "versiones"
+    versions: "versiones",
   },
   secrets: {
     eyebrow: "Configuración de entornos",
     title: "Secretos",
-    description: "Organiza variables por proyecto y activa un entorno solo cuando lo necesites en PowerShell.",
+    description:
+      "Organiza variables por proyecto y activa un entorno solo cuando lo necesites en PowerShell.",
     saving: "Guardando...",
     encryptedKeyring: "Almacén de claves cifrado",
     newProject: "Nuevo proyecto",
@@ -118,7 +122,7 @@ export const es = {
     importEnv: "Importar .env",
     copyEnv: "Copiar como .env",
     downloadEnv: "Descargar .env",
-    deleteEnvironment: "Eliminar entorno"
+    deleteEnvironment: "Eliminar entorno",
   },
   status: {
     application: "Estado de la aplicación",
@@ -126,6 +130,6 @@ export const es = {
     environment: "Entorno:",
     phpService: "Estado del servicio PHP FastCGI",
     tauriRuntime: "Runtime de escritorio Tauri",
-    webPreview: "Modo de previsualización web"
-  }
+    webPreview: "Modo de previsualización web",
+  },
 } as const;

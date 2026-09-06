@@ -92,25 +92,36 @@ export function createSecretsStore(): SecretsStore {
 
   function setCounters() {
     nextProjectId = Math.max(0, ...projects.map((project) => project.id)) + 1;
-    nextEnvironmentId = Math.max(
-      0,
-      ...projects.flatMap((project) => project.environments.map((environment) => environment.id)),
-    ) + 1;
-    nextSecretId = Math.max(
-      0,
-      ...projects.flatMap((project) =>
-        project.environments.flatMap((environment) => environment.secrets.map((secret) => secret.id)),
-      ),
-    ) + 1;
+    nextEnvironmentId =
+      Math.max(
+        0,
+        ...projects.flatMap((project) => project.environments.map((environment) => environment.id)),
+      ) + 1;
+    nextSecretId =
+      Math.max(
+        0,
+        ...projects.flatMap((project) =>
+          project.environments.flatMap((environment) =>
+            environment.secrets.map((secret) => secret.id),
+          ),
+        ),
+      ) + 1;
   }
 
   async function loadWithTimeout(): Promise<SecretsConfiguration> {
     return new Promise((resolve, reject) => {
       const timeout = window.setTimeout(
-        () => reject(new Error("Loading secure secrets timed out. Check that Harbor is running and try again.")),
+        () =>
+          reject(
+            new Error(
+              "Loading secure secrets timed out. Check that Harbor is running and try again.",
+            ),
+          ),
         8_000,
       );
-      loadSecretProfiles().then(resolve, reject).finally(() => window.clearTimeout(timeout));
+      loadSecretProfiles()
+        .then(resolve, reject)
+        .finally(() => window.clearTimeout(timeout));
     });
   }
 
@@ -119,15 +130,19 @@ export function createSecretsStore(): SecretsStore {
       const configuration = isNativeApp
         ? await loadWithTimeout()
         : { projects: structuredClone(demoProjects), activeEnvironmentId: 1 };
-      projects = configuration.projects.length ? configuration.projects : structuredClone(demoProjects);
-      activeEnvironmentId = configuration.activeEnvironmentId ?? projects[0]?.environments[0]?.id ?? null;
-      const currentProject = projects.find((project) => project.id === selectedProjectId) ?? projects[0];
+      projects = configuration.projects.length
+        ? configuration.projects
+        : structuredClone(demoProjects);
+      activeEnvironmentId =
+        configuration.activeEnvironmentId ?? projects[0]?.environments[0]?.id ?? null;
+      const currentProject =
+        projects.find((project) => project.id === selectedProjectId) ?? projects[0];
       selectedProjectId = currentProject?.id ?? null;
       selectedEnvironmentId = currentProject?.environments.some(
         (environment) => environment.id === selectedEnvironmentId,
       )
         ? selectedEnvironmentId
-        : currentProject?.environments[0]?.id ?? null;
+        : (currentProject?.environments[0]?.id ?? null);
       setCounters();
       error = "";
     } catch (caught) {
@@ -231,7 +246,9 @@ export function createSecretsStore(): SecretsStore {
     const project: Project = {
       id: nextProjectId++,
       name,
-      environments: [{ id: nextEnvironmentId++, name: environmentName, isProduction: false, secrets: [] }],
+      environments: [
+        { id: nextEnvironmentId++, name: environmentName, isProduction: false, secrets: [] },
+      ],
     };
     projects = [...projects, project];
     selectedProjectId = project.id;
@@ -305,7 +322,8 @@ export function createSecretsStore(): SecretsStore {
   }
 
   function deleteEnvironment() {
-    if (!selectedProject || !selectedEnvironment || selectedProject.environments.length <= 1) return;
+    if (!selectedProject || !selectedEnvironment || selectedProject.environments.length <= 1)
+      return;
     const remaining = selectedProject.environments.filter(
       (environment) => environment.id !== selectedEnvironment.id,
     );
@@ -331,7 +349,9 @@ export function createSecretsStore(): SecretsStore {
       }
       const secrets = [...environment.secrets];
       for (const item of items) {
-        const index = secrets.findIndex((secret) => secret.key.toUpperCase() === item.key.toUpperCase());
+        const index = secrets.findIndex(
+          (secret) => secret.key.toUpperCase() === item.key.toUpperCase(),
+        );
         if (index < 0) secrets.push({ id: nextSecretId++, ...item });
         else secrets[index] = { ...secrets[index], ...item };
       }

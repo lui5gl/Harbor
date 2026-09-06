@@ -21,7 +21,7 @@
     activeNodeVersion,
     installedPhpCount,
     installedNodeCount,
-    onSelect
+    onSelect,
   }: ServicesPanelProps = $props();
 </script>
 
@@ -60,7 +60,9 @@
                 </div>
                 <div class="service-secondary-row">
                   <span class="service-meta">
-                    {activePhpVersion ? `PHP ${activePhpVersion}` : `${installedPhpCount} ${t("services.installed")}`}
+                    {activePhpVersion
+                      ? `PHP ${activePhpVersion}`
+                      : `${installedPhpCount} ${t("services.installed")}`}
                   </span>
                 </div>
               </div>
@@ -84,7 +86,8 @@
                 </div>
                 <div class="service-secondary-row">
                   <span class="service-meta">
-                    {installedNodeCount} {installedNodeCount === 1 ? t("services.version") : t("services.versions")}
+                    {installedNodeCount}
+                    {installedNodeCount === 1 ? t("services.version") : t("services.versions")}
                   </span>
                 </div>
               </div>
@@ -197,7 +200,9 @@
     min-height: 48px;
     padding: 8px 10px;
     text-align: left;
-    transition: background-color 150ms ease, border-color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
     width: 100%;
   }
 

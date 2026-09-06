@@ -71,9 +71,7 @@
           id: 1,
           name: "Development",
           isProduction: false,
-          secrets: [
-            { id: 1, key: "API_URL", value: "https://api-dev.example.test" },
-          ],
+          secrets: [{ id: 1, key: "API_URL", value: "https://api-dev.example.test" }],
         },
         {
           id: 2,
@@ -153,9 +151,7 @@
     );
   });
 
-  let selectedEnvironment = $derived(
-    flatEnvironments.find((e) => e.id === selectedEnvironmentId),
-  );
+  let selectedEnvironment = $derived(flatEnvironments.find((e) => e.id === selectedEnvironmentId));
   let isCurrentEnvironmentActive = $derived(
     selectedEnvironment ? selectedEnvironment.id === activeEnvironmentId : false,
   );
@@ -165,9 +161,7 @@
     const query = searchQuery.trim().toLowerCase();
     if (!query) return selectedEnvironment.secrets;
     return selectedEnvironment.secrets.filter(
-      (s) =>
-        s.key.toLowerCase().includes(query) ||
-        s.value.toLowerCase().includes(query),
+      (s) => s.key.toLowerCase().includes(query) || s.value.toLowerCase().includes(query),
     );
   });
 
@@ -224,8 +218,7 @@
         configuration.projects.length > 0
           ? configuration.projects
           : structuredClone(starterProjects);
-      activeEnvironmentId =
-        configuration.activeEnvironmentId ?? flatEnvironments[0]?.id ?? null;
+      activeEnvironmentId = configuration.activeEnvironmentId ?? flatEnvironments[0]?.id ?? null;
       if (
         selectedEnvironmentId === null ||
         !flatEnvironments.some((p) => p.id === selectedEnvironmentId)
@@ -258,21 +251,24 @@
 
       phpState = {
         installedVersions: phpInstalled,
-        selectedVersion: phpState.selectedVersion && phpInstalled.includes(phpState.selectedVersion)
-          ? phpState.selectedVersion
-          : (phpInstalled[0] ?? ""),
+        selectedVersion:
+          phpState.selectedVersion && phpInstalled.includes(phpState.selectedVersion)
+            ? phpState.selectedVersion
+            : (phpInstalled[0] ?? ""),
       };
       nodeState = {
         installedVersions: nodeInstalled,
-        selectedVersion: nodeState.selectedVersion && nodeInstalled.includes(nodeState.selectedVersion)
-          ? nodeState.selectedVersion
-          : (nodeInstalled[0] ?? ""),
+        selectedVersion:
+          nodeState.selectedVersion && nodeInstalled.includes(nodeState.selectedVersion)
+            ? nodeState.selectedVersion
+            : (nodeInstalled[0] ?? ""),
       };
       apacheState = {
         installedVersions: apacheInstalled,
-        selectedVersion: apacheState.selectedVersion && apacheInstalled.includes(apacheState.selectedVersion)
-          ? apacheState.selectedVersion
-          : (apacheInstalled[0] ?? ""),
+        selectedVersion:
+          apacheState.selectedVersion && apacheInstalled.includes(apacheState.selectedVersion)
+            ? apacheState.selectedVersion
+            : (apacheInstalled[0] ?? ""),
       };
       isPhpRunning = running;
     } catch (error) {
@@ -296,10 +292,7 @@
     }
   }
 
-  async function saveConfiguration(
-    updatedProjects: Project[],
-    updatedActiveId: number | null,
-  ) {
+  async function saveConfiguration(updatedProjects: Project[], updatedActiveId: number | null) {
     projects = updatedProjects;
     activeEnvironmentId = updatedActiveId;
     if (!isNativeApp) return;
@@ -322,10 +315,7 @@
 
   function handleActivationRequest() {
     if (!selectedEnvironment) return;
-    if (
-      selectedEnvironment.isProduction &&
-      selectedEnvironment.id !== activeEnvironmentId
-    ) {
+    if (selectedEnvironment.isProduction && selectedEnvironment.id !== activeEnvironmentId) {
       isProductionDialogOpen = true;
       return;
     }
@@ -400,13 +390,7 @@
     }
     if (!selectedEnvironment) return;
 
-    if (
-      hasDuplicateSecretKey(
-        selectedEnvironment.secrets,
-        key,
-        editingSecretId ?? undefined,
-      )
-    ) {
+    if (hasDuplicateSecretKey(selectedEnvironment.secrets, key, editingSecretId ?? undefined)) {
       formError = `La variable ${key} ya existe en este entorno`;
       return;
     }
@@ -420,14 +404,9 @@
       const nextId =
         Math.max(
           0,
-          ...projects.flatMap((p) =>
-            p.environments.flatMap((e) => e.secrets.map((s) => s.id)),
-          ),
+          ...projects.flatMap((p) => p.environments.flatMap((e) => e.secrets.map((s) => s.id))),
         ) + 1;
-      updatedSecrets = [
-        ...selectedEnvironment.secrets,
-        { id: nextId, key, value: formValue },
-      ];
+      updatedSecrets = [...selectedEnvironment.secrets, { id: nextId, key, value: formValue }];
     }
 
     const updatedProjects = projects.map((p) => ({
@@ -460,9 +439,7 @@
     pendingDeleteSecretId = null;
     isDeleteVariableDialogOpen = false;
 
-    const updatedSecrets = selectedEnvironment.secrets.filter(
-      (s) => s.id !== secretId,
-    );
+    const updatedSecrets = selectedEnvironment.secrets.filter((s) => s.id !== secretId);
     const updatedProjects = projects.map((p) => ({
       ...p,
       environments: p.environments.map((e) =>
@@ -489,11 +466,7 @@
   async function saveNewEnvironment() {
     const name = newEnvironmentName.trim();
     if (!name) return;
-    const nextId =
-      Math.max(
-        0,
-        ...projects.flatMap((p) => p.environments.map((e) => e.id)),
-      ) + 1;
+    const nextId = Math.max(0, ...projects.flatMap((p) => p.environments.map((e) => e.id))) + 1;
     const newEnv: Environment = {
       id: nextId,
       name,
@@ -501,14 +474,12 @@
       secrets: [],
     };
 
-    const targetProject = projects.find((p) =>
-      p.environments.some((e) => e.id === selectedEnvironmentId),
-    ) ?? projects[0];
+    const targetProject =
+      projects.find((p) => p.environments.some((e) => e.id === selectedEnvironmentId)) ??
+      projects[0];
 
     const updatedProjects = projects.map((p) =>
-      p.id === targetProject.id
-        ? { ...p, environments: [...p.environments, newEnv] }
-        : p,
+      p.id === targetProject.id ? { ...p, environments: [...p.environments, newEnv] } : p,
     );
 
     selectedEnvironmentId = nextId;
@@ -624,9 +595,7 @@
           <Maximize2 size={13} strokeWidth={2.2} />
         </Tooltip.Trigger>
         <Tooltip.Portal>
-          <Tooltip.Content class="tooltip-content" sideOffset={6}
-            >Abrir Harbor</Tooltip.Content
-          >
+          <Tooltip.Content class="tooltip-content" sideOffset={6}>Abrir Harbor</Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
 
@@ -639,9 +608,7 @@
           <X size={14} strokeWidth={2.2} />
         </Tooltip.Trigger>
         <Tooltip.Portal>
-          <Tooltip.Content class="tooltip-content" sideOffset={6}
-            >Ocultar</Tooltip.Content
-          >
+          <Tooltip.Content class="tooltip-content" sideOffset={6}>Ocultar</Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
     </div>
@@ -672,14 +639,10 @@
               bind:value={selectedEnvironmentIdStr}
               onValueChange={handleProfileSelect}
             >
-              <Select.Trigger
-                class="profile-select-trigger"
-                aria-label="Seleccionar entorno"
-              >
+              <Select.Trigger class="profile-select-trigger" aria-label="Seleccionar entorno">
                 <div class="select-label-wrapper">
                   {#if isCurrentEnvironmentActive}
-                    <span class="active-dot" title="Entorno activo en el sistema"
-                    ></span>
+                    <span class="active-dot" title="Entorno activo en el sistema"></span>
                   {/if}
                   <span class="select-profile-name"
                     >{selectedEnvironment?.displayName || "Seleccionar entorno"}</span
@@ -692,11 +655,7 @@
               </Select.Trigger>
 
               <Select.Portal>
-                <Select.Content
-                  class="profile-select-content"
-                  sideOffset={5}
-                  align="start"
-                >
+                <Select.Content class="profile-select-content" sideOffset={5} align="start">
                   <Select.Viewport class="profile-select-viewport">
                     {#each flatEnvironments as env (env.id)}
                       {@const isEnvActive = env.id === activeEnvironmentId}
@@ -718,11 +677,7 @@
                             {/if}
                           </div>
                           {#if selected}
-                            <Check
-                              size={14}
-                              strokeWidth={2.4}
-                              class="item-check"
-                            />
+                            <Check size={14} strokeWidth={2.4} class="item-check" />
                           {/if}
                         {/snippet}
                       </Select.Item>
@@ -771,11 +726,7 @@
         <section class="search-section">
           <div class="search-input-wrapper">
             <Search size={14} strokeWidth={2} class="search-icon" />
-            <input
-              type="text"
-              placeholder="Buscar variable..."
-              bind:value={searchQuery}
-            />
+            <input type="text" placeholder="Buscar variable..." bind:value={searchQuery} />
             {#if searchQuery}
               <button
                 class="clear-search-btn"
@@ -807,11 +758,7 @@
               <p class="empty-subtitle">
                 Agrega variables a este entorno para administrarlas en el sistema.
               </p>
-              <Button.Root
-                class="secondary-button"
-                type="button"
-                onclick={openAddVariableDialog}
-              >
+              <Button.Root class="secondary-button" type="button" onclick={openAddVariableDialog}>
                 <Plus size={14} strokeWidth={2.2} />
                 <span>Agregar primera variable</span>
               </Button.Root>
@@ -850,9 +797,7 @@
                       </div>
                       <div class="secret-val-line">
                         {#if isRevealed}
-                          <span class="secret-val-text"
-                            >{secret.value || "<vacío>"}</span
-                          >
+                          <span class="secret-val-text">{secret.value || "<vacío>"}</span>
                         {:else}
                           <span class="secret-val-masked">••••••••••••</span>
                         {/if}
@@ -885,8 +830,7 @@
                           class={`action-icon-btn${isCopied ? " copied" : ""}`}
                           type="button"
                           aria-label="Copiar valor"
-                          onclick={() =>
-                            copyText(secret.value, `val-${secret.id}`)}
+                          onclick={() => copyText(secret.value, `val-${secret.id}`)}
                         >
                           {#if isCopied}
                             <Check size={14} strokeWidth={2.4} />
@@ -910,11 +854,7 @@
                           <Ellipsis size={15} strokeWidth={2} />
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Portal>
-                          <DropdownMenu.Content
-                            class="dropdown-content"
-                            sideOffset={4}
-                            align="end"
-                          >
+                          <DropdownMenu.Content class="dropdown-content" sideOffset={4} align="end">
                             <DropdownMenu.Item
                               class="dropdown-item"
                               onclick={() => openEditVariableDialog(secret)}
@@ -937,10 +877,7 @@
                   </div>
                 {/each}
               </ScrollArea.Viewport>
-              <ScrollArea.Scrollbar
-                class="variables-scrollbar"
-                orientation="vertical"
-              >
+              <ScrollArea.Scrollbar class="variables-scrollbar" orientation="vertical">
                 <ScrollArea.Thumb class="variables-scrollbar-thumb" />
               </ScrollArea.Scrollbar>
             </ScrollArea.Root>
@@ -953,17 +890,11 @@
             <span class="footer-indicator"></span>
             <span
               >{selectedEnvironment ? selectedEnvironment.secrets.length : 0}
-              {selectedEnvironment?.secrets.length === 1
-                ? "variable"
-                : "variables"}</span
+              {selectedEnvironment?.secrets.length === 1 ? "variable" : "variables"}</span
             >
           </div>
 
-          <Button.Root
-            class="footer-open-btn"
-            type="button"
-            onclick={openMainWindow}
-          >
+          <Button.Root class="footer-open-btn" type="button" onclick={openMainWindow}>
             <span>Abrir Harbor completo</span>
             <Maximize2 size={11} strokeWidth={2.4} />
           </Button.Root>
@@ -1062,7 +993,11 @@
                 <div class="service-status-row">
                   <span class="status-pill ready">
                     <span class="status-dot-indicator"></span>
-                    <span>{nodeState.selectedVersion ? `v${nodeState.selectedVersion} listo` : "Sin versión"}</span>
+                    <span
+                      >{nodeState.selectedVersion
+                        ? `v${nodeState.selectedVersion} listo`
+                        : "Sin versión"}</span
+                    >
                   </span>
                 </div>
               </div>
@@ -1097,14 +1032,14 @@
           <footer class="tray-footer">
             <div class="footer-status">
               <span class="footer-indicator"></span>
-              <span>{phpState.installedVersions.length + nodeState.installedVersions.length + apacheState.installedVersions.length} instalados</span>
+              <span
+                >{phpState.installedVersions.length +
+                  nodeState.installedVersions.length +
+                  apacheState.installedVersions.length} instalados</span
+              >
             </div>
 
-            <Button.Root
-              class="footer-open-btn"
-              type="button"
-              onclick={openMainWindow}
-            >
+            <Button.Root class="footer-open-btn" type="button" onclick={openMainWindow}>
               <span>Descargar más en Harbor</span>
               <Maximize2 size={11} strokeWidth={2.4} />
             </Button.Root>
@@ -1119,18 +1054,12 @@
 <Dialog.Root bind:open={isVariableDialogOpen}>
   <Dialog.Portal>
     <Dialog.Overlay class="modal-backdrop" />
-    <Dialog.Content
-      class="dialog-content"
-      aria-describedby="variable-dialog-desc"
-    >
+    <Dialog.Content class="dialog-content" aria-describedby="variable-dialog-desc">
       <div class="dialog-header">
         <Dialog.Title class="dialog-title">
           {editingSecretId !== null ? "Editar variable" : "Nueva variable"}
         </Dialog.Title>
-        <Dialog.Description
-          id="variable-dialog-desc"
-          class="dialog-description"
-        >
+        <Dialog.Description id="variable-dialog-desc" class="dialog-description">
           Define la clave y el valor para el entorno seleccionado.
         </Dialog.Description>
       </div>
@@ -1141,9 +1070,7 @@
 
       <div class="dialog-form-fields">
         <div class="field-group">
-          <label class="field-label" for="dialog-var-key"
-            >Nombre de Clave (KEY)</label
-          >
+          <label class="field-label" for="dialog-var-key">Nombre de Clave (KEY)</label>
           <input
             id="dialog-var-key"
             class="dialog-text-input font-mono"
@@ -1153,8 +1080,7 @@
         </div>
 
         <div class="field-group">
-          <label class="field-label" for="dialog-var-value">Valor (VALUE)</label
-          >
+          <label class="field-label" for="dialog-var-value">Valor (VALUE)</label>
           <input
             id="dialog-var-value"
             class="dialog-text-input font-mono"
@@ -1166,11 +1092,7 @@
 
       <div class="dialog-footer">
         <Dialog.Close class="secondary-button btn-sm">Cancelar</Dialog.Close>
-        <Button.Root
-          class="primary-button btn-sm"
-          type="button"
-          onclick={saveVariable}
-        >
+        <Button.Root class="primary-button btn-sm" type="button" onclick={saveVariable}>
           <Check size={14} strokeWidth={2.2} />
           <span>Guardar variable</span>
         </Button.Root>
@@ -1183,10 +1105,7 @@
 <Dialog.Root bind:open={isEnvironmentDialogOpen}>
   <Dialog.Portal>
     <Dialog.Overlay class="modal-backdrop" />
-    <Dialog.Content
-      class="dialog-content"
-      aria-describedby="profile-dialog-desc"
-    >
+    <Dialog.Content class="dialog-content" aria-describedby="profile-dialog-desc">
       <div class="dialog-header">
         <Dialog.Title class="dialog-title">Nuevo entorno</Dialog.Title>
         <Dialog.Description id="profile-dialog-desc" class="dialog-description">
@@ -1196,9 +1115,7 @@
 
       <div class="dialog-form-fields">
         <div class="field-group">
-          <label class="field-label" for="dialog-prof-name"
-            >Nombre del entorno</label
-          >
+          <label class="field-label" for="dialog-prof-name">Nombre del entorno</label>
           <input
             id="dialog-prof-name"
             class="dialog-text-input"
@@ -1210,14 +1127,9 @@
         <div class="production-switch-row">
           <div class="switch-info">
             <span class="switch-title">Entorno de Producción</span>
-            <span class="switch-desc"
-              >Solicitará confirmación antes de activarse</span
-            >
+            <span class="switch-desc">Solicitará confirmación antes de activarse</span>
           </div>
-          <Switch.Root
-            class="production-switch"
-            bind:checked={newEnvironmentIsProduction}
-          >
+          <Switch.Root class="production-switch" bind:checked={newEnvironmentIsProduction}>
             <Switch.Thumb class="production-switch-thumb" />
           </Switch.Root>
         </div>
@@ -1225,11 +1137,7 @@
 
       <div class="dialog-footer">
         <Dialog.Close class="secondary-button btn-sm">Cancelar</Dialog.Close>
-        <Button.Root
-          class="primary-button btn-sm"
-          type="button"
-          onclick={saveNewEnvironment}
-        >
+        <Button.Root class="primary-button btn-sm" type="button" onclick={saveNewEnvironment}>
           <Check size={14} strokeWidth={2.2} />
           <span>Crear entorno</span>
         </Button.Root>
@@ -1246,21 +1154,16 @@
       <div class="warning-icon-wrapper" aria-hidden="true">
         <ShieldAlert size={22} strokeWidth={2.2} />
       </div>
-      <AlertDialog.Title class="dialog-title"
-        >¿Activar entorno de producción?</AlertDialog.Title
-      >
+      <AlertDialog.Title class="dialog-title">¿Activar entorno de producción?</AlertDialog.Title>
       <AlertDialog.Description class="dialog-description">
-        Esto cargará las variables de producción en el sistema y en PowerShell.
-        Confirma solo si es intencional.
+        Esto cargará las variables de producción en el sistema y en PowerShell. Confirma solo si es
+        intencional.
       </AlertDialog.Description>
       <div class="dialog-footer">
-        <AlertDialog.Cancel class="secondary-button btn-sm"
-          >Cancelar</AlertDialog.Cancel
-        >
+        <AlertDialog.Cancel class="secondary-button btn-sm">Cancelar</AlertDialog.Cancel>
         <AlertDialog.Action
           class="primary-button btn-sm warning-action-btn"
-          onclick={() =>
-            selectedEnvironment && executeActivation(selectedEnvironment.id)}
+          onclick={() => selectedEnvironment && executeActivation(selectedEnvironment.id)}
         >
           <span>Activar producción</span>
         </AlertDialog.Action>
@@ -1277,17 +1180,12 @@
       <div class="warning-icon-wrapper danger" aria-hidden="true">
         <Trash2 size={22} strokeWidth={2.2} />
       </div>
-      <AlertDialog.Title class="dialog-title"
-        >¿Eliminar variable?</AlertDialog.Title
-      >
+      <AlertDialog.Title class="dialog-title">¿Eliminar variable?</AlertDialog.Title>
       <AlertDialog.Description class="dialog-description">
-        Esta acción eliminará la variable del entorno. Esta acción no se
-        puede deshacer.
+        Esta acción eliminará la variable del entorno. Esta acción no se puede deshacer.
       </AlertDialog.Description>
       <div class="dialog-footer">
-        <AlertDialog.Cancel class="secondary-button btn-sm"
-          >Cancelar</AlertDialog.Cancel
-        >
+        <AlertDialog.Cancel class="secondary-button btn-sm">Cancelar</AlertDialog.Cancel>
         <AlertDialog.Action
           class="primary-button btn-sm danger-action-btn"
           onclick={confirmDeleteVariable}

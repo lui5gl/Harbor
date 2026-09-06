@@ -115,7 +115,10 @@
 
     <span class="status-divider" aria-hidden="true"></span>
 
-    <span class="status-item" title={isNativeApp ? t("status.tauriRuntime") : t("status.webPreview")}>
+    <span
+      class="status-item"
+      title={isNativeApp ? t("status.tauriRuntime") : t("status.webPreview")}
+    >
       <span class="platform-badge">{isNativeApp ? t("common.native") : t("common.web")}</span>
     </span>
   </div>

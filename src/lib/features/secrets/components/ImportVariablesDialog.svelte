@@ -109,22 +109,24 @@
           bind:value={rawContent}
           placeholder="DATABASE_URL=postgres://user:pass@localhost:5432/db&#10;API_KEY=secret-token&#10;PORT=3000"
           rows={7}
-          spellcheck="false"
-        ></textarea>
+          spellcheck="false"></textarea>
 
         <div class="parse-summary">
           {#if rawContent.trim().length > 0}
             <span class="summary-text">
               <Info size={13} strokeWidth={2} />
               <span>
-                Found <strong>{parseResult.valid.length}</strong> {parseResult.valid.length === 1 ? "variable" : "variables"}
+                Found <strong>{parseResult.valid.length}</strong>
+                {parseResult.valid.length === 1 ? "variable" : "variables"}
                 {#if parseResult.ignoredCount > 0}
                   ({parseResult.ignoredCount} ignored)
                 {/if}
               </span>
             </span>
           {:else}
-            <span class="summary-text muted">Lines with # comments and export keywords are supported.</span>
+            <span class="summary-text muted"
+              >Lines with # comments and export keywords are supported.</span
+            >
           {/if}
         </div>
       </div>
@@ -231,7 +233,9 @@
     outline: none;
     padding: 10px;
     resize: vertical;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
     width: 100%;
   }
 
@@ -290,7 +294,9 @@
     height: 34px;
     justify-content: center;
     padding: 0 14px;
-    transition: background 0.12s ease, opacity 0.12s ease;
+    transition:
+      background 0.12s ease,
+      opacity 0.12s ease;
   }
 
   :global(.secondary-button) {

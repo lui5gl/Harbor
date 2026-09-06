@@ -17,7 +17,7 @@
     Square,
     Terminal,
     Trash2,
-    X
+    X,
   } from "@lucide/svelte";
   import { Button, Dialog, Select, Separator, Tooltip } from "bits-ui";
   import { openUrl } from "@tauri-apps/plugin-opener";
@@ -28,7 +28,7 @@
     cleanVersion,
     getCompatibleApacheVersions,
     parseVersionString,
-    type PhpStackProfile
+    type PhpStackProfile,
   } from "../types";
 
   type PhpWebStackEditorProps = {
@@ -68,7 +68,7 @@
     onSelectPhpVersion,
     onTogglePhpFastCgi,
     onInstallVersion,
-    onDeleteVersion
+    onDeleteVersion,
   }: PhpWebStackEditorProps = $props();
 
   const STORAGE_KEY = "harbor_php_stack_profiles";
@@ -114,17 +114,21 @@
   // Ensure default profiles exist when runtimes are available
   $effect(() => {
     if (profiles.length === 0 && (installedPhpVersions.length > 0 || activePhpVersion)) {
-      const defaultPhp = activePhpVersion ? cleanVersion(activePhpVersion) : cleanVersion(installedPhpVersions[0] ?? "8.3.17");
-      const defaultApache = activeApacheVersion ? cleanVersion(activeApacheVersion) : cleanVersion(installedApacheVersions[0] ?? "2.4.62");
-      
+      const defaultPhp = activePhpVersion
+        ? cleanVersion(activePhpVersion)
+        : cleanVersion(installedPhpVersions[0] ?? "8.3.17");
+      const defaultApache = activeApacheVersion
+        ? cleanVersion(activeApacheVersion)
+        : cleanVersion(installedApacheVersions[0] ?? "2.4.62");
+
       const initial: PhpStackProfile[] = [
         {
           id: "default-stack",
           name: "Default Web Stack",
           phpVersion: defaultPhp,
           apacheVersion: defaultApache,
-          isDefault: true
-        }
+          isDefault: true,
+        },
       ];
 
       // Add extra profiles if there are multiple PHP versions
@@ -135,7 +139,7 @@
             id: `stack-php-${clean.replace(/\./g, "-")}`,
             name: `PHP ${clean} Environment`,
             phpVersion: clean,
-            apacheVersion: defaultApache
+            apacheVersion: defaultApache,
           });
         }
       });
@@ -151,35 +155,37 @@
     availablePhpVersions
       .map((v) => {
         const meta = parseVersionString(v);
-        return { version: meta.version, label: `PHP ${meta.version} (${meta.channel || "Disponible"})` };
+        return {
+          version: meta.version,
+          label: `PHP ${meta.version} (${meta.channel || "Disponible"})`,
+        };
       })
-      .filter((opt) => !cleanInstalledPhp.includes(opt.version))
+      .filter((opt) => !cleanInstalledPhp.includes(opt.version)),
   );
 
   let apacheDownloadOptions = $derived(
     availableApacheVersions
       .map((v) => {
         const meta = parseVersionString(v);
-        return { version: meta.version, label: `Apache ${meta.version} (${meta.channel || "Disponible"})` };
+        return {
+          version: meta.version,
+          label: `Apache ${meta.version} (${meta.channel || "Disponible"})`,
+        };
       })
-      .filter((opt) => !cleanInstalledApache.includes(opt.version))
+      .filter((opt) => !cleanInstalledApache.includes(opt.version)),
   );
 
   let isSelectedPhpNeedsInstall = $derived(
-    profileFormPhp ? !cleanInstalledPhp.includes(cleanVersion(profileFormPhp)) : false
+    profileFormPhp ? !cleanInstalledPhp.includes(cleanVersion(profileFormPhp)) : false,
   );
 
   let isSelectedApacheNeedsInstall = $derived(
-    profileFormApache ? !cleanInstalledApache.includes(cleanVersion(profileFormApache)) : false
+    profileFormApache ? !cleanInstalledApache.includes(cleanVersion(profileFormApache)) : false,
   );
 
-  let cleanActivePhp = $derived(
-    activePhpVersion ? cleanVersion(activePhpVersion) : null
-  );
+  let cleanActivePhp = $derived(activePhpVersion ? cleanVersion(activePhpVersion) : null);
 
-  let cleanActiveApache = $derived(
-    activeApacheVersion ? cleanVersion(activeApacheVersion) : null
-  );
+  let cleanActiveApache = $derived(activeApacheVersion ? cleanVersion(activeApacheVersion) : null);
 
   let activeProfile = $derived(() => {
     if (!cleanActivePhp) return profiles[0] ?? null;
@@ -189,14 +195,20 @@
   let isApacheMissing = $derived(installedApacheVersions.length === 0);
 
   let compatibility = $derived(
-    getCompatibleApacheVersions(activePhpVersion, availableApacheVersions)
+    getCompatibleApacheVersions(activePhpVersion, availableApacheVersions),
   );
 
   function openCreateProfileModal() {
     editingProfile = null;
     profileFormName = "";
-    profileFormPhp = cleanActivePhp ?? cleanInstalledPhp[0] ?? (availablePhpVersions[0] ? cleanVersion(availablePhpVersions[0]) : "8.3.17");
-    profileFormApache = cleanActiveApache ?? cleanInstalledApache[0] ?? (availableApacheVersions[0] ? cleanVersion(availableApacheVersions[0]) : "2.4.62");
+    profileFormPhp =
+      cleanActivePhp ??
+      cleanInstalledPhp[0] ??
+      (availablePhpVersions[0] ? cleanVersion(availablePhpVersions[0]) : "8.3.17");
+    profileFormApache =
+      cleanActiveApache ??
+      cleanInstalledApache[0] ??
+      (availableApacheVersions[0] ? cleanVersion(availableApacheVersions[0]) : "2.4.62");
     profileFormError = "";
     isProfileModalOpen = true;
   }
@@ -247,9 +259,9 @@
               ...p,
               name: profileFormName.trim(),
               phpVersion: cleanPhp,
-              apacheVersion: cleanApache
+              apacheVersion: cleanApache,
             }
-          : p
+          : p,
       );
       saveProfiles(updated);
     } else {
@@ -257,7 +269,7 @@
         id: `profile-${Date.now()}`,
         name: profileFormName.trim(),
         phpVersion: cleanPhp,
-        apacheVersion: cleanApache
+        apacheVersion: cleanApache,
       };
       saveProfiles([...profiles, newProfile]);
       void handleSelectProfile(newProfile);
@@ -322,7 +334,8 @@
         <h2 id="web-stack-title">PHP & Servidor Web</h2>
       </div>
       <p class="header-sub">
-        Perfiles de desarrollo con PHP y Apache integrados para ejecutar aplicaciones web y comandos CLI locales.
+        Perfiles de desarrollo con PHP y Apache integrados para ejecutar aplicaciones web y comandos
+        CLI locales.
       </p>
     </div>
 
@@ -438,11 +451,7 @@
       </div>
 
       <div class="header-actions">
-        <Button.Root
-          class="primary-button-sm"
-          type="button"
-          onclick={openCreateProfileModal}
-        >
+        <Button.Root class="primary-button-sm" type="button" onclick={openCreateProfileModal}>
           <Plus size={14} strokeWidth={2.2} aria-hidden="true" />
           <span>Nuevo Perfil</span>
         </Button.Root>
@@ -452,11 +461,7 @@
     {#if profiles.length === 0}
       <div class="empty-runtime-box">
         <p>No tienes perfiles configurados.</p>
-        <Button.Root
-          class="primary-button-sm"
-          type="button"
-          onclick={openCreateProfileModal}
-        >
+        <Button.Root class="primary-button-sm" type="button" onclick={openCreateProfileModal}>
           <Plus size={14} strokeWidth={2.2} aria-hidden="true" />
           <span>Crear Primer Perfil</span>
         </Button.Root>
@@ -563,7 +568,8 @@
             {editingProfile ? "Editar Perfil de Stack" : "Nuevo Perfil de Entorno"}
           </Dialog.Title>
           <Dialog.Description class="modal-desc">
-            Configura el par de PHP y Apache para este stack. Si eliges una versión no descargada, se instalará automáticamente.
+            Configura el par de PHP y Apache para este stack. Si eliges una versión no descargada,
+            se instalará automáticamente.
           </Dialog.Description>
         </div>
         <Dialog.Close class="modal-close-btn" aria-label="Cerrar">
@@ -599,10 +605,7 @@
               {/if}
             </div>
 
-            <Select.Root
-              type="single"
-              bind:value={profileFormPhp}
-            >
+            <Select.Root type="single" bind:value={profileFormPhp}>
               <Select.Trigger class="bits-select-trigger" aria-label="Seleccionar versión de PHP">
                 <span class="select-value-text">
                   {profileFormPhp ? `PHP ${profileFormPhp}` : "Seleccionar PHP"}
@@ -614,9 +617,15 @@
                   <Select.Viewport class="bits-select-viewport">
                     {#if cleanInstalledPhp.length > 0}
                       <Select.Group>
-                        <Select.GroupHeading class="bits-select-group-label">Versiones Instaladas</Select.GroupHeading>
+                        <Select.GroupHeading class="bits-select-group-label"
+                          >Versiones Instaladas</Select.GroupHeading
+                        >
                         {#each cleanInstalledPhp as phpVer}
-                          <Select.Item class="bits-select-item" value={phpVer} label={`PHP ${phpVer}`}>
+                          <Select.Item
+                            class="bits-select-item"
+                            value={phpVer}
+                            label={`PHP ${phpVer}`}
+                          >
                             {#snippet children({ selected })}
                               <span class="item-label">PHP {phpVer} (Instalada ✓)</span>
                               {#if selected}
@@ -631,9 +640,15 @@
                     {#if phpDownloadOptions.length > 0}
                       <Separator.Root class="bits-select-separator" />
                       <Select.Group>
-                        <Select.GroupHeading class="bits-select-group-label">Descargar e Instalar</Select.GroupHeading>
+                        <Select.GroupHeading class="bits-select-group-label"
+                          >Descargar e Instalar</Select.GroupHeading
+                        >
                         {#each phpDownloadOptions as opt}
-                          <Select.Item class="bits-select-item download-item" value={opt.version} label={opt.label}>
+                          <Select.Item
+                            class="bits-select-item download-item"
+                            value={opt.version}
+                            label={opt.label}
+                          >
                             {#snippet children({ selected })}
                               <span class="item-label">⬇️ {opt.label}</span>
                               {#if selected}
@@ -659,11 +674,11 @@
               {/if}
             </div>
 
-            <Select.Root
-              type="single"
-              bind:value={profileFormApache}
-            >
-              <Select.Trigger class="bits-select-trigger" aria-label="Seleccionar versión de Apache">
+            <Select.Root type="single" bind:value={profileFormApache}>
+              <Select.Trigger
+                class="bits-select-trigger"
+                aria-label="Seleccionar versión de Apache"
+              >
                 <span class="select-value-text">
                   {profileFormApache ? `Apache ${profileFormApache}` : "Seleccionar Apache"}
                 </span>
@@ -674,9 +689,15 @@
                   <Select.Viewport class="bits-select-viewport">
                     {#if cleanInstalledApache.length > 0}
                       <Select.Group>
-                        <Select.GroupHeading class="bits-select-group-label">Versiones Instaladas</Select.GroupHeading>
+                        <Select.GroupHeading class="bits-select-group-label"
+                          >Versiones Instaladas</Select.GroupHeading
+                        >
                         {#each cleanInstalledApache as apacheVer}
-                          <Select.Item class="bits-select-item" value={apacheVer} label={`Apache ${apacheVer}`}>
+                          <Select.Item
+                            class="bits-select-item"
+                            value={apacheVer}
+                            label={`Apache ${apacheVer}`}
+                          >
                             {#snippet children({ selected })}
                               <span class="item-label">Apache {apacheVer} (Instalada ✓)</span>
                               {#if selected}
@@ -691,9 +712,15 @@
                     {#if apacheDownloadOptions.length > 0}
                       <Separator.Root class="bits-select-separator" />
                       <Select.Group>
-                        <Select.GroupHeading class="bits-select-group-label">Descargar e Instalar</Select.GroupHeading>
+                        <Select.GroupHeading class="bits-select-group-label"
+                          >Descargar e Instalar</Select.GroupHeading
+                        >
                         {#each apacheDownloadOptions as opt}
-                          <Select.Item class="bits-select-item download-item" value={opt.version} label={opt.label}>
+                          <Select.Item
+                            class="bits-select-item download-item"
+                            value={opt.version}
+                            label={opt.label}
+                          >
                             {#snippet children({ selected })}
                               <span class="item-label">⬇️ {opt.label}</span>
                               {#if selected}
@@ -714,7 +741,9 @@
         {#if isSelectedPhpNeedsInstall || isSelectedApacheNeedsInstall}
           <div class="download-notice">
             <Download size={14} strokeWidth={2} class="download-notice-icon" />
-            <span>Las versiones marcadas se descargarán e instalarán automáticamente al guardar.</span>
+            <span
+              >Las versiones marcadas se descargarán e instalarán automáticamente al guardar.</span
+            >
           </div>
         {/if}
       </div>
@@ -750,7 +779,9 @@
   open={Boolean(pendingDelete)}
   serviceLabel={pendingDelete?.service ?? ""}
   version={pendingDelete?.version ?? ""}
-  onOpenChange={(open) => { if (!open) pendingDelete = null; }}
+  onOpenChange={(open) => {
+    if (!open) pendingDelete = null;
+  }}
   onConfirm={confirmDelete}
 />
 
@@ -990,7 +1021,9 @@
   :global(.overview-action-icon) {
     color: var(--color-boulder-400);
     flex-shrink: 0;
-    transition: color 0.15s ease, transform 0.15s ease;
+    transition:
+      color 0.15s ease,
+      transform 0.15s ease;
   }
 
   .overview-value {
@@ -1089,7 +1122,9 @@
     gap: 6px;
     height: 32px;
     padding: 0 12px;
-    transition: background-color 150ms ease, border-color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
   }
 
   :global(.secondary-button:hover) {
@@ -1152,7 +1187,10 @@
     gap: 14px;
     padding: 12px 16px;
     position: relative;
-    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      background-color 150ms ease;
   }
 
   .profile-row:hover {
@@ -1178,7 +1216,9 @@
     display: block;
     height: 16px;
     position: relative;
-    transition: border-color 150ms ease, background-color 150ms ease;
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease;
     width: 16px;
   }
 
@@ -1288,7 +1328,11 @@
     height: 30px;
     justify-content: center;
     padding: 0;
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 100ms ease;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      transform 100ms ease;
     width: 30px;
   }
 
@@ -1611,4 +1655,3 @@
     }
   }
 </style>
-

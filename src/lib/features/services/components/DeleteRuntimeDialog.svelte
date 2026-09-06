@@ -15,7 +15,7 @@
     serviceLabel,
     version,
     onOpenChange,
-    onConfirm
+    onConfirm,
   }: DeleteRuntimeDialogProps = $props();
 
   let inputValue = $state("");
@@ -44,10 +44,12 @@
           </div>
           <div class="dialog-heading">
             <AlertDialog.Title class="dialog-title">
-              Delete {serviceLabel} {version}?
+              Delete {serviceLabel}
+              {version}?
             </AlertDialog.Title>
             <AlertDialog.Description class="dialog-description">
-              This will permanently delete the installed binaries and files for {serviceLabel} {version} from your Harbor runtimes directory.
+              This will permanently delete the installed binaries and files for {serviceLabel}
+              {version} from your Harbor runtimes directory.
             </AlertDialog.Description>
           </div>
         </div>
@@ -73,7 +75,9 @@
             class="btn-delete"
             type="submit"
             disabled={!isMatch}
-            onclick={() => { if (isMatch) onConfirm(); }}
+            onclick={() => {
+              if (isMatch) onConfirm();
+            }}
           >
             <Trash2 size={14} strokeWidth={2} aria-hidden="true" />
             <span>Delete version</span>

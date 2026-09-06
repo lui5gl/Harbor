@@ -5,9 +5,7 @@ export function loadSecretProfiles(): Promise<SecretsConfiguration> {
   return invoke<SecretsConfiguration>("load_secret_profiles");
 }
 
-export function saveSecretProfiles(
-  configuration: SecretsConfiguration,
-): Promise<void> {
+export function saveSecretProfiles(configuration: SecretsConfiguration): Promise<void> {
   return invoke("save_secret_profiles", { configuration });
 }
 

@@ -22,15 +22,18 @@
     </QuickTrayShell>
   {:else}
     <AppShell>
-        {@render children()}
+      {@render children()}
     </AppShell>
   {/if}
 </Tooltip.Provider>
 
 <style>
   :global(:root) {
-    --font-sans: "Geist Variable", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-sans:
+      "Geist Variable", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono:
+      "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      monospace;
 
     --color-east-bay-50: #f4f6fa;
     --color-east-bay-100: #e5e9f4;
@@ -83,5 +86,4 @@
     outline: 2px solid var(--color-east-bay-400);
     outline-offset: 2px;
   }
-
 </style>

@@ -3,11 +3,11 @@ name: Release & Build Harbor
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Tag de la versión a publicar (ej: v0.1.0)'
+        description: "Tag de la versión a publicar (ej: v0.1.0)"
         required: false
         type: string
 
@@ -31,7 +31,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -41,7 +41,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: 'src-tauri'
+          workspaces: "src-tauri"
 
       - name: Install frontend dependencies
         run: npm ci
@@ -54,7 +54,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag }}
-          releaseName: 'Harbor v__VERSION__'
-          releaseBody: 'Consulta el changelog y notas de versión para más detalles.'
+          releaseName: "Harbor v__VERSION__"
+          releaseBody: "Consulta el changelog y notas de versión para más detalles."
           releaseDraft: true
           prerelease: false

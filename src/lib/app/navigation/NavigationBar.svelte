@@ -18,12 +18,9 @@
   </a>
 
   <nav class="navigation-links" aria-label={t("nav.primaryNavigation")}>
-    {#each [
-      { href: "/services", label: t("nav.services"), icon: Boxes },
-      { href: "/secrets", label: t("nav.secrets"), icon: KeyRound },
-      { href: "/settings", label: t("nav.settings"), icon: Settings }
-    ] as item (item.href)}
-      {@const isActive = page.url.pathname === item.href || page.url.pathname.startsWith(item.href + "/")}
+    {#each [{ href: "/services", label: t("nav.services"), icon: Boxes }, { href: "/secrets", label: t("nav.secrets"), icon: KeyRound }, { href: "/settings", label: t("nav.settings"), icon: Settings }] as item (item.href)}
+      {@const isActive =
+        page.url.pathname === item.href || page.url.pathname.startsWith(item.href + "/")}
       <a
         class={`navigation-link${isActive ? " active" : ""}`}
         href={item.href}
@@ -97,7 +94,9 @@
     min-height: 34px;
     padding: 0 10px;
     text-decoration: none;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   .navigation-link:hover {

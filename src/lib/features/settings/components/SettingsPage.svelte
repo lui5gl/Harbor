@@ -131,10 +131,7 @@
 
 <svelte:head>
   <title>Harbor | {t("settings.title")}</title>
-  <meta
-    name="description"
-    content={t("settings.description")}
-  />
+  <meta name="description" content={t("settings.description")} />
 </svelte:head>
 
 <main class="settings-page" aria-labelledby="settings-title">
@@ -147,11 +144,7 @@
       </p>
     </div>
     <div class="header-actions">
-      <Button.Root
-        class="secondary-button"
-        type="button"
-        onclick={resetSettings}
-      >
+      <Button.Root class="secondary-button" type="button" onclick={resetSettings}>
         <RotateCcw size={15} aria-hidden="true" />
         <span>{t("settings.reset")}</span>
       </Button.Root>
@@ -167,9 +160,7 @@
   <div class="settings-grid">
     <section class="settings-section behavior-section" aria-labelledby="behavior-title">
       <div class="section-heading">
-        <span class="section-icon"
-          ><MonitorCog size={18} aria-hidden="true" /></span
-        >
+        <span class="section-icon"><MonitorCog size={18} aria-hidden="true" /></span>
         <div>
           <h2 id="behavior-title">{t("settings.behavior")}</h2>
           <p>{t("settings.behaviorDescription")}</p>
@@ -245,11 +236,7 @@
       </div>
       <div class="workspace-control">
         <label for="language-select">{t("settings.language")}</label>
-        <Select.Root
-          type="single"
-          value={i18n.locale}
-          onValueChange={changeLocale}
-        >
+        <Select.Root type="single" value={i18n.locale} onValueChange={changeLocale}>
           <Select.Trigger class="settings-select-trigger" aria-label={t("settings.language")}>
             <span class="select-value-text">
               {i18n.locale === "es" ? t("settings.spanish") : t("settings.english")}
@@ -259,21 +246,13 @@
           <Select.Portal>
             <Select.Content class="settings-select-content" sideOffset={5} align="start">
               <Select.Viewport class="settings-select-viewport">
-                <Select.Item
-                  class="settings-select-item"
-                  value="es"
-                  label={t("settings.spanish")}
-                >
+                <Select.Item class="settings-select-item" value="es" label={t("settings.spanish")}>
                   {#snippet children({ selected })}
                     <span>{t("settings.spanish")}</span>
                     {#if selected}<Check size={14} strokeWidth={2.4} />{/if}
                   {/snippet}
                 </Select.Item>
-                <Select.Item
-                  class="settings-select-item"
-                  value="en"
-                  label={t("settings.english")}
-                >
+                <Select.Item class="settings-select-item" value="en" label={t("settings.english")}>
                   {#snippet children({ selected })}
                     <span>{t("settings.english")}</span>
                     {#if selected}<Check size={14} strokeWidth={2.4} />{/if}
@@ -288,9 +267,7 @@
 
     <section class="settings-section workspace-section" aria-labelledby="workspace-title">
       <div class="section-heading">
-        <span class="section-icon"
-          ><Settings2 size={18} aria-hidden="true" /></span
-        >
+        <span class="section-icon"><Settings2 size={18} aria-hidden="true" /></span>
         <div>
           <h2 id="workspace-title">{t("settings.workspace")}</h2>
           <p>{t("settings.workspaceDescription")}</p>
@@ -338,19 +315,45 @@
         <div class="proxy-form">
           <div class="form-row">
             <label for="proxy-host">{t("common.host")}</label>
-            <input id="proxy-host" bind:value={settings.proxyHost} placeholder="proxy.example.com" autocomplete="off" />
+            <input
+              id="proxy-host"
+              bind:value={settings.proxyHost}
+              placeholder="proxy.example.com"
+              autocomplete="off"
+            />
           </div>
           <div class="form-row port-field">
             <label for="proxy-port">{t("common.port")}</label>
-            <input id="proxy-port" type="number" min="1" max="65535" bind:value={settings.proxyPort} placeholder="8080" inputmode="numeric" />
+            <input
+              id="proxy-port"
+              type="number"
+              min="1"
+              max="65535"
+              bind:value={settings.proxyPort}
+              placeholder="8080"
+              inputmode="numeric"
+            />
           </div>
           <div class="form-row">
-            <label for="proxy-username">{t("common.username")} <span>({t("settings.optional")})</span></label>
-            <input id="proxy-username" bind:value={settings.proxyUsername} autocomplete="username" />
+            <label for="proxy-username"
+              >{t("common.username")} <span>({t("settings.optional")})</span></label
+            >
+            <input
+              id="proxy-username"
+              bind:value={settings.proxyUsername}
+              autocomplete="username"
+            />
           </div>
           <div class="form-row">
-            <label for="proxy-password">{t("common.password")} <span>({t("settings.optional")})</span></label>
-            <input id="proxy-password" type="password" bind:value={settings.proxyPassword} autocomplete="current-password" />
+            <label for="proxy-password"
+              >{t("common.password")} <span>({t("settings.optional")})</span></label
+            >
+            <input
+              id="proxy-password"
+              type="password"
+              bind:value={settings.proxyPassword}
+              autocomplete="current-password"
+            />
           </div>
           <p class="hint">{t("settings.proxyHint")}</p>
         </div>
@@ -434,22 +437,36 @@
     grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
     margin-top: 32px;
   }
-  .behavior-section { grid-row: span 2; }
+  .behavior-section {
+    grid-row: span 2;
+  }
   .language-section,
-  .workspace-section { grid-column: 2; }
+  .workspace-section {
+    grid-column: 2;
+  }
   .settings-section {
     background: #fff;
     border: 1px solid var(--color-boulder-200);
     border-radius: 8px;
     min-width: 0;
   }
-  .proxy-section { grid-column: 1 / -1; }
+  .proxy-section {
+    grid-column: 1 / -1;
+  }
   .section-heading {
     border-bottom: 1px solid var(--color-boulder-100);
     gap: 11px;
     padding: 18px;
   }
-  .switch-label { align-items: center; color: var(--color-boulder-500); display: inline-flex; font-size: 11px; font-weight: 650; gap: 7px; margin-left: auto; }
+  .switch-label {
+    align-items: center;
+    color: var(--color-boulder-500);
+    display: inline-flex;
+    font-size: 11px;
+    font-weight: 650;
+    gap: 7px;
+    margin-left: auto;
+  }
   .section-icon {
     align-items: center;
     background: var(--color-east-bay-50);
@@ -586,14 +603,52 @@
     background: var(--color-east-bay-50);
     color: var(--color-east-bay-900);
   }
-  .proxy-form { display: grid; gap: 15px 16px; grid-template-columns: minmax(0, 1fr) 150px; padding: 18px; }
-  .form-row { display: flex; flex-direction: column; gap: 7px; }
-  .form-row label { color: var(--color-boulder-700); font-size: 12px; font-weight: 650; }
-  .form-row label span { color: var(--color-boulder-500); font-weight: 500; }
-  .form-row input { background: #fff; border: 1px solid var(--color-boulder-200); border-radius: 6px; box-sizing: border-box; color: var(--color-boulder-800); font: inherit; font-size: 12px; height: 36px; padding: 0 10px; width: 100%; }
-  .form-row input:focus { border-color: var(--color-east-bay-400); outline: 2px solid var(--color-east-bay-100); }
-  .proxy-form .hint { grid-column: 1 / -1; margin-top: -2px; }
-  .proxy-disabled { color: var(--color-boulder-500); font-size: 12px; margin: 0; padding: 18px; }
+  .proxy-form {
+    display: grid;
+    gap: 15px 16px;
+    grid-template-columns: minmax(0, 1fr) 150px;
+    padding: 18px;
+  }
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .form-row label {
+    color: var(--color-boulder-700);
+    font-size: 12px;
+    font-weight: 650;
+  }
+  .form-row label span {
+    color: var(--color-boulder-500);
+    font-weight: 500;
+  }
+  .form-row input {
+    background: #fff;
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--color-boulder-800);
+    font: inherit;
+    font-size: 12px;
+    height: 36px;
+    padding: 0 10px;
+    width: 100%;
+  }
+  .form-row input:focus {
+    border-color: var(--color-east-bay-400);
+    outline: 2px solid var(--color-east-bay-100);
+  }
+  .proxy-form .hint {
+    grid-column: 1 / -1;
+    margin-top: -2px;
+  }
+  .proxy-disabled {
+    color: var(--color-boulder-500);
+    font-size: 12px;
+    margin: 0;
+    padding: 18px;
+  }
   .workspace-control label {
     color: var(--color-boulder-700);
     display: block;
@@ -658,9 +713,15 @@
       grid-column: auto;
       grid-row: auto;
     }
-    .proxy-section { grid-column: auto; }
-    .proxy-form { grid-template-columns: 1fr; }
-    .proxy-form .hint { grid-column: auto; }
+    .proxy-section {
+      grid-column: auto;
+    }
+    .proxy-form {
+      grid-template-columns: 1fr;
+    }
+    .proxy-form .hint {
+      grid-column: auto;
+    }
     .header-actions {
       width: 100%;
     }

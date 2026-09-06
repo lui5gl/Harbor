@@ -39,11 +39,13 @@
   }
 
   function generateUUID(): string {
-    return crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r = (crypto.getRandomValues(new Uint8Array(1))[0] % 16) | 0;
-      const v = c === "x" ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
+    return crypto.randomUUID
+      ? crypto.randomUUID()
+      : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+          const r = (crypto.getRandomValues(new Uint8Array(1))[0] % 16) | 0;
+          const v = c === "x" ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
   }
 
   function generateToken(length: number): string {
@@ -164,42 +166,60 @@
           <button
             type="button"
             class={`type-chip${generatorType === "hex256" ? " active" : ""}`}
-            onclick={() => { generatorType = "hex256"; regenerate(); }}
+            onclick={() => {
+              generatorType = "hex256";
+              regenerate();
+            }}
           >
             Hex 256-bit
           </button>
           <button
             type="button"
             class={`type-chip${generatorType === "hex128" ? " active" : ""}`}
-            onclick={() => { generatorType = "hex128"; regenerate(); }}
+            onclick={() => {
+              generatorType = "hex128";
+              regenerate();
+            }}
           >
             Hex 128-bit
           </button>
           <button
             type="button"
             class={`type-chip${generatorType === "base64" ? " active" : ""}`}
-            onclick={() => { generatorType = "base64"; regenerate(); }}
+            onclick={() => {
+              generatorType = "base64";
+              regenerate();
+            }}
           >
             Base64 (32B)
           </button>
           <button
             type="button"
             class={`type-chip${generatorType === "token" ? " active" : ""}`}
-            onclick={() => { generatorType = "token"; regenerate(); }}
+            onclick={() => {
+              generatorType = "token";
+              regenerate();
+            }}
           >
             Alphanumeric
           </button>
           <button
             type="button"
             class={`type-chip${generatorType === "password" ? " active" : ""}`}
-            onclick={() => { generatorType = "password"; regenerate(); }}
+            onclick={() => {
+              generatorType = "password";
+              regenerate();
+            }}
           >
             Password
           </button>
           <button
             type="button"
             class={`type-chip${generatorType === "uuid" ? " active" : ""}`}
-            onclick={() => { generatorType = "uuid"; regenerate(); }}
+            onclick={() => {
+              generatorType = "uuid";
+              regenerate();
+            }}
           >
             UUID v4
           </button>
@@ -227,7 +247,12 @@
       <div class="preview-box">
         <div class="preview-header">
           <span class="preview-label">Generated value</span>
-          <button type="button" class="regenerate-button" onclick={regenerate} aria-label="Regenerate">
+          <button
+            type="button"
+            class="regenerate-button"
+            onclick={regenerate}
+            aria-label="Regenerate"
+          >
             <RefreshCw size={14} strokeWidth={2.2} />
             <span>Regenerate</span>
           </button>
@@ -365,7 +390,10 @@
     justify-content: center;
     min-height: 32px;
     padding: 0 8px;
-    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    transition:
+      background 0.12s ease,
+      border-color 0.12s ease,
+      color 0.12s ease;
   }
 
   .type-chip:hover {
@@ -469,7 +497,9 @@
     justify-content: center;
     width: 30px;
     flex-shrink: 0;
-    transition: background 0.12s ease, color 0.12s ease;
+    transition:
+      background 0.12s ease,
+      color 0.12s ease;
   }
 
   .copy-btn:hover {

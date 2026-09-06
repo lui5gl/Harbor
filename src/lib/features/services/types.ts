@@ -42,7 +42,7 @@ export function parseVersionString(raw: string): { version: string; channel: str
   }
   return {
     version: (match[1] ?? raw).trim().replace(/^v/, ""),
-    channel: (match[2] ?? "").trim()
+    channel: (match[2] ?? "").trim(),
   };
 }
 
@@ -52,13 +52,13 @@ export function cleanVersion(raw: string): string {
 
 export function getCompatibleApacheVersions(
   phpVersion: string | null,
-  availableApache: string[]
+  availableApache: string[],
 ): { recommended: string[]; all: string[]; compatibilityNote: string } {
   if (!phpVersion) {
     return {
       recommended: availableApache.slice(0, 3),
       all: availableApache,
-      compatibilityNote: "Select a PHP version to verify Apache FastCGI binary compatibility."
+      compatibilityNote: "Select a PHP version to verify Apache FastCGI binary compatibility.",
     };
   }
 
@@ -70,13 +70,13 @@ export function getCompatibleApacheVersions(
     return {
       recommended: availableApache.filter((v) => v.startsWith("2.4.")).slice(0, 4),
       all: availableApache,
-      compatibilityNote: `PHP ${clean} (VS16/VS17 x64) is fully compatible with Apache 2.4.x via FastCGI (127.0.0.1:9070).`
+      compatibilityNote: `PHP ${clean} (VS16/VS17 x64) is fully compatible with Apache 2.4.x via FastCGI (127.0.0.1:9070).`,
     };
   }
 
   return {
     recommended: availableApache.slice(0, 3),
     all: availableApache,
-    compatibilityNote: `PHP ${clean} is configured to run via FastCGI on 127.0.0.1:9070 with Apache 2.4.`
+    compatibilityNote: `PHP ${clean} is configured to run via FastCGI on 127.0.0.1:9070 with Apache 2.4.`,
   };
 }

@@ -26,7 +26,7 @@
     installingVersion,
     installError = "",
     onOpenChange,
-    onInstall
+    onInstall,
   }: InstallVersionDialogProps = $props();
 
   let searchQuery = $state("");
@@ -37,7 +37,7 @@
       const { version, channel } = parseVersionString(raw);
       const isInstalled = installedVersions.includes(version);
       return { raw, version, channel, isInstalled };
-    })
+    }),
   );
 
   let filteredVersions = $derived(
@@ -58,7 +58,7 @@
       }
 
       return true;
-    })
+    }),
   );
 
   let displayedVersions = $derived(filteredVersions.slice(0, 60));
@@ -105,7 +105,8 @@
               <Loader2 size={16} class="spinner" strokeWidth={2.4} />
             </div>
             <span class="installing-title">
-              Downloading & installing {serviceLabel} {installingVersion}...
+              Downloading & installing {serviceLabel}
+              {installingVersion}...
             </span>
             <span class="installing-percent">{installProgress}%</span>
           </div>
@@ -159,12 +160,12 @@
                           item.channel.startsWith("Active")
                             ? "channel-active"
                             : item.channel.startsWith("LTS")
-                            ? "channel-lts"
-                            : item.channel.startsWith("Current")
-                            ? "channel-current"
-                            : item.channel.startsWith("Security")
-                            ? "channel-security"
-                            : "channel-eol"
+                              ? "channel-lts"
+                              : item.channel.startsWith("Current")
+                                ? "channel-current"
+                                : item.channel.startsWith("Security")
+                                  ? "channel-security"
+                                  : "channel-eol"
                         }`}
                       >
                         {item.channel.replace("LTS - ", "LTS · ")}
@@ -195,7 +196,8 @@
 
               {#if filteredVersions.length > displayedVersions.length}
                 <div class="truncated-notice">
-                  Showing first {displayedVersions.length} of {filteredVersions.length} versions. Use the search field to filter.
+                  Showing first {displayedVersions.length} of {filteredVersions.length} versions. Use
+                  the search field to filter.
                 </div>
               {/if}
             </div>
@@ -274,7 +276,9 @@
     height: 32px;
     justify-content: center;
     padding: 0;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
     width: 32px;
   }
 
@@ -414,7 +418,9 @@
     font-size: 12px;
     font-weight: 600;
     padding: 4px 10px;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   .filter-pill:hover {

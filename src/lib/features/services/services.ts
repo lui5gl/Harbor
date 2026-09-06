@@ -14,20 +14,20 @@ export const serviceDefinitions: ServiceDefinition[] = [
     description: "Local web server",
     iconPath: siApache.path,
     versions: [],
-    installedVersions: []
+    installedVersions: [],
   },
   {
     name: "PHP",
     description: "PHP runtime",
     iconPath: siPhp.path,
     versions: [],
-    installedVersions: []
+    installedVersions: [],
   },
   {
     name: "Node.js",
     description: "JavaScript runtime",
     iconPath: siNodedotjs.path,
     versions: [],
-    installedVersions: []
-  }
+    installedVersions: [],
+  },
 ];

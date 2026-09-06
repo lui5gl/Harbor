@@ -28,7 +28,7 @@
     onStart,
     onStop,
     getStatus,
-    onVersionSelect
+    onVersionSelect,
   }: ServiceCardProps = $props();
   let serviceTitleId = $derived(`${serviceName.toLowerCase().replaceAll(" ", "-")}-service-title`);
 
@@ -48,21 +48,29 @@
   let isRunning = $state(false);
   let canStartStop = $derived(serviceName === "PHP" || serviceName === "Apache");
   let serviceRole = $derived(
-    serviceName === "PHP" ? "FastCGI / CLI" : serviceName === "Apache" ? "Web server" : "Runtime"
+    serviceName === "PHP" ? "FastCGI / CLI" : serviceName === "Apache" ? "Web server" : "Runtime",
   );
   let servicePort = $derived(
-    serviceName === "PHP" ? "FastCGI :9070" : serviceName === "Apache" ? "HTTP :8080" : "CLI"
+    serviceName === "PHP" ? "FastCGI :9070" : serviceName === "Apache" ? "HTTP :8080" : "CLI",
   );
   $effect(() => {
     if (!installedCatalog.includes(selectedVersion)) {
       selectedVersion = installedCatalog[0] ?? "";
     }
   });
-  let installedCatalog = $derived(versions.filter((version) => installedVersions.includes(getVersionNumber(version))));
-  let downloadableCatalog = $derived(versions.filter((version) => !installedVersions.includes(getVersionNumber(version))));
-  let filteredDownloadCatalog = $derived(downloadSearchValue === ""
-    ? downloadableCatalog
-    : downloadableCatalog.filter((version) => version.toLowerCase().includes(downloadSearchValue.toLowerCase())));
+  let installedCatalog = $derived(
+    versions.filter((version) => installedVersions.includes(getVersionNumber(version))),
+  );
+  let downloadableCatalog = $derived(
+    versions.filter((version) => !installedVersions.includes(getVersionNumber(version))),
+  );
+  let filteredDownloadCatalog = $derived(
+    downloadSearchValue === ""
+      ? downloadableCatalog
+      : downloadableCatalog.filter((version) =>
+          version.toLowerCase().includes(downloadSearchValue.toLowerCase()),
+        ),
+  );
 
   function getVersionParts(version: string) {
     const match = version.match(/^(.*) \((.*)\)$/);
@@ -85,11 +93,17 @@
       void getStatus().then((status) => (isRunning = status));
     }
     let unlisten: (() => void) | undefined;
-    void listen<{ service: string; version: string; progress: number }>("runtime-download-progress", (event) => {
-      if (event.payload.service === serviceName && event.payload.version === getVersionNumber(installingVersion)) {
-        downloadProgress = event.payload.progress;
-      }
-    }).then((cleanup) => (unlisten = cleanup));
+    void listen<{ service: string; version: string; progress: number }>(
+      "runtime-download-progress",
+      (event) => {
+        if (
+          event.payload.service === serviceName &&
+          event.payload.version === getVersionNumber(installingVersion)
+        ) {
+          downloadProgress = event.payload.progress;
+        }
+      },
+    ).then((cleanup) => (unlisten = cleanup));
     return () => unlisten?.();
   });
 
@@ -199,125 +213,159 @@
 
   <div class={`service-controls${canStartStop ? "" : " runtime-controls"}`}>
     <div class="version-control-group" bind:this={downloadAnchor}>
-    <Combobox.Root
-      type="single"
-      items={installedCatalog.map((version) => ({ value: version, label: version }))}
-      bind:value={selectedVersion}
-      onValueChange={(value) => value && void handleVersionSelect(value)}
-      bind:open={isVersionMenuOpen}
-      onOpenChangeComplete={(isOpen) => {
-        if (!isOpen) searchValue = "";
-      }}
-    >
-      <div class="version-anchor">
-        <Combobox.Trigger class={`version-button${isVersionMenuOpen ? " version-button-open" : ""}`} aria-label={`Select installed ${serviceName} version`}>
-          {#if selectedVersion}
-            {@const selectedParts = getVersionParts(selectedVersion)}
-            <span class="selected-version-label">
-              <span>{selectedParts.number}</span>
-              {#if selectedParts.channel}<span class="selected-version-channel">{selectedParts.channel.replace("LTS - ", "LTS · ")}</span>{/if}
-            </span>
-          {:else}
-            <span>No version selected</span>
-          {/if}
-          <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
-        </Combobox.Trigger>
-      </div>
-
-      <Combobox.Portal>
-        <Combobox.Content class="version-content" customAnchor={downloadAnchor} sideOffset={0}>
-          <div class="version-search-row">
-            <Search class="version-search-icon" size={16} strokeWidth={2} aria-hidden="true" />
-            <Combobox.Input
-              class="version-search"
-              oninput={(event) => (searchValue = event.currentTarget.value)}
-              placeholder="Search versions"
-              aria-label={`Search ${serviceName} versions`}
-            />
-          </div>
-          <Combobox.Viewport>
-            {#if installedCatalog.length > 0}
-              {#each installedCatalog as version (version)}
-                <Combobox.Item class="version-item" value={version} label={version}>
-                  {#snippet children({ selected })}
-                    {@const versionParts = getVersionParts(version)}
-                    <span class="version-item-label">
-                      <span>{versionParts.number}</span>
-                      {#if versionParts.channel}
-                        <span class={`version-channel ${versionParts.channel.startsWith("EOL") ? "version-channel-eol" : versionParts.channel.startsWith("LTS") ? "version-channel-lts" : versionParts.channel.startsWith("Security") ? "version-channel-security" : "version-channel-current"}`}>
-                          {versionParts.channel.replace("LTS - ", "LTS · ")}
-                        </span>
-                      {/if}
-                    </span>
-                    {#if selected}
-                      <Check size={16} strokeWidth={2} aria-hidden="true" />
-                    {/if}
-                    <button class="remove-version-button" type="button" aria-label={`Remove ${version}`} onclick={(event) => { event.stopPropagation(); requestRemoval(version); }}>
-                      <Trash2 size={15} strokeWidth={2} aria-hidden="true" />
-                    </button>
-                  {/snippet}
-                </Combobox.Item>
-              {/each}
+      <Combobox.Root
+        type="single"
+        items={installedCatalog.map((version) => ({ value: version, label: version }))}
+        bind:value={selectedVersion}
+        onValueChange={(value) => value && void handleVersionSelect(value)}
+        bind:open={isVersionMenuOpen}
+        onOpenChangeComplete={(isOpen) => {
+          if (!isOpen) searchValue = "";
+        }}
+      >
+        <div class="version-anchor">
+          <Combobox.Trigger
+            class={`version-button${isVersionMenuOpen ? " version-button-open" : ""}`}
+            aria-label={`Select installed ${serviceName} version`}
+          >
+            {#if selectedVersion}
+              {@const selectedParts = getVersionParts(selectedVersion)}
+              <span class="selected-version-label">
+                <span>{selectedParts.number}</span>
+                {#if selectedParts.channel}<span class="selected-version-channel"
+                    >{selectedParts.channel.replace("LTS - ", "LTS · ")}</span
+                  >{/if}
+              </span>
             {:else}
-              <span class="version-empty">No installed versions</span>
+              <span>No version selected</span>
             {/if}
-          </Combobox.Viewport>
-        </Combobox.Content>
-      </Combobox.Portal>
-    </Combobox.Root>
+            <ChevronDown size={16} strokeWidth={2} aria-hidden="true" />
+          </Combobox.Trigger>
+        </div>
 
-    <Combobox.Root
-      type="single"
-      items={downloadableCatalog.map((version) => ({ value: version, label: version }))}
-      bind:open={isDownloadMenuOpen}
-      onOpenChangeComplete={(isOpen) => {
-        if (!isOpen) downloadSearchValue = "";
-      }}
-    >
-      <div class="download-anchor">
-        <Combobox.Trigger class="download-selected-button" aria-label={`Install another ${serviceName} version`} disabled={Boolean(installingVersion)}>
-          {#if installingVersion}
-            <span class="download-progress" style={`--download-progress: ${downloadProgress * 3.6}deg`} aria-label={`${downloadProgress}% downloaded`}>
-              <span>{downloadProgress}%</span>
-            </span>
-          {:else}
-            <Download size={16} strokeWidth={2} aria-hidden="true" />
-            <span>Install another version</span>
-          {/if}
-        </Combobox.Trigger>
-      </div>
-      <Combobox.Portal>
-        <Combobox.Content class="version-content download-content" customAnchor={downloadAnchor} sideOffset={0}>
-          <div class="version-search-row">
-            <Search class="version-search-icon" size={16} strokeWidth={2} aria-hidden="true" />
-            <Combobox.Input
-              class="version-search"
-              oninput={(event) => (downloadSearchValue = event.currentTarget.value)}
-              placeholder="Search versions"
-              aria-label={`Search downloadable ${serviceName} versions`}
-            />
-          </div>
-          <Combobox.Viewport>
-            {#each filteredDownloadCatalog as version (version)}
-              <Combobox.Item class="version-item" value={version} label={version} onclick={() => requestInstall(version)}>
-                {@const versionParts = getVersionParts(version)}
-                <span class="version-item-label">
-                  <span>{versionParts.number}</span>
-                  {#if versionParts.channel}
-                    <span class={`version-channel ${versionParts.channel.startsWith("EOL") ? "version-channel-eol" : versionParts.channel.startsWith("LTS") ? "version-channel-lts" : versionParts.channel.startsWith("Active") ? "version-channel-active" : versionParts.channel.startsWith("Security") ? "version-channel-security" : "version-channel-current"}`}>
-                      {versionParts.channel.replace("LTS - ", "LTS · ")}
-                    </span>
-                  {/if}
-                </span>
-                <Download size={16} strokeWidth={2} aria-hidden="true" />
-              </Combobox.Item>
+        <Combobox.Portal>
+          <Combobox.Content class="version-content" customAnchor={downloadAnchor} sideOffset={0}>
+            <div class="version-search-row">
+              <Search class="version-search-icon" size={16} strokeWidth={2} aria-hidden="true" />
+              <Combobox.Input
+                class="version-search"
+                oninput={(event) => (searchValue = event.currentTarget.value)}
+                placeholder="Search versions"
+                aria-label={`Search ${serviceName} versions`}
+              />
+            </div>
+            <Combobox.Viewport>
+              {#if installedCatalog.length > 0}
+                {#each installedCatalog as version (version)}
+                  <Combobox.Item class="version-item" value={version} label={version}>
+                    {#snippet children({ selected })}
+                      {@const versionParts = getVersionParts(version)}
+                      <span class="version-item-label">
+                        <span>{versionParts.number}</span>
+                        {#if versionParts.channel}
+                          <span
+                            class={`version-channel ${versionParts.channel.startsWith("EOL") ? "version-channel-eol" : versionParts.channel.startsWith("LTS") ? "version-channel-lts" : versionParts.channel.startsWith("Security") ? "version-channel-security" : "version-channel-current"}`}
+                          >
+                            {versionParts.channel.replace("LTS - ", "LTS · ")}
+                          </span>
+                        {/if}
+                      </span>
+                      {#if selected}
+                        <Check size={16} strokeWidth={2} aria-hidden="true" />
+                      {/if}
+                      <button
+                        class="remove-version-button"
+                        type="button"
+                        aria-label={`Remove ${version}`}
+                        onclick={(event) => {
+                          event.stopPropagation();
+                          requestRemoval(version);
+                        }}
+                      >
+                        <Trash2 size={15} strokeWidth={2} aria-hidden="true" />
+                      </button>
+                    {/snippet}
+                  </Combobox.Item>
+                {/each}
+              {:else}
+                <span class="version-empty">No installed versions</span>
+              {/if}
+            </Combobox.Viewport>
+          </Combobox.Content>
+        </Combobox.Portal>
+      </Combobox.Root>
+
+      <Combobox.Root
+        type="single"
+        items={downloadableCatalog.map((version) => ({ value: version, label: version }))}
+        bind:open={isDownloadMenuOpen}
+        onOpenChangeComplete={(isOpen) => {
+          if (!isOpen) downloadSearchValue = "";
+        }}
+      >
+        <div class="download-anchor">
+          <Combobox.Trigger
+            class="download-selected-button"
+            aria-label={`Install another ${serviceName} version`}
+            disabled={Boolean(installingVersion)}
+          >
+            {#if installingVersion}
+              <span
+                class="download-progress"
+                style={`--download-progress: ${downloadProgress * 3.6}deg`}
+                aria-label={`${downloadProgress}% downloaded`}
+              >
+                <span>{downloadProgress}%</span>
+              </span>
             {:else}
-              <span class="version-empty">No downloadable versions found</span>
-            {/each}
-          </Combobox.Viewport>
-        </Combobox.Content>
-      </Combobox.Portal>
-    </Combobox.Root>
+              <Download size={16} strokeWidth={2} aria-hidden="true" />
+              <span>Install another version</span>
+            {/if}
+          </Combobox.Trigger>
+        </div>
+        <Combobox.Portal>
+          <Combobox.Content
+            class="version-content download-content"
+            customAnchor={downloadAnchor}
+            sideOffset={0}
+          >
+            <div class="version-search-row">
+              <Search class="version-search-icon" size={16} strokeWidth={2} aria-hidden="true" />
+              <Combobox.Input
+                class="version-search"
+                oninput={(event) => (downloadSearchValue = event.currentTarget.value)}
+                placeholder="Search versions"
+                aria-label={`Search downloadable ${serviceName} versions`}
+              />
+            </div>
+            <Combobox.Viewport>
+              {#each filteredDownloadCatalog as version (version)}
+                <Combobox.Item
+                  class="version-item"
+                  value={version}
+                  label={version}
+                  onclick={() => requestInstall(version)}
+                >
+                  {@const versionParts = getVersionParts(version)}
+                  <span class="version-item-label">
+                    <span>{versionParts.number}</span>
+                    {#if versionParts.channel}
+                      <span
+                        class={`version-channel ${versionParts.channel.startsWith("EOL") ? "version-channel-eol" : versionParts.channel.startsWith("LTS") ? "version-channel-lts" : versionParts.channel.startsWith("Active") ? "version-channel-active" : versionParts.channel.startsWith("Security") ? "version-channel-security" : "version-channel-current"}`}
+                      >
+                        {versionParts.channel.replace("LTS - ", "LTS · ")}
+                      </span>
+                    {/if}
+                  </span>
+                  <Download size={16} strokeWidth={2} aria-hidden="true" />
+                </Combobox.Item>
+              {:else}
+                <span class="version-empty">No downloadable versions found</span>
+              {/each}
+            </Combobox.Viewport>
+          </Combobox.Content>
+        </Combobox.Portal>
+      </Combobox.Root>
     </div>
 
     {#if canStartStop}
@@ -340,12 +388,27 @@
 
 {#if pendingVersion}
   <div class="modal-backdrop">
-    <div class="download-modal" role="dialog" aria-modal="true" aria-labelledby={`${serviceTitleId}-download-title`}>
+    <div
+      class="download-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={`${serviceTitleId}-download-title`}
+    >
       <h3 id={`${serviceTitleId}-download-title`}>Download {serviceName} {pendingVersion}?</h3>
       <p>The runtime will be installed in the Harbor runtimes folder.</p>
       <div class="modal-actions">
-        <Button.Root class="modal-cancel" type="button" onclick={() => (pendingVersion = "")}>Cancel</Button.Root>
-        <Button.Root class="modal-confirm" type="button" onclick={() => { const version = pendingVersion; pendingVersion = ""; void installVersion(version); }}>Confirm</Button.Root>
+        <Button.Root class="modal-cancel" type="button" onclick={() => (pendingVersion = "")}
+          >Cancel</Button.Root
+        >
+        <Button.Root
+          class="modal-confirm"
+          type="button"
+          onclick={() => {
+            const version = pendingVersion;
+            pendingVersion = "";
+            void installVersion(version);
+          }}>Confirm</Button.Root
+        >
       </div>
     </div>
   </div>
@@ -353,10 +416,20 @@
 
 {#if pendingRemovalVersion}
   <div class="modal-backdrop">
-    <div class="download-modal" role="dialog" aria-modal="true" aria-labelledby={`${serviceTitleId}-remove-title`}>
-      <h3 id={`${serviceTitleId}-remove-title`}>Eliminar {serviceName} {getVersionNumber(pendingRemovalVersion)}?</h3>
+    <div
+      class="download-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={`${serviceTitleId}-remove-title`}
+    >
+      <h3 id={`${serviceTitleId}-remove-title`}>
+        Eliminar {serviceName}
+        {getVersionNumber(pendingRemovalVersion)}?
+      </h3>
       <p>Se borrará permanentemente la versión instalada y sus archivos.</p>
-      <label class="confirmation-label" for={`${serviceTitleId}-remove-confirmation`}>Escribe CONFIRMAR</label>
+      <label class="confirmation-label" for={`${serviceTitleId}-remove-confirmation`}
+        >Escribe CONFIRMAR</label
+      >
       <input
         id={`${serviceTitleId}-remove-confirmation`}
         class="confirmation-input"
@@ -365,8 +438,16 @@
         spellcheck="false"
       />
       <div class="modal-actions">
-        <Button.Root class="modal-cancel" type="button" onclick={() => (pendingRemovalVersion = "")}>Cancelar</Button.Root>
-        <Button.Root class="modal-confirm modal-danger" type="button" disabled={isRemoving} onclick={() => void removeVersion()}>{isRemoving ? "Eliminando..." : "Eliminar"}</Button.Root>
+        <Button.Root class="modal-cancel" type="button" onclick={() => (pendingRemovalVersion = "")}
+          >Cancelar</Button.Root
+        >
+        <Button.Root
+          class="modal-confirm modal-danger"
+          type="button"
+          disabled={isRemoving}
+          onclick={() => void removeVersion()}
+          >{isRemoving ? "Eliminando..." : "Eliminar"}</Button.Root
+        >
       </div>
     </div>
   </div>
@@ -440,7 +521,10 @@
 
   .download-progress {
     align-items: center;
-    background: conic-gradient(var(--color-east-bay-500) var(--download-progress), var(--color-boulder-200) 0deg);
+    background: conic-gradient(
+      var(--color-east-bay-500) var(--download-progress),
+      var(--color-boulder-200) 0deg
+    );
     border-radius: 50%;
     display: inline-flex;
     height: 24px;
@@ -483,15 +567,48 @@
     width: calc(100% - 32px);
   }
 
-  .download-modal h3 { margin: 0; }
-  .download-modal p { margin: 10px 0 20px; }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-  :global(.modal-cancel), :global(.modal-confirm) { border: 1px solid var(--color-boulder-200); border-radius: 6px; padding: 8px 14px; }
-  :global(.modal-confirm) { background: var(--color-east-bay-500); color: #ffffff; }
-  :global(.modal-danger) { background: #a33c2c; }
-  .confirmation-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
-  .confirmation-input { border: 1px solid var(--color-boulder-200); border-radius: 6px; box-sizing: border-box; font: inherit; padding: 9px 10px; width: 100%; }
-  .confirmation-input:focus { border-color: #a33c2c; outline: 2px solid rgb(163 60 44 / 18%); }
+  .download-modal h3 {
+    margin: 0;
+  }
+  .download-modal p {
+    margin: 10px 0 20px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  :global(.modal-cancel),
+  :global(.modal-confirm) {
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 6px;
+    padding: 8px 14px;
+  }
+  :global(.modal-confirm) {
+    background: var(--color-east-bay-500);
+    color: #ffffff;
+  }
+  :global(.modal-danger) {
+    background: #a33c2c;
+  }
+  .confirmation-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .confirmation-input {
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 6px;
+    box-sizing: border-box;
+    font: inherit;
+    padding: 9px 10px;
+    width: 100%;
+  }
+  .confirmation-input:focus {
+    border-color: #a33c2c;
+    outline: 2px solid rgb(163 60 44 / 18%);
+  }
 
   .service-identity {
     align-items: center;
@@ -640,7 +757,10 @@
     font: inherit;
     justify-content: center;
     min-height: 40px;
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
   }
 
   :global(.version-button:hover),

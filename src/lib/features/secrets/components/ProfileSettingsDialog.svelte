@@ -20,10 +20,7 @@
   });
 
   function saveSettings() {
-    onSave(
-      draftName.trim() || "Untitled environment",
-      draftIsProduction
-    );
+    onSave(draftName.trim() || "Untitled environment", draftIsProduction);
     open = false;
   }
 </script>
@@ -50,7 +47,11 @@
           <strong>Production environment</strong>
           <small>Requires confirmation before activation in the shell.</small>
         </span>
-        <Switch.Root class="production-switch" bind:checked={draftIsProduction} aria-label="Production environment">
+        <Switch.Root
+          class="production-switch"
+          bind:checked={draftIsProduction}
+          aria-label="Production environment"
+        >
           <Switch.Thumb class="production-switch-thumb" />
         </Switch.Root>
       </div>

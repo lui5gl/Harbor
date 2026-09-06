@@ -29,18 +29,14 @@
     "8.3.17 (Active)",
     "8.2.27 (Security)",
     "8.1.31 (EOL)",
-    "7.4.33 (EOL)"
+    "7.4.33 (EOL)",
   ];
-  const mockApacheCatalog = [
-    "2.4.62 (Active)",
-    "2.4.61 (Active)",
-    "2.4.58 (Active)"
-  ];
+  const mockApacheCatalog = ["2.4.62 (Active)", "2.4.61 (Active)", "2.4.58 (Active)"];
   const mockNodeCatalog = [
     "22.14.0 (LTS - Jod)",
     "23.8.0 (Current)",
     "20.18.3 (LTS - Iron)",
-    "18.20.7 (EOL)"
+    "18.20.7 (EOL)",
   ];
 
   let selectedServiceId = $state<ServiceId>("php-web");
@@ -82,7 +78,7 @@
           if (event.payload.service === installingService) {
             installProgress = event.payload.progress;
           }
-        }
+        },
       ).then((cleanup) => {
         unlistenProgress = cleanup;
       });
@@ -137,15 +133,18 @@
     const catalogRequests = [
       ["PHP", "get_php_versions"],
       ["Apache", "get_apache_versions"],
-      ["Node.js", "get_node_versions"]
+      ["Node.js", "get_node_versions"],
     ] as const;
 
     const results = await Promise.allSettled(
-      catalogRequests.map(async ([serviceName, command]) => [
-        serviceName,
-        await getCatalog(serviceName),
-        await getInstalledVersions(serviceName)
-      ] as const)
+      catalogRequests.map(
+        async ([serviceName, command]) =>
+          [
+            serviceName,
+            await getCatalog(serviceName),
+            await getInstalledVersions(serviceName),
+          ] as const,
+      ),
     );
 
     const failures: string[] = [];
@@ -156,9 +155,10 @@
         if (serviceName === "PHP") {
           availablePhpVersions = catalog;
           installedPhpVersions = installed;
-          const target = savedRuntimes.php && installed.includes(savedRuntimes.php)
-            ? savedRuntimes.php
-            : installed[0];
+          const target =
+            savedRuntimes.php && installed.includes(savedRuntimes.php)
+              ? savedRuntimes.php
+              : installed[0];
           if (target) {
             activePhpVersion = target;
             void setActiveVersion("PHP", cleanVersion(target));
@@ -166,9 +166,10 @@
         } else if (serviceName === "Apache") {
           availableApacheVersions = catalog;
           installedApacheVersions = installed;
-          const target = savedRuntimes.apache && installed.includes(savedRuntimes.apache)
-            ? savedRuntimes.apache
-            : installed[0];
+          const target =
+            savedRuntimes.apache && installed.includes(savedRuntimes.apache)
+              ? savedRuntimes.apache
+              : installed[0];
           if (target) {
             activeApacheVersion = target;
             void setActiveVersion("Apache", cleanVersion(target));
@@ -176,16 +177,19 @@
         } else if (serviceName === "Node.js") {
           availableNodeVersions = catalog;
           installedNodeVersions = installed;
-          const target = savedRuntimes.nodejs && installed.includes(savedRuntimes.nodejs)
-            ? savedRuntimes.nodejs
-            : installed[0];
+          const target =
+            savedRuntimes.nodejs && installed.includes(savedRuntimes.nodejs)
+              ? savedRuntimes.nodejs
+              : installed[0];
           if (target) {
             activeNodeVersion = target;
             void setActiveVersion("Node.js", cleanVersion(target));
           }
         }
       } else {
-        failures.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
+        failures.push(
+          result.reason instanceof Error ? result.reason.message : String(result.reason),
+        );
       }
     }
 
@@ -288,7 +292,7 @@
     const commandMap = {
       PHP: "install_php",
       Apache: "install_apache",
-      "Node.js": "install_node"
+      "Node.js": "install_node",
     } as const;
 
     try {
@@ -321,8 +325,11 @@
         installedPhpVersions = installedPhpVersions.filter((v) => cleanVersion(v) !== cleanVer);
         if (activePhpVersion === cleanVer) activePhpVersion = installedPhpVersions[0] ?? null;
       } else if (service === "Apache") {
-        installedApacheVersions = installedApacheVersions.filter((v) => cleanVersion(v) !== cleanVer);
-        if (activeApacheVersion === cleanVer) activeApacheVersion = installedApacheVersions[0] ?? null;
+        installedApacheVersions = installedApacheVersions.filter(
+          (v) => cleanVersion(v) !== cleanVer,
+        );
+        if (activeApacheVersion === cleanVer)
+          activeApacheVersion = installedApacheVersions[0] ?? null;
       } else if (service === "Node.js") {
         installedNodeVersions = installedNodeVersions.filter((v) => cleanVersion(v) !== cleanVer);
         if (activeNodeVersion === cleanVer) activeNodeVersion = installedNodeVersions[0] ?? null;
@@ -383,7 +390,12 @@
       onclick={() => void loadAllCatalogs()}
       disabled={isCatalogLoading}
     >
-      <RefreshCw size={15} strokeWidth={2} class={isCatalogLoading ? "spin" : ""} aria-hidden="true" />
+      <RefreshCw
+        size={15}
+        strokeWidth={2}
+        class={isCatalogLoading ? "spin" : ""}
+        aria-hidden="true"
+      />
       <span>{isCatalogLoading ? t("services.refreshing") : t("services.refreshCatalog")}</span>
     </Button.Root>
   </header>
@@ -505,7 +517,9 @@
     justify-content: center;
     min-height: 38px;
     padding: 0 14px;
-    transition: background-color 150ms ease, border-color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
   }
 
   :global(.secondary-button:hover:not(:disabled)) {

@@ -14,16 +14,10 @@ export function validateSecretKey(key: string): string | null {
   return null;
 }
 
-export function hasDuplicateSecretKey(
-  secrets: Secret[],
-  key: string,
-  ignoredId?: number,
-): boolean {
+export function hasDuplicateSecretKey(secrets: Secret[], key: string, ignoredId?: number): boolean {
   const normalizedKey = key.trim().toUpperCase();
 
   return secrets.some(
-    (secret) =>
-      secret.id !== ignoredId &&
-      secret.key.trim().toUpperCase() === normalizedKey,
+    (secret) => secret.id !== ignoredId && secret.key.trim().toUpperCase() === normalizedKey,
   );
 }

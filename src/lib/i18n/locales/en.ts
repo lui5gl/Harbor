@@ -4,7 +4,7 @@ export const en = {
     secrets: "Secrets",
     settings: "Settings",
     primaryNavigation: "Primary navigation",
-    home: "Harbor, home"
+    home: "Harbor, home",
   },
   settings: {
     eyebrow: "Application preferences",
@@ -41,8 +41,8 @@ export const en = {
     saved: "Saved",
     errors: {
       proxyHostRequired: "Enter the proxy host.",
-      proxyPortInvalid: "Enter a valid proxy port between 1 and 65535."
-    }
+      proxyPortInvalid: "Enter a valid proxy port between 1 and 65535.",
+    },
   },
   common: {
     host: "Host",
@@ -59,12 +59,13 @@ export const en = {
     version: "version",
     versions: "versions",
     loading: "Loading...",
-    clear: "Clear"
+    clear: "Clear",
   },
   services: {
     eyebrow: "Local environment",
     title: "Services & Runtimes",
-    description: "Manage local runtimes, active versions, and the integrated PHP + Apache Web Stack.",
+    description:
+      "Manage local runtimes, active versions, and the integrated PHP + Apache Web Stack.",
     refreshing: "Refreshing...",
     refreshCatalog: "Refresh catalog",
     loading: "Loading services and runtime catalogs...",
@@ -77,12 +78,13 @@ export const en = {
     running: "Running",
     installed: "installed",
     version: "version",
-    versions: "versions"
+    versions: "versions",
   },
   secrets: {
     eyebrow: "Environment configuration",
     title: "Secrets",
-    description: "Keep variables in projects, then activate an environment only when you need it in PowerShell.",
+    description:
+      "Keep variables in projects, then activate an environment only when you need it in PowerShell.",
     saving: "Saving...",
     encryptedKeyring: "Encrypted keyring",
     newProject: "New project",
@@ -118,7 +120,7 @@ export const en = {
     importEnv: "Import .env",
     copyEnv: "Copy as .env",
     downloadEnv: "Download .env",
-    deleteEnvironment: "Delete environment"
+    deleteEnvironment: "Delete environment",
   },
   status: {
     application: "Application status",
@@ -126,6 +128,6 @@ export const en = {
     environment: "Env:",
     phpService: "PHP FastCGI service status",
     tauriRuntime: "Tauri Desktop Runtime",
-    webPreview: "Web Preview Mode"
-  }
+    webPreview: "Web Preview Mode",
+  },
 } as const;
