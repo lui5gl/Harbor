@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Check, Download, Loader2, Search, X } from "@lucide/svelte";
   import { Dialog, ScrollArea } from "bits-ui";
-  import { cleanVersion, parseVersionString } from "./types";
+  import { cleanVersion, parseVersionString } from "../types";
 
   type InstallVersionDialogProps = {
     open: boolean;

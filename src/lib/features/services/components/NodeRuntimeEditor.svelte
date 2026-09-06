@@ -10,7 +10,7 @@
   import { Button } from "bits-ui";
   import DeleteRuntimeDialog from "./DeleteRuntimeDialog.svelte";
   import InstallVersionDialog from "./InstallVersionDialog.svelte";
-  import { cleanVersion, parseVersionString } from "./types";
+  import { cleanVersion, parseVersionString } from "../types";
 
   type NodeRuntimeEditorProps = {
     activeNodeVersion: string | null;

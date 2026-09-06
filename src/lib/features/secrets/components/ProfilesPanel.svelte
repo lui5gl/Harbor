@@ -1,8 +1,8 @@
 <script lang="ts">
   import { ChevronDown, ChevronRight, FolderGit2, Lock, Plus, Search, X } from "@lucide/svelte";
   import { t } from "$lib/i18n";
-  import { ScrollArea } from "bits-ui";
-  import type { Project } from "./types";
+  import { Button, ScrollArea } from "bits-ui";
+  import type { Project } from "../types";
 
   type ProfilesPanelProps = {
     projects: Project[];
@@ -50,7 +50,7 @@
       <Search size={13} />
       <input class="search-input" placeholder={t("secrets.searchProjects")} bind:value={searchQuery} />
       {#if searchQuery}
-        <button class="clear-search" type="button" aria-label="Clear search" onclick={() => (searchQuery = "")}><X size={12} /></button>
+        <Button.Root class="clear-search" type="button" aria-label="Clear search" onclick={() => (searchQuery = "")}><X size={12} /></Button.Root>
       {/if}
     </div>
   {/if}
@@ -65,12 +65,12 @@
             {@const isCollapsed = collapsedProjectIds.includes(project.id)}
             <section class={`project-group${project.id === selectedProjectId ? " selected-project" : ""}`}>
               <div class="project-heading">
-                <button class="project-toggle" type="button" aria-expanded={!isCollapsed} onclick={() => toggleProject(project.id)}>
+                <Button.Root class="project-toggle" type="button" aria-expanded={!isCollapsed} onclick={() => toggleProject(project.id)}>
                   {#if isCollapsed}<ChevronRight size={13} />{:else}<ChevronDown size={13} />{/if}
                   <FolderGit2 size={14} class="project-icon" />
                   <span>{project.name}</span>
-                </button>
-                <button class="add-environment" type="button" title={`Add environment to ${project.name}`} aria-label={`Add environment to ${project.name}`} onclick={() => onAddEnvironment(project.id)}><Plus size={14} /></button>
+                </Button.Root>
+                <Button.Root class="add-environment" type="button" title={`Add environment to ${project.name}`} aria-label={`Add environment to ${project.name}`} onclick={() => onAddEnvironment(project.id)}><Plus size={14} /></Button.Root>
               </div>
 
               {#if !isCollapsed}
@@ -78,11 +78,11 @@
                   {#each project.environments as environment (environment.id)}
                     {@const isSelected = environment.id === selectedEnvironmentId}
                     {@const isActive = environment.id === activeEnvironmentId}
-                    <button class={`environment-item${isSelected ? " selected" : ""}`} type="button" onclick={() => onSelectEnvironment(project.id, environment.id)}>
+                    <Button.Root class={`environment-item${isSelected ? " selected" : ""}`} type="button" onclick={() => onSelectEnvironment(project.id, environment.id)}>
                       <span class={`status-dot${isActive ? " active" : ""}`}></span>
                       <span class="environment-name">{environment.name}</span>
                       {#if environment.isProduction}<Lock size={11} class="production-lock" />{/if}
-                    </button>
+                    </Button.Root>
                   {/each}
                 </div>
               {/if}
@@ -103,20 +103,20 @@
   .panel-header p { color: var(--color-boulder-500); font-size: 11px; margin-top: 3px; }
   .search-box { align-items: center; background: var(--color-boulder-50); border: 1px solid var(--color-boulder-200); border-radius: 6px; color: var(--color-boulder-400); display: flex; gap: 6px; margin-bottom: 10px; padding: 0 8px; }
   .search-input { background: transparent; border: 0; color: var(--color-boulder-800); font: inherit; font-size: 12px; height: 30px; outline: none; width: 100%; }
-  .clear-search, .add-environment { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--color-boulder-400); cursor: pointer; display: inline-flex; height: 22px; justify-content: center; padding: 0; width: 22px; }
-  .clear-search:hover, .add-environment:hover { background: var(--color-boulder-100); color: var(--color-east-bay-800); }
+  :global(.clear-search), :global(.add-environment) { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--color-boulder-400); cursor: pointer; display: inline-flex; height: 22px; justify-content: center; padding: 0; width: 22px; }
+  :global(.clear-search:hover), :global(.add-environment:hover) { background: var(--color-boulder-100); color: var(--color-east-bay-800); }
   :global(.project-scroll-area) { flex: 1; min-height: 0; }
   :global(.project-list-viewport) { height: 100%; width: 100%; }
   .project-list { display: flex; flex-direction: column; gap: 10px; padding-right: 3px; }
   .project-group { border-radius: 6px; }
   .project-heading { align-items: center; display: flex; justify-content: space-between; }
-  .project-toggle { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--color-boulder-800); cursor: pointer; display: flex; flex: 1; font: inherit; font-size: 12px; font-weight: 700; gap: 5px; min-width: 0; padding: 5px; text-align: left; }
-  .project-toggle:hover { background: var(--color-boulder-50); }
+  :global(.project-toggle) { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--color-boulder-800); cursor: pointer; display: flex; flex: 1; font: inherit; font-size: 12px; font-weight: 700; gap: 5px; min-width: 0; padding: 5px; text-align: left; }
+  :global(.project-toggle:hover) { background: var(--color-boulder-50); }
   :global(.project-icon) { color: var(--color-east-bay-700); flex-shrink: 0; }
   .environment-list { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; padding-left: 22px; }
-  .environment-item { align-items: center; background: transparent; border: 1px solid transparent; border-radius: 5px; color: var(--color-boulder-700); cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 6px; min-height: 29px; padding: 0 7px; text-align: left; width: 100%; }
-  .environment-item:hover { background: var(--color-boulder-50); }
-  .environment-item.selected { background: var(--color-east-bay-50); border-color: var(--color-east-bay-200); color: var(--color-east-bay-950); font-weight: 650; }
+  :global(.environment-item) { align-items: center; background: transparent; border: 1px solid transparent; border-radius: 5px; color: var(--color-boulder-700); cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 6px; min-height: 29px; padding: 0 7px; text-align: left; width: 100%; }
+  :global(.environment-item:hover) { background: var(--color-boulder-50); }
+  :global(.environment-item.selected) { background: var(--color-east-bay-50); border-color: var(--color-east-bay-200); color: var(--color-east-bay-950); font-weight: 650; }
   .status-dot { background: var(--color-boulder-300); border-radius: 50%; flex-shrink: 0; height: 6px; width: 6px; }
   .status-dot.active { background: #16a34a; box-shadow: 0 0 0 2px rgb(22 163 74 / 18%); }
   .environment-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

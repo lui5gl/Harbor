@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, ScrollArea } from "bits-ui";
   import { Server, Terminal } from "@lucide/svelte";
-  import type { ServiceId } from "./types";
+  import type { ServiceId } from "../types";
   import { t } from "$lib/i18n";
 
   type ServicesPanelProps = {

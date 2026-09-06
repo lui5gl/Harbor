@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { invoke, isTauri } from "@tauri-apps/api/core";
+  import { isTauri } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
   import { KeyRound, Server, ShieldAlert } from "@lucide/svelte";
   import type { SecretsConfiguration } from "$lib/features/secrets/types";
+  import { loadSecretProfiles } from "$lib/features/secrets/infrastructure/secretsRepository";
+  import { getPhpStatus } from "$lib/features/services/infrastructure/runtimesRepository";
   import { t } from "$lib/i18n";
 
   const isNativeApp = isTauri();
@@ -21,7 +23,7 @@
     }
 
     try {
-      const config = await invoke<SecretsConfiguration>("load_secret_profiles");
+      const config = await loadSecretProfiles();
       let activeEnv: { name: string; isProduction: boolean; projectName: string } | null = null;
       for (const project of config.projects) {
         const env = project.environments.find((e) => e.id === config.activeEnvironmentId);
@@ -48,7 +50,7 @@
       return;
     }
     try {
-      isPhpRunning = await invoke<boolean>("get_php_status");
+      isPhpRunning = await getPhpStatus();
     } catch {
       isPhpRunning = false;
     }

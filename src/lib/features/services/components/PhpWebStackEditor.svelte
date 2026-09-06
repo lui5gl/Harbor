@@ -29,7 +29,7 @@
     getCompatibleApacheVersions,
     parseVersionString,
     type PhpStackProfile
-  } from "./types";
+  } from "../types";
 
   type PhpWebStackEditorProps = {
     activePhpVersion: string | null;

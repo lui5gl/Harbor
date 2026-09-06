@@ -3,8 +3,8 @@
   import "@fontsource-variable/geist-mono";
   import { Tooltip } from "bits-ui";
   import { page } from "$app/state";
-  import NavigationBar from "$lib/features/navigation/NavigationBar.svelte";
-  import StatusBar from "$lib/features/status-bar/StatusBar.svelte";
+  import AppShell from "$lib/app/AppShell.svelte";
+  import QuickTrayShell from "$lib/app/QuickTrayShell.svelte";
 
   let { children } = $props();
 
@@ -17,17 +17,13 @@
 
 <Tooltip.Provider delayDuration={500}>
   {#if isQuickTray}
-    <div class="quick-tray-shell">
+    <QuickTrayShell>
       {@render children()}
-    </div>
+    </QuickTrayShell>
   {:else}
-    <div class="application-shell">
-      <NavigationBar />
-      <div class="application-content">
+    <AppShell>
         {@render children()}
-      </div>
-      <StatusBar />
-    </div>
+    </AppShell>
   {/if}
 </Tooltip.Provider>
 
@@ -88,27 +84,4 @@
     outline-offset: 2px;
   }
 
-  .application-shell {
-    background: var(--color-boulder-50);
-    color: var(--color-boulder-950);
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
-  .application-content {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  .quick-tray-shell {
-    background: var(--color-boulder-50);
-    color: var(--color-boulder-950);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    box-sizing: border-box;
-  }
 </style>
