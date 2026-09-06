@@ -2,13 +2,15 @@
   import { invoke, isTauri } from "@tauri-apps/api/core";
   import {
     FolderOpen,
+    Check,
+    ChevronDown,
     MonitorCog,
     Network,
     RotateCcw,
     Save,
     Settings2,
   } from "@lucide/svelte";
-  import { Button } from "bits-ui";
+  import { Button, Select, Switch } from "bits-ui";
   import { onMount } from "svelte";
   import { i18n, persistLocale, t, type Locale } from "$lib/i18n";
 
@@ -107,8 +109,10 @@
     saveSettings();
   }
 
-  function changeLocale(event: Event) {
-    const nextLocale = (event.currentTarget as HTMLSelectElement).value as Locale;
+  function changeLocale(nextLocale: string | undefined) {
+    if (nextLocale !== "es" && nextLocale !== "en") {
+      return;
+    }
     settings.locale = nextLocale;
     persistLocale(nextLocale);
   }
@@ -161,7 +165,7 @@
   {#if error}<p class="error" role="alert">{error}</p>{/if}
 
   <div class="settings-grid">
-    <section class="settings-section" aria-labelledby="behavior-title">
+    <section class="settings-section behavior-section" aria-labelledby="behavior-title">
       <div class="section-heading">
         <span class="section-icon"
           ><MonitorCog size={18} aria-hidden="true" /></span
@@ -172,58 +176,66 @@
         </div>
       </div>
       <div class="settings-list">
-        <label class="setting-row">
+        <div class="setting-row">
           <span
             ><strong>{t("settings.launchAtStartup")}</strong><small
               >{t("settings.launchAtStartupDescription")}</small
             ></span
           >
-          <input
-            type="checkbox"
+          <Switch.Root
+            class="settings-switch"
             bind:checked={settings.launchAtStartup}
             aria-label={t("settings.launchAtStartup")}
-          />
-        </label>
-        <label class="setting-row">
+          >
+            <Switch.Thumb class="settings-switch-thumb" />
+          </Switch.Root>
+        </div>
+        <div class="setting-row">
           <span
             ><strong>{t("settings.minimizeToTray")}</strong><small
               >{t("settings.minimizeToTrayDescription")}</small
             ></span
           >
-          <input
-            type="checkbox"
+          <Switch.Root
+            class="settings-switch"
             bind:checked={settings.minimizeToTray}
             aria-label={t("settings.minimizeToTray")}
-          />
-        </label>
-        <label class="setting-row">
+          >
+            <Switch.Thumb class="settings-switch-thumb" />
+          </Switch.Root>
+        </div>
+        <div class="setting-row">
           <span
             ><strong>{t("settings.closeToTray")}</strong><small
               >{t("settings.closeToTrayDescription")}</small
             ></span
           >
-          <input
-            type="checkbox"
+          <Switch.Root
+            class="settings-switch"
             bind:checked={settings.closeToTray}
             aria-label={t("settings.closeToTray")}
-          />
-        </label>
-        <label class="setting-row">
+          >
+            <Switch.Thumb class="settings-switch-thumb" />
+          </Switch.Root>
+        </div>
+        <div class="setting-row">
           <span
             ><strong>{t("settings.restoreLastSection")}</strong><small
               >{t("settings.restoreLastSectionDescription")}</small
             ></span
           >
-          <input
-            type="checkbox"
+          <Switch.Root
+            class="settings-switch"
             bind:checked={settings.openLastSection}
             aria-label={t("settings.restoreLastSection")}
-          />
-        </label>
+          >
+            <Switch.Thumb class="settings-switch-thumb" />
+          </Switch.Root>
+        </div>
       </div>
     </section>
 
-    <section class="settings-section" aria-labelledby="language-title">
+    <section class="settings-section language-section" aria-labelledby="language-title">
       <div class="section-heading">
         <span class="section-icon"><Settings2 size={18} aria-hidden="true" /></span>
         <div>
@@ -233,14 +245,48 @@
       </div>
       <div class="workspace-control">
         <label for="language-select">{t("settings.language")}</label>
-        <select id="language-select" value={i18n.locale} onchange={changeLocale}>
-          <option value="es">{t("settings.spanish")}</option>
-          <option value="en">{t("settings.english")}</option>
-        </select>
+        <Select.Root
+          type="single"
+          value={i18n.locale}
+          onValueChange={changeLocale}
+        >
+          <Select.Trigger class="settings-select-trigger" aria-label={t("settings.language")}>
+            <span class="select-value-text">
+              {i18n.locale === "es" ? t("settings.spanish") : t("settings.english")}
+            </span>
+            <ChevronDown size={14} strokeWidth={2.2} class="select-chevron" />
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Content class="settings-select-content" sideOffset={5} align="start">
+              <Select.Viewport class="settings-select-viewport">
+                <Select.Item
+                  class="settings-select-item"
+                  value="es"
+                  label={t("settings.spanish")}
+                >
+                  {#snippet children({ selected })}
+                    <span>{t("settings.spanish")}</span>
+                    {#if selected}<Check size={14} strokeWidth={2.4} />{/if}
+                  {/snippet}
+                </Select.Item>
+                <Select.Item
+                  class="settings-select-item"
+                  value="en"
+                  label={t("settings.english")}
+                >
+                  {#snippet children({ selected })}
+                    <span>{t("settings.english")}</span>
+                    {#if selected}<Check size={14} strokeWidth={2.4} />{/if}
+                  {/snippet}
+                </Select.Item>
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
       </div>
     </section>
 
-    <section class="settings-section" aria-labelledby="workspace-title">
+    <section class="settings-section workspace-section" aria-labelledby="workspace-title">
       <div class="section-heading">
         <span class="section-icon"
           ><Settings2 size={18} aria-hidden="true" /></span
@@ -277,10 +323,16 @@
           <h2 id="proxy-title">{t("settings.proxy")}</h2>
           <p>{t("settings.proxyDescription")}</p>
         </div>
-        <label class="switch-label">
-          <input type="checkbox" bind:checked={settings.proxyEnabled} aria-label={t("settings.proxy")} />
+        <div class="switch-label">
+          <Switch.Root
+            class="settings-switch"
+            bind:checked={settings.proxyEnabled}
+            aria-label={t("settings.proxy")}
+          >
+            <Switch.Thumb class="settings-switch-thumb" />
+          </Switch.Root>
           <span>{settings.proxyEnabled ? t("settings.enabled") : t("settings.disabled")}</span>
-        </label>
+        </div>
       </div>
       {#if settings.proxyEnabled}
         <div class="proxy-form">
@@ -379,9 +431,12 @@
   .settings-grid {
     display: grid;
     gap: 16px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
     margin-top: 32px;
   }
+  .behavior-section { grid-row: span 2; }
+  .language-section,
+  .workspace-section { grid-column: 2; }
   .settings-section {
     background: #fff;
     border: 1px solid var(--color-boulder-200);
@@ -448,15 +503,88 @@
     font-size: 11px;
     line-height: 1.4;
   }
-  input[type="checkbox"] {
-    accent-color: var(--color-east-bay-700);
+  :global(.settings-switch) {
+    background: var(--color-boulder-300);
+    border: 0;
+    border-radius: 999px;
     cursor: pointer;
     flex: 0 0 auto;
-    height: 16px;
-    width: 16px;
+    height: 22px;
+    padding: 0;
+    position: relative;
+    width: 38px;
+  }
+  :global(.settings-switch[data-state="checked"]) {
+    background: var(--color-east-bay-700);
+  }
+  :global(.settings-switch:focus-visible) {
+    outline: 2px solid var(--color-east-bay-400);
+    outline-offset: 2px;
+  }
+  :global(.settings-switch-thumb) {
+    background: #fff;
+    border-radius: 999px;
+    display: block;
+    height: 18px;
+    margin: 2px;
+    transform: translateX(0);
+    transition: transform 150ms ease;
+    width: 18px;
+  }
+  :global(.settings-switch[data-state="checked"] .settings-switch-thumb) {
+    transform: translateX(16px);
   }
   .workspace-control {
     padding: 18px;
+  }
+  :global(.settings-select-trigger) {
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--color-boulder-800);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 12px;
+    height: 36px;
+    justify-content: space-between;
+    padding: 0 10px;
+    width: 100%;
+  }
+  :global(.settings-select-trigger:focus-visible) {
+    border-color: var(--color-east-bay-400);
+    outline: 2px solid var(--color-east-bay-100);
+  }
+  :global(.settings-select-content) {
+    background: #fff;
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgb(0 0 0 / 12%);
+    padding: 4px;
+    width: var(--bits-select-anchor-width);
+    z-index: 80;
+  }
+  :global(.settings-select-viewport) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  :global(.settings-select-item) {
+    align-items: center;
+    border-radius: 4px;
+    color: var(--color-boulder-800);
+    cursor: pointer;
+    display: flex;
+    font-size: 12px;
+    justify-content: space-between;
+    min-height: 32px;
+    padding: 0 8px;
+  }
+  :global(.settings-select-item[data-highlighted]) {
+    background: var(--color-east-bay-50);
+    color: var(--color-east-bay-900);
   }
   .proxy-form { display: grid; gap: 15px 16px; grid-template-columns: minmax(0, 1fr) 150px; padding: 18px; }
   .form-row { display: flex; flex-direction: column; gap: 7px; }
@@ -522,6 +650,13 @@
     .settings-grid {
       grid-template-columns: 1fr;
       margin-top: 24px;
+    }
+    .behavior-section,
+    .language-section,
+    .workspace-section,
+    .proxy-section {
+      grid-column: auto;
+      grid-row: auto;
     }
     .proxy-section { grid-column: auto; }
     .proxy-form { grid-template-columns: 1fr; }
