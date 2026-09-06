@@ -10,9 +10,11 @@
   } from "@lucide/svelte";
   import { Button } from "bits-ui";
   import { onMount } from "svelte";
+  import { i18n, persistLocale, t, type Locale } from "$lib/i18n";
 
   const isNativeApp = isTauri();
   const defaultSettings = {
+    locale: "es" as Locale,
     launchAtStartup: false,
     minimizeToTray: true,
     closeToTray: true,
@@ -50,6 +52,7 @@
     if (stored) {
       try {
         settings = { ...defaultSettings, ...JSON.parse(stored) };
+        persistLocale(settings.locale);
       } catch {
         localStorage.removeItem("harbor-settings");
       }
@@ -71,11 +74,11 @@
     const port = Number(settings.proxyPort);
     if (settings.proxyEnabled) {
       if (!settings.proxyHost.trim()) {
-        error = "Introduce el host del proxy.";
+        error = t("settings.errors.proxyHostRequired");
         return;
       }
       if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        error = "Introduce un puerto de proxy válido entre 1 y 65535.";
+        error = t("settings.errors.proxyPortInvalid");
         return;
       }
     }
@@ -100,7 +103,14 @@
 
   function resetSettings() {
     settings = { ...defaultSettings };
+    persistLocale(settings.locale);
     saveSettings();
+  }
+
+  function changeLocale(event: Event) {
+    const nextLocale = (event.currentTarget as HTMLSelectElement).value as Locale;
+    settings.locale = nextLocale;
+    persistLocale(nextLocale);
   }
 
   async function openWorkspace() {
@@ -116,20 +126,20 @@
 </script>
 
 <svelte:head>
-  <title>Harbor | Settings</title>
+  <title>Harbor | {t("settings.title")}</title>
   <meta
     name="description"
-    content="Configure Harbor preferences and workspace behavior."
+    content={t("settings.description")}
   />
 </svelte:head>
 
 <main class="settings-page" aria-labelledby="settings-title">
   <header class="page-header">
     <div>
-      <p class="eyebrow">Application preferences</p>
-      <h1 id="settings-title">Settings</h1>
+      <p class="eyebrow">{t("settings.eyebrow")}</p>
+      <h1 id="settings-title">{t("settings.title")}</h1>
       <p class="page-description">
-        Adjust how Harbor starts, stays available, and remembers your workspace.
+        {t("settings.description")}
       </p>
     </div>
     <div class="header-actions">
@@ -139,11 +149,11 @@
         onclick={resetSettings}
       >
         <RotateCcw size={15} aria-hidden="true" />
-        <span>Reset</span>
+        <span>{t("settings.reset")}</span>
       </Button.Root>
       <Button.Root class="primary-button" type="button" onclick={saveSettings}>
         <Save size={15} aria-hidden="true" />
-        <span>{saved ? "Saved" : "Save changes"}</span>
+        <span>{saved ? t("settings.saved") : t("settings.save")}</span>
       </Button.Root>
     </div>
   </header>
@@ -157,59 +167,76 @@
           ><MonitorCog size={18} aria-hidden="true" /></span
         >
         <div>
-          <h2 id="behavior-title">Behavior</h2>
-          <p>Choose what Harbor does while you work.</p>
+          <h2 id="behavior-title">{t("settings.behavior")}</h2>
+          <p>{t("settings.behaviorDescription")}</p>
         </div>
       </div>
       <div class="settings-list">
         <label class="setting-row">
           <span
-            ><strong>Launch at startup</strong><small
-              >Open Harbor when you sign in to Windows.</small
+            ><strong>{t("settings.launchAtStartup")}</strong><small
+              >{t("settings.launchAtStartupDescription")}</small
             ></span
           >
           <input
             type="checkbox"
             bind:checked={settings.launchAtStartup}
-            aria-label="Launch at startup"
+            aria-label={t("settings.launchAtStartup")}
           />
         </label>
         <label class="setting-row">
           <span
-            ><strong>Minimize to tray</strong><small
-              >Keep Harbor available in the system tray when minimized.</small
+            ><strong>{t("settings.minimizeToTray")}</strong><small
+              >{t("settings.minimizeToTrayDescription")}</small
             ></span
           >
           <input
             type="checkbox"
             bind:checked={settings.minimizeToTray}
-            aria-label="Minimize to tray"
+            aria-label={t("settings.minimizeToTray")}
           />
         </label>
         <label class="setting-row">
           <span
-            ><strong>Close to tray</strong><small
-              >Hide the window instead of exiting when it is closed.</small
+            ><strong>{t("settings.closeToTray")}</strong><small
+              >{t("settings.closeToTrayDescription")}</small
             ></span
           >
           <input
             type="checkbox"
             bind:checked={settings.closeToTray}
-            aria-label="Close to tray"
+            aria-label={t("settings.closeToTray")}
           />
         </label>
         <label class="setting-row">
           <span
-            ><strong>Restore last section</strong><small
-              >Return to the section you used most recently.</small
+            ><strong>{t("settings.restoreLastSection")}</strong><small
+              >{t("settings.restoreLastSectionDescription")}</small
             ></span
           >
           <input
             type="checkbox"
             bind:checked={settings.openLastSection}
-            aria-label="Restore last section"
+            aria-label={t("settings.restoreLastSection")}
           />
         </label>
+      </div>
+    </section>
+
+    <section class="settings-section" aria-labelledby="language-title">
+      <div class="section-heading">
+        <span class="section-icon"><Settings2 size={18} aria-hidden="true" /></span>
+        <div>
+          <h2 id="language-title">{t("settings.language")}</h2>
+          <p>{t("settings.languageDescription")}</p>
+        </div>
+      </div>
+      <div class="workspace-control">
+        <label for="language-select">{t("settings.language")}</label>
+        <select id="language-select" value={i18n.locale} onchange={changeLocale}>
+          <option value="es">{t("settings.spanish")}</option>
+          <option value="en">{t("settings.english")}</option>
+        </select>
       </div>
     </section>
 
@@ -219,26 +246,26 @@
           ><Settings2 size={18} aria-hidden="true" /></span
         >
         <div>
-          <h2 id="workspace-title">Workspace</h2>
-          <p>Manage the local files used by Harbor.</p>
+          <h2 id="workspace-title">{t("settings.workspace")}</h2>
+          <p>{t("settings.workspaceDescription")}</p>
         </div>
       </div>
       <div class="workspace-control">
-        <label for="workspace-path">Harbor workspace</label>
+        <label for="workspace-path">{t("settings.workspaceLabel")}</label>
         <div class="path-row">
           <input id="workspace-path" value={workspacePath} readonly />
           <Button.Root
             class="icon-button"
             type="button"
             onclick={openWorkspace}
-            title="Open workspace folder"
-            aria-label="Open workspace folder"
+            title={t("settings.openWorkspace")}
+            aria-label={t("settings.openWorkspace")}
           >
             <FolderOpen size={16} aria-hidden="true" />
           </Button.Root>
         </div>
         <p class="hint">
-          Runtime installations, logs, cache, and web projects are stored here.
+          {t("settings.workspaceHint")}
         </p>
       </div>
     </section>
@@ -247,36 +274,36 @@
       <div class="section-heading">
         <span class="section-icon"><Network size={18} aria-hidden="true" /></span>
         <div>
-          <h2 id="proxy-title">Proxy</h2>
-          <p>Configure la conexión de Harbor a Internet.</p>
+          <h2 id="proxy-title">{t("settings.proxy")}</h2>
+          <p>{t("settings.proxyDescription")}</p>
         </div>
         <label class="switch-label">
-          <input type="checkbox" bind:checked={settings.proxyEnabled} aria-label="Enable proxy" />
-          <span>{settings.proxyEnabled ? "Enabled" : "Disabled"}</span>
+          <input type="checkbox" bind:checked={settings.proxyEnabled} aria-label={t("settings.proxy")} />
+          <span>{settings.proxyEnabled ? t("settings.enabled") : t("settings.disabled")}</span>
         </label>
       </div>
       {#if settings.proxyEnabled}
         <div class="proxy-form">
           <div class="form-row">
-            <label for="proxy-host">Host</label>
+            <label for="proxy-host">{t("common.host")}</label>
             <input id="proxy-host" bind:value={settings.proxyHost} placeholder="proxy.example.com" autocomplete="off" />
           </div>
           <div class="form-row port-field">
-            <label for="proxy-port">Port</label>
+            <label for="proxy-port">{t("common.port")}</label>
             <input id="proxy-port" type="number" min="1" max="65535" bind:value={settings.proxyPort} placeholder="8080" inputmode="numeric" />
           </div>
           <div class="form-row">
-            <label for="proxy-username">Username <span>(optional)</span></label>
+            <label for="proxy-username">{t("common.username")} <span>({t("settings.optional")})</span></label>
             <input id="proxy-username" bind:value={settings.proxyUsername} autocomplete="username" />
           </div>
           <div class="form-row">
-            <label for="proxy-password">Password <span>(optional)</span></label>
+            <label for="proxy-password">{t("common.password")} <span>({t("settings.optional")})</span></label>
             <input id="proxy-password" type="password" bind:value={settings.proxyPassword} autocomplete="current-password" />
           </div>
-          <p class="hint">Use un proxy HTTP o HTTPS. Las credenciales se guardan junto a las preferencias locales.</p>
+          <p class="hint">{t("settings.proxyHint")}</p>
         </div>
       {:else}
-        <p class="proxy-disabled">El tráfico de Harbor se conecta directamente a Internet.</p>
+        <p class="proxy-disabled">{t("settings.directConnection")}</p>
       {/if}
     </section>
   </div>

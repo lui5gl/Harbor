@@ -8,6 +8,7 @@
   import PhpWebStackEditor from "$lib/features/services/PhpWebStackEditor.svelte";
   import ServicesPanel from "$lib/features/services/ServicesPanel.svelte";
   import { cleanVersion, type ServiceId } from "$lib/features/services/types";
+  import { t } from "$lib/i18n";
 
   const isNativeApp = isTauri();
 
@@ -351,17 +352,17 @@
 </script>
 
 <svelte:head>
-  <title>Harbor | Services</title>
-  <meta name="description" content="Manage local runtimes and development services in Harbor." />
+  <title>Harbor | {t("services.title")}</title>
+  <meta name="description" content={t("services.description")} />
 </svelte:head>
 
 <main class="services-page" aria-labelledby="services-title">
   <header class="page-header">
     <div>
-      <p class="eyebrow">Local environment</p>
-      <h1 id="services-title">Services & Runtimes</h1>
+      <p class="eyebrow">{t("services.eyebrow")}</p>
+      <h1 id="services-title">{t("services.title")}</h1>
       <p class="page-description">
-        Manage local runtimes, active versions, and the integrated PHP + Apache Web Stack.
+        {t("services.description")}
       </p>
     </div>
     <Button.Root
@@ -371,7 +372,7 @@
       disabled={isCatalogLoading}
     >
       <RefreshCw size={15} strokeWidth={2} class={isCatalogLoading ? "spin" : ""} aria-hidden="true" />
-      <span>{isCatalogLoading ? "Refreshing..." : "Refresh catalog"}</span>
+      <span>{isCatalogLoading ? t("services.refreshing") : t("services.refreshCatalog")}</span>
     </Button.Root>
   </header>
 
@@ -380,7 +381,7 @@
   {/if}
 
   {#if isCatalogLoading && installedPhpVersions.length === 0 && installedNodeVersions.length === 0}
-    <div class="loading-state" role="status">Loading services and runtime catalogs...</div>
+    <div class="loading-state" role="status">{t("services.loading")}</div>
   {:else}
     <div class="services-workspace">
       <ServicesPanel

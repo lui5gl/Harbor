@@ -2,6 +2,7 @@
   import { Button, ScrollArea } from "bits-ui";
   import { Server, Terminal } from "@lucide/svelte";
   import type { ServiceId } from "./types";
+  import { t } from "$lib/i18n";
 
   type ServicesPanelProps = {
     selectedServiceId: ServiceId;
@@ -24,20 +25,20 @@
   }: ServicesPanelProps = $props();
 </script>
 
-<aside class="services-panel" aria-label="Services & Runtimes navigation">
+<aside class="services-panel" aria-label={t("services.navigation")}>
   <div class="panel-header">
     <div class="header-title-row">
-      <h2>Services</h2>
-      <span class="service-count" title="2 services available">2</span>
+      <h2>{t("services.titleShort")}</h2>
+      <span class="service-count" title={`2 ${t("services.available")}`}>2</span>
     </div>
   </div>
 
   <ScrollArea.Root class="service-scroll-area" type="auto">
     <ScrollArea.Viewport class="service-list-viewport">
       <div class="service-sections">
-        <section class="section-group" aria-label="Web Server & Runtime Stacks">
+        <section class="section-group" aria-label={t("services.webSection")}>
           <div class="section-heading">
-            <span class="section-title">Web Stack & Runtimes</span>
+            <span class="section-title">{t("services.webSection")}</span>
           </div>
 
           <div class="service-list">
@@ -52,14 +53,14 @@
               </div>
               <div class="service-item-body">
                 <div class="service-primary-row">
-                  <span class="service-name">PHP & Web Stack</span>
+                  <span class="service-name">{t("services.webStack")}</span>
                   {#if isPhpRunning}
-                    <span class="running-badge">Running</span>
+                    <span class="running-badge">{t("services.running")}</span>
                   {/if}
                 </div>
                 <div class="service-secondary-row">
                   <span class="service-meta">
-                    {activePhpVersion ? `PHP ${activePhpVersion}` : `${installedPhpCount} installed`}
+                    {activePhpVersion ? `PHP ${activePhpVersion}` : `${installedPhpCount} ${t("services.installed")}`}
                   </span>
                 </div>
               </div>
@@ -76,14 +77,14 @@
               </div>
               <div class="service-item-body">
                 <div class="service-primary-row">
-                  <span class="service-name">Node.js</span>
+                  <span class="service-name">{t("services.node")}</span>
                   {#if activeNodeVersion}
                     <span class="active-badge">{activeNodeVersion}</span>
                   {/if}
                 </div>
                 <div class="service-secondary-row">
                   <span class="service-meta">
-                    {installedNodeCount} {installedNodeCount === 1 ? "version" : "versions"}
+                    {installedNodeCount} {installedNodeCount === 1 ? t("services.version") : t("services.versions")}
                   </span>
                 </div>
               </div>

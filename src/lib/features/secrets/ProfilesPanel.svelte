@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ChevronDown, ChevronRight, FolderGit2, Lock, Plus, Search, X } from "@lucide/svelte";
+  import { t } from "$lib/i18n";
   import { ScrollArea } from "bits-ui";
   import type { Project } from "./types";
 
@@ -36,18 +37,18 @@
   }
 </script>
 
-<aside class="projects-panel" aria-label="Projects and environments">
+<aside class="projects-panel" aria-label={`${t("secrets.projects")} & ${t("secrets.environments")}`}>
   <div class="panel-header">
     <div>
-      <h2>Projects</h2>
-      <p>{projects.length} {projects.length === 1 ? "project" : "projects"}</p>
+      <h2>{t("secrets.projects")}</h2>
+      <p>{projects.length} {projects.length === 1 ? t("secrets.project") : t("secrets.projectPlural")}</p>
     </div>
   </div>
 
   {#if projects.length > 1}
     <div class="search-box">
       <Search size={13} />
-      <input class="search-input" placeholder="Search projects..." bind:value={searchQuery} />
+      <input class="search-input" placeholder={t("secrets.searchProjects")} bind:value={searchQuery} />
       {#if searchQuery}
         <button class="clear-search" type="button" aria-label="Clear search" onclick={() => (searchQuery = "")}><X size={12} /></button>
       {/if}
@@ -57,7 +58,7 @@
   <ScrollArea.Root class="project-scroll-area" type="auto">
     <ScrollArea.Viewport class="project-list-viewport">
       {#if filteredProjects.length === 0}
-        <p class="empty-state">No projects found.</p>
+        <p class="empty-state">{t("secrets.noProjectsFound")}</p>
       {:else}
         <div class="project-list">
           {#each filteredProjects as project (project.id)}

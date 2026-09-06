@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import { KeyRound, Server, ShieldAlert } from "@lucide/svelte";
   import type { SecretsConfiguration } from "$lib/features/secrets/types";
+  import { t } from "$lib/i18n";
 
   const isNativeApp = isTauri();
   const pollIntervalMs = 5_000;
@@ -82,38 +83,38 @@
   });
 </script>
 
-<footer class="status-bar" aria-label="Application status">
+<footer class="status-bar" aria-label={t("status.application")}>
   <div class="status-group">
-    <a href="/secrets" class="status-item status-link" title="Active environment secrets profile">
+    <a href="/secrets" class="status-item status-link" title={t("status.activeProfile")}>
       {#if isProduction}
         <ShieldAlert size={13} strokeWidth={2.4} class="alert-icon" aria-hidden="true" />
       {:else}
         <KeyRound size={13} strokeWidth={2.2} aria-hidden="true" />
       {/if}
-      <span class="label">Env:</span>
+      <span class="label">{t("status.environment")}</span>
       {#if activeProfileName}
         <strong class={isProduction ? "production-name" : ""}>{activeProfileName}</strong>
         {#if isProduction}
           <span class="prod-badge">PROD</span>
         {/if}
       {:else}
-        <span class="muted-text">None</span>
+        <span class="muted-text">{t("common.none")}</span>
       {/if}
     </a>
   </div>
 
   <div class="status-group">
-    <a href="/services" class="status-item status-link" title="PHP FastCGI service status">
+    <a href="/services" class="status-item status-link" title={t("status.phpService")}>
       <span class={`status-dot ${isPhpRunning ? "running" : "stopped"}`} aria-hidden="true"></span>
       <Server size={13} strokeWidth={2} aria-hidden="true" />
       <span class="label">FastCGI:</span>
-      <strong>{isPhpRunning ? "127.0.0.1:9070" : "Stopped"}</strong>
+      <strong>{isPhpRunning ? "127.0.0.1:9070" : t("common.stopped")}</strong>
     </a>
 
     <span class="status-divider" aria-hidden="true"></span>
 
-    <span class="status-item" title={isNativeApp ? "Tauri Desktop Runtime" : "Web Preview Mode"}>
-      <span class="platform-badge">{isNativeApp ? "Native" : "Web"}</span>
+    <span class="status-item" title={isNativeApp ? t("status.tauriRuntime") : t("status.webPreview")}>
+      <span class="platform-badge">{isNativeApp ? t("common.native") : t("common.web")}</span>
     </span>
   </div>
 </footer>

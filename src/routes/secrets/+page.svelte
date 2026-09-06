@@ -11,6 +11,7 @@
   import ProfilesPanel from "$lib/features/secrets/ProfilesPanel.svelte";
   import ProjectDialog from "$lib/features/secrets/ProjectDialog.svelte";
   import type { Environment, Project, SecretsConfiguration } from "$lib/features/secrets/types";
+  import { t } from "$lib/i18n";
 
   const demoProjects: Project[] = [{ id: 1, name: "General", environments: [
     { id: 1, name: "Development", isProduction: false, secrets: [{ id: 1, key: "API_URL", value: "https://api-dev.example.test" }] },
@@ -139,12 +140,12 @@
   function confirmProductionActivation() { const id = pendingActivationId; pendingActivationId = null; pendingActivationLabel = ""; productionDialogOpen = false; if (id !== null) void activate(id); }
 </script>
 
-<svelte:head><title>Harbor | Secrets</title><meta name="description" content="Manage secrets by project and environment." /></svelte:head>
+<svelte:head><title>Harbor | {t("secrets.title")}</title><meta name="description" content={t("secrets.description")} /></svelte:head>
 <main class="secrets-page" aria-labelledby="secrets-title">
-  <header class="page-header"><div><div class="top-row"><p class="eyebrow">Environment configuration</p>{#if !isLoading}<span class="save-status">{#if isSaving}<Loader2 size={12} class="spin" />Saving...{:else if !error}<ShieldCheck size={13} />Encrypted keyring{/if}</span>{/if}</div><h1 id="secrets-title">Secrets</h1><p class="page-description">Keep variables in projects, then activate an environment only when you need it in PowerShell.</p></div><Button.Root class="new-project-button" type="button" onclick={() => (projectDialogOpen = true)}><Plus size={17} />New project</Button.Root></header>
+  <header class="page-header"><div><div class="top-row"><p class="eyebrow">{t("secrets.eyebrow")}</p>{#if !isLoading}<span class="save-status">{#if isSaving}<Loader2 size={12} class="spin" />{t("secrets.saving")}{:else if !error}<ShieldCheck size={13} />{t("secrets.encryptedKeyring")}{/if}</span>{/if}</div><h1 id="secrets-title">{t("secrets.title")}</h1><p class="page-description">{t("secrets.description")}</p></div><Button.Root class="new-project-button" type="button" onclick={() => (projectDialogOpen = true)}><Plus size={17} />{t("secrets.newProject")}</Button.Root></header>
   {#if error}<p class="error" role="alert">{error}</p>{/if}
-  {#if isLoading}<div class="loading" role="status">Loading secure secrets...</div>
-  {:else if projects.length === 0}<div class="empty-workspace"><h2>No projects yet</h2><p>Create a project to add environments and their variables.</p><Button.Root class="new-project-button" type="button" onclick={() => (projectDialogOpen = true)}><Plus size={16} />Create project</Button.Root></div>
+  {#if isLoading}<div class="loading" role="status">{t("secrets.loading")}</div>
+  {:else if projects.length === 0}<div class="empty-workspace"><h2>{t("secrets.noProjects")}</h2><p>{t("secrets.noProjectsDescription")}</p><Button.Root class="new-project-button" type="button" onclick={() => (projectDialogOpen = true)}><Plus size={16} />{t("secrets.createProject")}</Button.Root></div>
   {:else}<div class="workspace"><ProfilesPanel {projects} {selectedProjectId} {selectedEnvironmentId} {activeEnvironmentId} onSelectEnvironment={selectEnvironment} onAddEnvironment={openEnvironmentDialog} />{#if selectedProject && selectedEnvironment}<ProfileEditor project={selectedProject} environment={selectedEnvironment} {activeEnvironmentId} onSelectEnvironment={(id) => selectEnvironment(selectedProject.id, id)} onAddEnvironment={() => openEnvironmentDialog()} onRenameProject={(name) => updateProject(selectedProject.id, (project) => ({ ...project, name }))} onRequestDeleteProject={() => requestDelete("project")} onSaveEnvironment={(name, isProduction) => updateEnvironment((environment) => ({ ...environment, name, isProduction }))} onRequestDeleteEnvironment={() => requestDelete("environment")} onAddVariable={() => updateEnvironment((environment) => ({ ...environment, secrets: [...environment.secrets, { id: nextSecretId++, key: "", value: "" }] }), false)} onAddCustomVariable={(key, value) => updateEnvironment((environment) => ({ ...environment, secrets: [...environment.secrets, { id: nextSecretId++, key, value }] }))} onImportVariables={importVariables} onUpdateVariable={(id, field, value) => updateEnvironment((environment) => ({ ...environment, secrets: environment.secrets.map((secret) => secret.id === id ? { ...secret, [field]: value } : secret) }))} onRequestDeleteVariable={(id) => requestDelete("variable", id)} onActivateEnvironment={() => void requestActivation()} />{/if}</div>{/if}
 </main>
 <ProjectDialog bind:open={projectDialogOpen} onCreate={createProject} />

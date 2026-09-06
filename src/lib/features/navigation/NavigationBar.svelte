@@ -1,17 +1,13 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { Anchor, Boxes, KeyRound, Settings } from "@lucide/svelte";
+  import { t } from "$lib/i18n";
 
   const applicationName = "Harbor";
-  const navigationItems = [
-    { href: "/services", label: "Services", icon: Boxes },
-    { href: "/secrets", label: "Secrets", icon: KeyRound },
-    { href: "/settings", label: "Settings", icon: Settings }
-  ];
 </script>
 
 <header class="navigation-bar" data-tauri-drag-region>
-  <a class="brand" href="/services" aria-label={`${applicationName}, inicio`}>
+  <a class="brand" href="/services" aria-label={t("nav.home")}>
     <span class="brand-mark" aria-hidden="true">
       <Anchor size={16} strokeWidth={2} />
     </span>
@@ -21,8 +17,12 @@
     </span>
   </a>
 
-  <nav class="navigation-links" aria-label="Primary navigation">
-    {#each navigationItems as item (item.href)}
+  <nav class="navigation-links" aria-label={t("nav.primaryNavigation")}>
+    {#each [
+      { href: "/services", label: t("nav.services"), icon: Boxes },
+      { href: "/secrets", label: t("nav.secrets"), icon: KeyRound },
+      { href: "/settings", label: t("nav.settings"), icon: Settings }
+    ] as item (item.href)}
       {@const isActive = page.url.pathname === item.href || page.url.pathname.startsWith(item.href + "/")}
       <a
         class={`navigation-link${isActive ? " active" : ""}`}
