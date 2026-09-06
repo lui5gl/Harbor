@@ -1,11 +1,12 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { Anchor, Boxes, KeyRound } from "@lucide/svelte";
+  import { Anchor, Boxes, KeyRound, Settings } from "@lucide/svelte";
 
   const applicationName = "Harbor";
   const navigationItems = [
     { href: "/services", label: "Services", icon: Boxes },
-    { href: "/secrets", label: "Secrets", icon: KeyRound }
+    { href: "/secrets", label: "Secrets", icon: KeyRound },
+    { href: "/settings", label: "Settings", icon: Settings }
   ];
 </script>
 

@@ -22,6 +22,26 @@ static NODE_VERSIONS_CACHE: OnceLock<Mutex<Option<CacheEntry<Vec<String>>>>> = O
 static APACHE_VERSIONS_CACHE: OnceLock<Mutex<Option<CacheEntry<Vec<String>>>>> = OnceLock::new();
 const CACHE_TTL: Duration = Duration::from_secs(30 * 60);
 
+fn http_client() -> Result<reqwest::Client, String> {
+    let mut builder = reqwest::Client::builder().timeout(Duration::from_secs(15));
+    let proxy = runtime_config::read_proxy_settings().map_err(format_io_error)?;
+    if proxy.enabled {
+        let proxy_url = if proxy.host.starts_with("http://") || proxy.host.starts_with("https://") {
+            format!("{}:{}", proxy.host.trim_end_matches('/'), proxy.port)
+        } else {
+            format!("http://{}:{}", proxy.host, proxy.port)
+        };
+        let mut proxy_builder = reqwest::Proxy::all(&proxy_url).map_err(|error| format!("Invalid proxy configuration: {error}"))?;
+        if let (Some(username), Some(password)) = (proxy.username.as_deref(), proxy.password.as_deref()) {
+            if !username.is_empty() {
+                proxy_builder = proxy_builder.basic_auth(username, password);
+            }
+        }
+        builder = builder.proxy(proxy_builder);
+    }
+    builder.build().map_err(|error| format!("Unable to create HTTP client: {error}"))
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
 struct NodeRelease {
     version: String,
@@ -98,10 +118,7 @@ async fn get_node_versions() -> Result<Vec<String>, String> {
         }
     }
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(7))
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = http_client()?;
 
     let releases_fut = async {
         client
@@ -182,10 +199,7 @@ async fn get_php_versions() -> Result<Vec<String>, String> {
         }
     }
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(7))
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = http_client()?;
 
     let support_cycles_fut = async {
         client
@@ -263,10 +277,7 @@ async fn get_apache_versions() -> Result<Vec<String>, String> {
         }
     }
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(7))
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = http_client()?;
 
     let index = client
         .get("https://downloads.apache.org/httpd/")
@@ -387,10 +398,7 @@ async fn install_php(app: tauri::AppHandle, version: String) -> Result<String, S
         return Ok(target_directory.to_string_lossy().into_owned());
     }
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(15))
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = http_client()?;
 
     let candidate_urls = generate_php_archive_urls(&version);
     let mut verified_url: Option<String> = None;
@@ -473,7 +481,10 @@ async fn download_archive(
     version: &str,
     url: &str,
 ) -> Result<Vec<u8>, String> {
-    let response = reqwest::get(url)
+    let client = http_client()?;
+    let response = client
+        .get(url)
+        .send()
         .await
         .map_err(|error| format!("Unable to download {service} {version}: {error}"))?
         .error_for_status()
@@ -632,6 +643,16 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 fn get_active_runtimes() -> Result<runtime_config::ActiveRuntimes, String> {
     runtime_config::read_active_runtimes().map_err(format_io_error)
+}
+
+#[tauri::command]
+fn get_proxy_settings() -> Result<runtime_config::ProxySettings, String> {
+    runtime_config::read_proxy_settings().map_err(format_io_error)
+}
+
+#[tauri::command]
+fn save_proxy_settings(settings: runtime_config::ProxySettings) -> Result<(), String> {
+    runtime_config::write_proxy_settings(settings).map_err(format_io_error)
 }
 
 #[tauri::command]
@@ -983,6 +1004,8 @@ pub fn run() {
             get_apache_versions,
             get_installed_versions,
             get_active_runtimes,
+            get_proxy_settings,
+            save_proxy_settings,
             remove_runtime,
             initialize_harbor_workspace,
             install_php,
