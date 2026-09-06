@@ -55,7 +55,7 @@ type SecretsStore = {
   createEnvironment: (name: string, isProduction: boolean) => void;
   renameProject: (name: string) => void;
   saveEnvironment: (name: string, isProduction: boolean) => void;
-  addVariable: () => void;
+  addVariable: () => number | null;
   addCustomVariable: (key: string, value: string) => void;
   updateVariable: (id: number, field: "key" | "value", value: string) => void;
   deleteProject: () => void;
@@ -263,14 +263,17 @@ export function createSecretsStore(): SecretsStore {
     updateEnvironment((environment) => ({ ...environment, name, isProduction }));
   }
 
-  function addVariable() {
+  function addVariable(): number | null {
+    if (!selectedEnvironment) return null;
+    const id = nextSecretId++;
     updateEnvironment(
       (environment) => ({
         ...environment,
-        secrets: [...environment.secrets, { id: nextSecretId++, key: "", value: "" }],
+        secrets: [...environment.secrets, { id, key: "", value: "" }],
       }),
       false,
     );
+    return id;
   }
 
   function addCustomVariable(key: string, value: string) {

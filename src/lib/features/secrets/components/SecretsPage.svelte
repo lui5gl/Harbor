@@ -144,7 +144,6 @@
           environment={secrets.selectedEnvironment}
           activeEnvironmentId={secrets.activeEnvironmentId}
           onSelectEnvironment={(id) => secrets.selectEnvironment(secrets.selectedProject!.id, id)}
-          onAddEnvironment={() => openEnvironmentDialog()}
           onRenameProject={secrets.renameProject}
           onRequestDeleteProject={() => requestDelete("project")}
           onSaveEnvironment={secrets.saveEnvironment}
