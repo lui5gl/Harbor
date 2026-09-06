@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import {
     FolderOpen,
     Check,
@@ -19,7 +20,7 @@
   let workspacePath = $derived(settingsStore.workspacePath);
   let saved = $derived(settingsStore.saved);
   let error = $derived(settingsStore.error);
-  $effect(() => settingsStore.load());
+  onMount(() => settingsStore.load());
 
   function saveSettings() {
     const settings = settingsStore.settings;
