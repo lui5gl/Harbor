@@ -1,111 +1,54 @@
 <script lang="ts">
-  import { invoke, isTauri } from "@tauri-apps/api/core";
   import {
     FolderOpen,
     Check,
     ChevronDown,
     MonitorCog,
-    Network,
     RotateCcw,
     Save,
     Settings2,
   } from "@lucide/svelte";
   import { Button, Select, Switch } from "bits-ui";
-  import { onMount } from "svelte";
-  import { i18n, persistLocale, t, type Locale } from "$lib/i18n";
+  import { i18n, t, type Locale } from "$lib/i18n";
+  import { createSettingsStore, type ProxySettings } from "../application/settingsStore.svelte";
+  import { openWorkspaceDirectory } from "../infrastructure/settingsRepository";
+  import ProxySettingsSection from "./ProxySettingsSection.svelte";
 
-  const isNativeApp = isTauri();
-  const defaultSettings = {
-    locale: "es" as Locale,
-    launchAtStartup: false,
-    minimizeToTray: true,
-    closeToTray: true,
-    openLastSection: true,
-    proxyEnabled: false,
-    proxyHost: "",
-    proxyPort: "",
-    proxyUsername: "",
-    proxyPassword: "",
-  };
-
-  let settings = $state({ ...defaultSettings });
-  let saved = $state(false);
-  let workspacePath = $state("C:\\Harbor");
-  let error = $state("");
-
-  type ProxySettings = {
-    enabled: boolean;
-    host: string;
-    port: number;
-    username: string | null;
-    password: string | null;
-  };
-
-  let proxy = $state<ProxySettings>({
-    enabled: false,
-    host: "",
-    port: 8080,
-    username: null,
-    password: null,
-  });
-
-  onMount(() => {
-    const stored = localStorage.getItem("harbor-settings");
-    if (stored) {
-      try {
-        settings = { ...defaultSettings, ...JSON.parse(stored) };
-        persistLocale(settings.locale);
-      } catch {
-        localStorage.removeItem("harbor-settings");
-      }
-    }
-    if (isNativeApp) {
-      void loadProxySettings();
-    }
-  });
-
-  async function loadProxySettings() {
-    try {
-      proxy = await invoke<ProxySettings>("get_proxy_settings");
-    } catch (caught) {
-      error = caught instanceof Error ? caught.message : String(caught);
-    }
-  }
+  const settingsStore = createSettingsStore();
+  let settings = $derived(settingsStore.settings);
+  let workspacePath = $derived(settingsStore.workspacePath);
+  let saved = $derived(settingsStore.saved);
+  let error = $derived(settingsStore.error);
+  $effect(() => settingsStore.load());
 
   function saveSettings() {
+    const settings = settingsStore.settings;
     const port = Number(settings.proxyPort);
     if (settings.proxyEnabled) {
       if (!settings.proxyHost.trim()) {
-        error = t("settings.errors.proxyHostRequired");
+        settingsStore.setError(t("settings.errors.proxyHostRequired"));
         return;
       }
       if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        error = t("settings.errors.proxyPortInvalid");
+        settingsStore.setError(t("settings.errors.proxyPortInvalid"));
         return;
       }
     }
 
-    error = "";
-    proxy = {
+    const proxy: ProxySettings = {
       enabled: settings.proxyEnabled,
       host: settings.proxyHost.trim(),
       port,
       username: settings.proxyUsername.trim() || null,
       password: settings.proxyPassword || null,
     };
-    if (isNativeApp) {
-      void invoke("save_proxy_settings", { settings: proxy }).catch((caught) => {
-        error = caught instanceof Error ? caught.message : String(caught);
-      });
-    }
-    localStorage.setItem("harbor-settings", JSON.stringify(settings));
-    saved = true;
-    window.setTimeout(() => (saved = false), 1800);
+    void settingsStore.save(proxy).catch((caught) => {
+      settingsStore.setError(caught instanceof Error ? caught.message : String(caught));
+    });
   }
 
   function resetSettings() {
-    settings = { ...defaultSettings };
-    persistLocale(settings.locale);
+    settingsStore.reset();
     saveSettings();
   }
 
@@ -113,19 +56,11 @@
     if (nextLocale !== "es" && nextLocale !== "en") {
       return;
     }
-    settings.locale = nextLocale;
-    persistLocale(nextLocale);
+    settingsStore.setLocale(nextLocale);
   }
 
   async function openWorkspace() {
-    error = "";
-    try {
-      if (isNativeApp) {
-        await invoke("open_directory", { path: workspacePath });
-      }
-    } catch (caught) {
-      error = caught instanceof Error ? caught.message : String(caught);
-    }
+    await openWorkspaceDirectory(settingsStore.workspacePath);
   }
 </script>
 
@@ -293,74 +228,13 @@
       </div>
     </section>
 
-    <section class="settings-section proxy-section" aria-labelledby="proxy-title">
-      <div class="section-heading">
-        <span class="section-icon"><Network size={18} aria-hidden="true" /></span>
-        <div>
-          <h2 id="proxy-title">{t("settings.proxy")}</h2>
-          <p>{t("settings.proxyDescription")}</p>
-        </div>
-        <div class="switch-label">
-          <Switch.Root
-            class="settings-switch"
-            bind:checked={settings.proxyEnabled}
-            aria-label={t("settings.proxy")}
-          >
-            <Switch.Thumb class="settings-switch-thumb" />
-          </Switch.Root>
-          <span>{settings.proxyEnabled ? t("settings.enabled") : t("settings.disabled")}</span>
-        </div>
-      </div>
-      {#if settings.proxyEnabled}
-        <div class="proxy-form">
-          <div class="form-row">
-            <label for="proxy-host">{t("common.host")}</label>
-            <input
-              id="proxy-host"
-              bind:value={settings.proxyHost}
-              placeholder="proxy.example.com"
-              autocomplete="off"
-            />
-          </div>
-          <div class="form-row port-field">
-            <label for="proxy-port">{t("common.port")}</label>
-            <input
-              id="proxy-port"
-              type="number"
-              min="1"
-              max="65535"
-              bind:value={settings.proxyPort}
-              placeholder="8080"
-              inputmode="numeric"
-            />
-          </div>
-          <div class="form-row">
-            <label for="proxy-username"
-              >{t("common.username")} <span>({t("settings.optional")})</span></label
-            >
-            <input
-              id="proxy-username"
-              bind:value={settings.proxyUsername}
-              autocomplete="username"
-            />
-          </div>
-          <div class="form-row">
-            <label for="proxy-password"
-              >{t("common.password")} <span>({t("settings.optional")})</span></label
-            >
-            <input
-              id="proxy-password"
-              type="password"
-              bind:value={settings.proxyPassword}
-              autocomplete="current-password"
-            />
-          </div>
-          <p class="hint">{t("settings.proxyHint")}</p>
-        </div>
-      {:else}
-        <p class="proxy-disabled">{t("settings.directConnection")}</p>
-      {/if}
-    </section>
+    <ProxySettingsSection
+      bind:enabled={settings.proxyEnabled}
+      bind:host={settings.proxyHost}
+      bind:port={settings.proxyPort}
+      bind:username={settings.proxyUsername}
+      bind:password={settings.proxyPassword}
+    />
   </div>
 </main>
 
@@ -450,22 +324,13 @@
     border-radius: 8px;
     min-width: 0;
   }
-  .proxy-section {
+  :global(.proxy-section) {
     grid-column: 1 / -1;
   }
   .section-heading {
     border-bottom: 1px solid var(--color-boulder-100);
     gap: 11px;
     padding: 18px;
-  }
-  .switch-label {
-    align-items: center;
-    color: var(--color-boulder-500);
-    display: inline-flex;
-    font-size: 11px;
-    font-weight: 650;
-    gap: 7px;
-    margin-left: auto;
   }
   .section-icon {
     align-items: center;
@@ -603,52 +468,6 @@
     background: var(--color-east-bay-50);
     color: var(--color-east-bay-900);
   }
-  .proxy-form {
-    display: grid;
-    gap: 15px 16px;
-    grid-template-columns: minmax(0, 1fr) 150px;
-    padding: 18px;
-  }
-  .form-row {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-  .form-row label {
-    color: var(--color-boulder-700);
-    font-size: 12px;
-    font-weight: 650;
-  }
-  .form-row label span {
-    color: var(--color-boulder-500);
-    font-weight: 500;
-  }
-  .form-row input {
-    background: #fff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    box-sizing: border-box;
-    color: var(--color-boulder-800);
-    font: inherit;
-    font-size: 12px;
-    height: 36px;
-    padding: 0 10px;
-    width: 100%;
-  }
-  .form-row input:focus {
-    border-color: var(--color-east-bay-400);
-    outline: 2px solid var(--color-east-bay-100);
-  }
-  .proxy-form .hint {
-    grid-column: 1 / -1;
-    margin-top: -2px;
-  }
-  .proxy-disabled {
-    color: var(--color-boulder-500);
-    font-size: 12px;
-    margin: 0;
-    padding: 18px;
-  }
   .workspace-control label {
     color: var(--color-boulder-700);
     display: block;
@@ -708,18 +527,11 @@
     }
     .behavior-section,
     .language-section,
-    .workspace-section,
-    .proxy-section {
+    .workspace-section {
       grid-column: auto;
       grid-row: auto;
     }
-    .proxy-section {
-      grid-column: auto;
-    }
-    .proxy-form {
-      grid-template-columns: 1fr;
-    }
-    .proxy-form .hint {
+    :global(.proxy-section) {
       grid-column: auto;
     }
     .header-actions {

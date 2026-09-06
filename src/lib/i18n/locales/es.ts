@@ -47,6 +47,8 @@ export const es = {
     },
   },
   common: {
+    cancel: "Cancelar",
+    save: "Guardar",
     host: "Host",
     port: "Puerto",
     username: "Usuario",

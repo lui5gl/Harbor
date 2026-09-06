@@ -5,7 +5,17 @@ import {
   loadSecretProfiles,
   saveSecretProfiles,
 } from "../infrastructure/secretsRepository";
-import { hasDuplicateSecretKey, validateSecretKey } from "../domain/validation";
+import { createSecretsConfiguration, validateSecretsConfiguration } from "./secretsConfiguration";
+import {
+  appendEnvironment,
+  appendProject,
+  appendSecret,
+  getSecretCounters,
+  removeSecret,
+  updateEnvironment as updateEnvironmentData,
+  updateProject as updateProjectData,
+  updateSecret,
+} from "./secretsMutations";
 import type { Environment, Project, Secret, SecretsConfiguration } from "../types";
 
 const demoProjects: Project[] = [
@@ -91,21 +101,10 @@ export function createSecretsStore(): SecretsStore {
   }
 
   function setCounters() {
-    nextProjectId = Math.max(0, ...projects.map((project) => project.id)) + 1;
-    nextEnvironmentId =
-      Math.max(
-        0,
-        ...projects.flatMap((project) => project.environments.map((environment) => environment.id)),
-      ) + 1;
-    nextSecretId =
-      Math.max(
-        0,
-        ...projects.flatMap((project) =>
-          project.environments.flatMap((environment) =>
-            environment.secrets.map((secret) => secret.id),
-          ),
-        ),
-      ) + 1;
+    const counters = getSecretCounters(projects);
+    nextProjectId = counters.nextProjectId;
+    nextEnvironmentId = counters.nextEnvironmentId;
+    nextSecretId = counters.nextSecretId;
   }
 
   async function loadWithTimeout(): Promise<SecretsConfiguration> {
@@ -167,55 +166,32 @@ export function createSecretsStore(): SecretsStore {
     update: (project: Project) => Project,
     shouldSave = true,
   ) {
-    projects = projects.map((project) => (project.id === projectId ? update(project) : project));
+    projects = updateProjectData(projects, projectId, update);
     if (shouldSave) scheduleSave();
   }
 
   function updateEnvironment(update: (environment: Environment) => Environment, shouldSave = true) {
     if (selectedProjectId === null || selectedEnvironmentId === null) return;
-    updateProject(
-      selectedProjectId,
-      (project) => ({
-        ...project,
-        environments: project.environments.map((environment) =>
-          environment.id === selectedEnvironmentId ? update(environment) : environment,
-        ),
-      }),
-      shouldSave,
-    );
+    projects = updateEnvironmentData(projects, selectedProjectId, selectedEnvironmentId, update);
+    if (shouldSave) scheduleSave();
   }
 
   async function save() {
     if (!isNativeApp) return;
 
-    for (const environment of allEnvironments()) {
-      for (const secret of environment.secrets) {
-        const key = secret.key.trim();
-        if (!key) continue;
-        if (validateSecretKey(key)) {
-          error = `Variable "${key}" in ${environment.name} may only use letters, numbers, and underscores`;
-          return;
-        }
-        if (hasDuplicateSecretKey(environment.secrets, key, secret.id)) {
-          error = `Variable "${key}" is duplicated in ${environment.name}`;
-          return;
-        }
-      }
+    const validationError = validateSecretsConfiguration(projects);
+    if (validationError) {
+      error = validationError;
+      return;
     }
 
     isSaving = true;
     error = "";
     try {
-      const configuration: SecretsConfiguration = {
-        projects: projects.map((project) => ({
-          ...project,
-          environments: project.environments.map((environment) => ({
-            ...environment,
-            secrets: environment.secrets.filter((secret) => secret.key.trim()),
-          })),
-        })),
+      const configuration: SecretsConfiguration = createSecretsConfiguration(
+        projects,
         activeEnvironmentId,
-      };
+      );
       await saveSecretProfiles(configuration);
       isSelfEmitting = true;
       await emit("secrets-updated");
@@ -243,32 +219,20 @@ export function createSecretsStore(): SecretsStore {
   }
 
   function createProject(name: string, environmentName: string) {
-    const project: Project = {
-      id: nextProjectId++,
-      name,
-      environments: [
-        { id: nextEnvironmentId++, name: environmentName, isProduction: false, secrets: [] },
-      ],
-    };
-    projects = [...projects, project];
-    selectedProjectId = project.id;
-    selectedEnvironmentId = project.environments[0].id;
+    const projectId = nextProjectId++;
+    const environmentId = nextEnvironmentId++;
+    projects = appendProject(projects, projectId, environmentId, name, environmentName);
+    selectedProjectId = projectId;
+    selectedEnvironmentId = environmentId;
     scheduleSave();
   }
 
   function createEnvironment(name: string, isProduction: boolean) {
     if (selectedProjectId === null) return;
-    const environment: Environment = {
-      id: nextEnvironmentId++,
-      name,
-      isProduction,
-      secrets: [],
-    };
-    updateProject(selectedProjectId, (project) => ({
-      ...project,
-      environments: [...project.environments, environment],
-    }));
-    selectedEnvironmentId = environment.id;
+    const environmentId = nextEnvironmentId++;
+    projects = appendEnvironment(projects, selectedProjectId, environmentId, name, isProduction);
+    scheduleSave();
+    selectedEnvironmentId = environmentId;
   }
 
   function renameProject(name: string) {
@@ -283,30 +247,24 @@ export function createSecretsStore(): SecretsStore {
   function addVariable(): number | null {
     if (!selectedEnvironment) return null;
     const id = nextSecretId++;
-    updateEnvironment(
-      (environment) => ({
-        ...environment,
-        secrets: [...environment.secrets, { id, key: "", value: "" }],
-      }),
-      false,
-    );
+    projects = appendSecret(projects, selectedProjectId, selectedEnvironmentId, id, {
+      key: "",
+      value: "",
+    });
     return id;
   }
 
   function addCustomVariable(key: string, value: string) {
-    updateEnvironment((environment) => ({
-      ...environment,
-      secrets: [...environment.secrets, { id: nextSecretId++, key, value }],
-    }));
+    projects = appendSecret(projects, selectedProjectId, selectedEnvironmentId, nextSecretId++, {
+      key,
+      value,
+    });
+    scheduleSave();
   }
 
   function updateVariable(id: number, field: "key" | "value", value: string) {
-    updateEnvironment((environment) => ({
-      ...environment,
-      secrets: environment.secrets.map((secret) =>
-        secret.id === id ? { ...secret, [field]: value } : secret,
-      ),
-    }));
+    projects = updateSecret(projects, selectedProjectId, selectedEnvironmentId, id, field, value);
+    scheduleSave();
   }
 
   function deleteProject() {
@@ -327,16 +285,18 @@ export function createSecretsStore(): SecretsStore {
     const remaining = selectedProject.environments.filter(
       (environment) => environment.id !== selectedEnvironment.id,
     );
-    updateProject(selectedProject.id, (project) => ({ ...project, environments: remaining }));
+    projects = updateProjectData(projects, selectedProject.id, (project) => ({
+      ...project,
+      environments: remaining,
+    }));
+    scheduleSave();
     selectedEnvironmentId = remaining[0].id;
     if (activeEnvironmentId === selectedEnvironment.id) activeEnvironmentId = remaining[0].id;
   }
 
   function deleteVariable(id: number) {
-    updateEnvironment((environment) => ({
-      ...environment,
-      secrets: environment.secrets.filter((secret) => secret.id !== id),
-    }));
+    projects = removeSecret(projects, selectedProjectId, selectedEnvironmentId, id);
+    scheduleSave();
   }
 
   function importVariables(items: { key: string; value: string }[], replaceAll: boolean) {

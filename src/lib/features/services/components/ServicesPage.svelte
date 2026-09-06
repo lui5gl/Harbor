@@ -1,373 +1,48 @@
 <script lang="ts">
-  import { isTauri } from "@tauri-apps/api/core";
-  import { listen } from "@tauri-apps/api/event";
   import { RefreshCw } from "@lucide/svelte";
   import { Button } from "bits-ui";
   import { onMount } from "svelte";
+  import { createRuntimesStore } from "$lib/features/services/application/runtimesStore.svelte";
   import NodeRuntimeEditor from "$lib/features/services/components/NodeRuntimeEditor.svelte";
   import PhpWebStackEditor from "$lib/features/services/components/PhpWebStackEditor.svelte";
   import ServicesPanel from "$lib/features/services/components/ServicesPanel.svelte";
-  import {
-    getActiveRuntimes,
-    getCatalog,
-    getInstalledVersions,
-    getPhpStatus,
-    initializeWorkspace,
-    installRuntime,
-    removeRuntime,
-    setActiveVersion,
-    startPhp,
-    stopPhp,
-  } from "$lib/features/services/infrastructure/runtimesRepository";
-  import { cleanVersion, type ServiceId } from "$lib/features/services/types";
+  import type { ServiceId } from "$lib/features/services/types";
   import { t } from "$lib/i18n";
 
-  const isNativeApp = isTauri();
-
-  const mockPhpCatalog = [
-    "8.4.4 (Active)",
-    "8.3.17 (Active)",
-    "8.2.27 (Security)",
-    "8.1.31 (EOL)",
-    "7.4.33 (EOL)",
-  ];
-  const mockApacheCatalog = ["2.4.62 (Active)", "2.4.61 (Active)", "2.4.58 (Active)"];
-  const mockNodeCatalog = [
-    "22.14.0 (LTS - Jod)",
-    "23.8.0 (Current)",
-    "20.18.3 (LTS - Iron)",
-    "18.20.7 (EOL)",
-  ];
-
+  const runtimes = createRuntimesStore();
   let selectedServiceId = $state<ServiceId>("php-web");
-
-  // PHP State
-  let activePhpVersion = $state<string | null>(null);
-  let installedPhpVersions = $state<string[]>([]);
-  let availablePhpVersions = $state<string[]>([]);
-  let isPhpRunning = $state(false);
   const fastCgiAddress = "127.0.0.1:9070";
 
-  // Apache State
-  let activeApacheVersion = $state<string | null>(null);
-  let installedApacheVersions = $state<string[]>([]);
-  let availableApacheVersions = $state<string[]>([]);
-
-  // Node.js State
-  let activeNodeVersion = $state<string | null>(null);
-  let installedNodeVersions = $state<string[]>([]);
-  let availableNodeVersions = $state<string[]>([]);
-
-  // Async & Operations State
-  let isCatalogLoading = $state(true);
-  let catalogError = $state("");
-  let isInstalling = $state(false);
-  let installProgress = $state(0);
-  let installingService = $state("");
-  let installingVersion = $state("");
-  let installError = $state("");
-
   onMount(() => {
-    void initializeAndLoad();
-
-    let unlistenProgress: (() => void) | undefined;
-    if (isNativeApp) {
-      listen<{ service: string; version: string; progress: number }>(
-        "runtime-download-progress",
-        (event) => {
-          if (event.payload.service === installingService) {
-            installProgress = event.payload.progress;
-          }
-        },
-      ).then((cleanup) => {
-        unlistenProgress = cleanup;
-      });
-    }
-
-    return () => {
-      if (unlistenProgress) unlistenProgress();
-    };
+    runtimes.start();
+    void runtimes.load();
+    return () => runtimes.dispose();
   });
 
-  async function initializeAndLoad() {
-    if (!isNativeApp) {
-      availablePhpVersions = mockPhpCatalog;
-      installedPhpVersions = ["8.3.17"];
-      activePhpVersion = "8.3.17";
+  const activePhpVersion = $derived(runtimes.php.active);
+  const installedPhpVersions = $derived(runtimes.php.installed);
+  const availablePhpVersions = $derived(runtimes.php.available);
+  const activeApacheVersion = $derived(runtimes.apache.active);
+  const installedApacheVersions = $derived(runtimes.apache.installed);
+  const availableApacheVersions = $derived(runtimes.apache.available);
+  const activeNodeVersion = $derived(runtimes.node.active);
+  const installedNodeVersions = $derived(runtimes.node.installed);
+  const availableNodeVersions = $derived(runtimes.node.available);
+  const isPhpRunning = $derived(runtimes.isPhpRunning);
+  const isCatalogLoading = $derived(runtimes.isCatalogLoading);
+  const catalogError = $derived(runtimes.catalogError);
+  const isInstalling = $derived(runtimes.isInstalling);
+  const installProgress = $derived(runtimes.installProgress);
+  const installingService = $derived(runtimes.installingService);
+  const installingVersion = $derived(runtimes.installingVersion);
+  const installError = $derived(runtimes.installError);
 
-      availableApacheVersions = mockApacheCatalog;
-      installedApacheVersions = ["2.4.62"];
-      activeApacheVersion = "2.4.62";
-
-      availableNodeVersions = mockNodeCatalog;
-      installedNodeVersions = ["22.14.0"];
-      activeNodeVersion = "22.14.0";
-
-      isCatalogLoading = false;
-      return;
-    }
-
-    try {
-      await initializeWorkspace();
-    } catch (err) {
-      catalogError = err instanceof Error ? err.message : String(err);
-    }
-
-    await loadAllCatalogs();
-    await updatePhpStatus();
-  }
-
-  async function loadAllCatalogs() {
-    if (!isNativeApp) return;
-
-    isCatalogLoading = true;
-    catalogError = "";
-
-    let savedRuntimes: { php?: string; nodejs?: string; apache?: string } = {};
-    try {
-      savedRuntimes = await getActiveRuntimes();
-    } catch {
-      // Config not initialized yet
-    }
-
-    const catalogRequests = [
-      ["PHP", "get_php_versions"],
-      ["Apache", "get_apache_versions"],
-      ["Node.js", "get_node_versions"],
-    ] as const;
-
-    const results = await Promise.allSettled(
-      catalogRequests.map(
-        async ([serviceName, command]) =>
-          [
-            serviceName,
-            await getCatalog(serviceName),
-            await getInstalledVersions(serviceName),
-          ] as const,
-      ),
-    );
-
-    const failures: string[] = [];
-
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        const [serviceName, catalog, installed] = result.value;
-        if (serviceName === "PHP") {
-          availablePhpVersions = catalog;
-          installedPhpVersions = installed;
-          const target =
-            savedRuntimes.php && installed.includes(savedRuntimes.php)
-              ? savedRuntimes.php
-              : installed[0];
-          if (target) {
-            activePhpVersion = target;
-            void setActiveVersion("PHP", cleanVersion(target));
-          }
-        } else if (serviceName === "Apache") {
-          availableApacheVersions = catalog;
-          installedApacheVersions = installed;
-          const target =
-            savedRuntimes.apache && installed.includes(savedRuntimes.apache)
-              ? savedRuntimes.apache
-              : installed[0];
-          if (target) {
-            activeApacheVersion = target;
-            void setActiveVersion("Apache", cleanVersion(target));
-          }
-        } else if (serviceName === "Node.js") {
-          availableNodeVersions = catalog;
-          installedNodeVersions = installed;
-          const target =
-            savedRuntimes.nodejs && installed.includes(savedRuntimes.nodejs)
-              ? savedRuntimes.nodejs
-              : installed[0];
-          if (target) {
-            activeNodeVersion = target;
-            void setActiveVersion("Node.js", cleanVersion(target));
-          }
-        }
-      } else {
-        failures.push(
-          result.reason instanceof Error ? result.reason.message : String(result.reason),
-        );
-      }
-    }
-
-    if (failures.length > 0) {
-      catalogError = `Some runtime catalogs could not be loaded: ${failures.join(" | ")}`;
-    }
-
-    isCatalogLoading = false;
-  }
-
-  async function updatePhpStatus() {
-    if (!isNativeApp) return;
-    try {
-      isPhpRunning = await getPhpStatus();
-    } catch {
-      isPhpRunning = false;
-    }
-  }
-
-  // PHP Actions
-  async function handleSelectPhpVersion(version: string) {
-    const clean = cleanVersion(version);
-    activePhpVersion = clean;
-    if (!isNativeApp) return;
-
-    try {
-      await setActiveVersion("PHP", clean);
-      if (isPhpRunning) {
-        await startPhp(clean);
-      }
-    } catch (err) {
-      catalogError = err instanceof Error ? err.message : String(err);
-    }
-  }
-
-  async function handleTogglePhpFastCgi() {
-    if (!activePhpVersion) return;
-    const clean = cleanVersion(activePhpVersion);
-
-    if (!isNativeApp) {
-      isPhpRunning = !isPhpRunning;
-      return;
-    }
-
-    try {
-      if (isPhpRunning) {
-        await stopPhp();
-        isPhpRunning = false;
-      } else {
-        await startPhp(clean);
-        isPhpRunning = true;
-      }
-    } catch (err) {
-      catalogError = err instanceof Error ? err.message : String(err);
-      await updatePhpStatus();
-    }
-  }
-
-  // Node.js Actions
-  async function handleSelectNodeVersion(version: string) {
-    const clean = cleanVersion(version);
-    activeNodeVersion = clean;
-    if (!isNativeApp) return;
-
-    try {
-      await setActiveVersion("Node.js", clean);
-    } catch (err) {
-      catalogError = err instanceof Error ? err.message : String(err);
-    }
-  }
-
-  // General Install / Delete Actions
-  async function handleInstallVersion(service: "PHP" | "Apache" | "Node.js", rawVersion: string) {
-    const clean = cleanVersion(rawVersion);
-    isInstalling = true;
-    installingService = service;
-    installingVersion = clean;
-    installProgress = 0;
-    installError = "";
-
-    if (!isNativeApp) {
-      setTimeout(() => {
-        if (service === "PHP") {
-          installedPhpVersions = [...installedPhpVersions, clean];
-          if (!activePhpVersion) activePhpVersion = clean;
-        } else if (service === "Apache") {
-          installedApacheVersions = [...installedApacheVersions, clean];
-          if (!activeApacheVersion) activeApacheVersion = clean;
-        } else if (service === "Node.js") {
-          installedNodeVersions = [...installedNodeVersions, clean];
-          if (!activeNodeVersion) activeNodeVersion = clean;
-        }
-        isInstalling = false;
-        installingService = "";
-        installingVersion = "";
-      }, 500);
-      return;
-    }
-
-    const commandMap = {
-      PHP: "install_php",
-      Apache: "install_apache",
-      "Node.js": "install_node",
-    } as const;
-
-    try {
-      await installRuntime(service, clean);
-
-      const updated = await getInstalledVersions(service);
-      if (service === "PHP") {
-        installedPhpVersions = updated;
-        if (!activePhpVersion) void handleSelectPhpVersion(clean);
-      } else if (service === "Apache") {
-        installedApacheVersions = updated;
-        if (!activeApacheVersion) activeApacheVersion = clean;
-      } else if (service === "Node.js") {
-        installedNodeVersions = updated;
-        if (!activeNodeVersion) void handleSelectNodeVersion(clean);
-      }
-    } catch (err) {
-      installError = err instanceof Error ? err.message : String(err);
-    } finally {
-      isInstalling = false;
-      installingService = "";
-      installingVersion = "";
-      installProgress = 0;
-    }
-  }
-
-  async function handleDeleteVersion(service: "PHP" | "Apache" | "Node.js", cleanVer: string) {
-    if (!isNativeApp) {
-      if (service === "PHP") {
-        installedPhpVersions = installedPhpVersions.filter((v) => cleanVersion(v) !== cleanVer);
-        if (activePhpVersion === cleanVer) activePhpVersion = installedPhpVersions[0] ?? null;
-      } else if (service === "Apache") {
-        installedApacheVersions = installedApacheVersions.filter(
-          (v) => cleanVersion(v) !== cleanVer,
-        );
-        if (activeApacheVersion === cleanVer)
-          activeApacheVersion = installedApacheVersions[0] ?? null;
-      } else if (service === "Node.js") {
-        installedNodeVersions = installedNodeVersions.filter((v) => cleanVersion(v) !== cleanVer);
-        if (activeNodeVersion === cleanVer) activeNodeVersion = installedNodeVersions[0] ?? null;
-      }
-      return;
-    }
-
-    try {
-      if (service === "PHP" && isPhpRunning && activePhpVersion === cleanVer) {
-        await stopPhp();
-        isPhpRunning = false;
-      }
-
-      await removeRuntime(service, cleanVer);
-
-      const updated = await getInstalledVersions(service);
-      if (service === "PHP") {
-        installedPhpVersions = updated;
-        if (activePhpVersion === cleanVer) {
-          activePhpVersion = updated[0] ?? null;
-          if (activePhpVersion) void handleSelectPhpVersion(activePhpVersion);
-        }
-      } else if (service === "Apache") {
-        installedApacheVersions = updated;
-        if (activeApacheVersion === cleanVer) {
-          activeApacheVersion = updated[0] ?? null;
-        }
-      } else if (service === "Node.js") {
-        installedNodeVersions = updated;
-        if (activeNodeVersion === cleanVer) {
-          activeNodeVersion = updated[0] ?? null;
-          if (activeNodeVersion) void handleSelectNodeVersion(activeNodeVersion);
-        }
-      }
-    } catch (err) {
-      catalogError = err instanceof Error ? err.message : String(err);
-    }
-  }
+  const loadAllCatalogs = runtimes.refresh;
+  const handleSelectPhpVersion = runtimes.selectPhpVersion;
+  const handleTogglePhpFastCgi = runtimes.togglePhp;
+  const handleSelectNodeVersion = runtimes.selectNodeVersion;
+  const handleInstallVersion = runtimes.install;
+  const handleDeleteVersion = runtimes.remove;
 </script>
 
 <svelte:head>

@@ -1,8 +1,7 @@
 <script lang="ts">
   import { Check, Copy, Dices, KeyRound, RefreshCw, ShieldCheck } from "@lucide/svelte";
   import { Button, Dialog } from "bits-ui";
-
-  type GeneratorType = "hex256" | "hex128" | "base64" | "token" | "password" | "uuid";
+  import { generateSecret, type GeneratorType } from "../application/secretGenerator";
 
   type SecretGeneratorDialogProps = {
     open: boolean;
@@ -26,94 +25,9 @@
     }
   });
 
-  function generateRandomBytes(size: number): Uint8Array {
-    const array = new Uint8Array(size);
-    crypto.getRandomValues(array);
-    return array;
-  }
-
-  function bytesToHex(bytes: Uint8Array): string {
-    return Array.from(bytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  function generateUUID(): string {
-    return crypto.randomUUID
-      ? crypto.randomUUID()
-      : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-          const r = (crypto.getRandomValues(new Uint8Array(1))[0] % 16) | 0;
-          const v = c === "x" ? r : (r & 0x3) | 0x8;
-          return v.toString(16);
-        });
-  }
-
-  function generateToken(length: number): string {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const bytes = generateRandomBytes(length);
-    let result = "";
-    for (let i = 0; i < length; i++) {
-      result += chars[bytes[i] % chars.length];
-    }
-    return result;
-  }
-
-  function generateStrongPassword(length: number): string {
-    const lower = "abcdefghijklmnopqrstuvwxyz";
-    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const numbers = "0123456789";
-    const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
-    const all = lower + upper + numbers + symbols;
-
-    const bytes = generateRandomBytes(length);
-    let password = "";
-    // Ensure at least one of each category
-    password += lower[bytes[0] % lower.length];
-    password += upper[bytes[1] % upper.length];
-    password += numbers[bytes[2] % numbers.length];
-    password += symbols[bytes[3] % symbols.length];
-
-    for (let i = 4; i < length; i++) {
-      password += all[bytes[i] % all.length];
-    }
-
-    // Shuffle characters securely
-    const chars = password.split("");
-    for (let i = chars.length - 1; i > 0; i--) {
-      const j = bytes[i % bytes.length] % (i + 1);
-      [chars[i], chars[j]] = [chars[j], chars[i]];
-    }
-    return chars.join("");
-  }
-
   function regenerate() {
     isCopied = false;
-    switch (generatorType) {
-      case "hex256":
-        generatedValue = bytesToHex(generateRandomBytes(32));
-        break;
-      case "hex128":
-        generatedValue = bytesToHex(generateRandomBytes(16));
-        break;
-      case "base64": {
-        const bytes = generateRandomBytes(32);
-        let binary = "";
-        for (let i = 0; i < bytes.length; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        generatedValue = btoa(binary);
-        break;
-      }
-      case "token":
-        generatedValue = generateToken(32);
-        break;
-      case "password":
-        generatedValue = generateStrongPassword(passwordLength);
-        break;
-      case "uuid":
-        generatedValue = generateUUID();
-        break;
-    }
+    generatedValue = generateSecret(generatorType, passwordLength);
   }
 
   async function copyValue() {

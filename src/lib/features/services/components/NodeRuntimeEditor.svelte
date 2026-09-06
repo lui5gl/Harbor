@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { Check, Download, HardDrive, Plus, Terminal, Trash2 } from "@lucide/svelte";
+  import { Download, HardDrive, Plus, Terminal } from "@lucide/svelte";
   import { Button } from "bits-ui";
   import DeleteRuntimeDialog from "./DeleteRuntimeDialog.svelte";
   import InstallVersionDialog from "./InstallVersionDialog.svelte";
-  import { cleanVersion, parseVersionString } from "../types";
+  import NodeInstalledVersions from "./NodeInstalledVersions.svelte";
+  import { cleanVersion } from "../types";
 
   type NodeRuntimeEditorProps = {
     activeNodeVersion: string | null;
@@ -110,49 +111,13 @@
         </Button.Root>
       </div>
     {:else}
-      <div class="installed-versions-list">
-        {#each installedNodeVersions as nodeVer (nodeVer)}
-          {@const isActive = cleanVersion(nodeVer) === cleanActiveVersion}
-          {@const versionMeta = parseVersionString(
-            availableNodeVersions.find((v) => cleanVersion(v) === cleanVersion(nodeVer)) ?? nodeVer,
-          )}
-          <div class={`runtime-row${isActive ? " is-active" : ""}`}>
-            <div class="runtime-info">
-              <span class="version-name">v{cleanVersion(nodeVer)}</span>
-              {#if versionMeta.channel}
-                <span class="channel-tag">
-                  {versionMeta.channel.replace("LTS - ", "LTS · ")}
-                </span>
-              {/if}
-              {#if isActive}
-                <span class="active-tag">Active</span>
-              {/if}
-            </div>
-
-            <div class="runtime-actions">
-              {#if !isActive}
-                <button
-                  type="button"
-                  class="btn-activate"
-                  onclick={() => void onSelectNodeVersion(nodeVer)}
-                >
-                  <span>Set as active</span>
-                </button>
-              {/if}
-
-              <button
-                type="button"
-                class="btn-delete-icon"
-                title={`Delete Node.js ${nodeVer}`}
-                aria-label={`Delete Node.js ${nodeVer}`}
-                onclick={() => requestDelete(nodeVer)}
-              >
-                <Trash2 size={15} strokeWidth={2} aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        {/each}
-      </div>
+      <NodeInstalledVersions
+        installedVersions={installedNodeVersions}
+        availableVersions={availableNodeVersions}
+        activeVersion={activeNodeVersion}
+        onSelect={(version) => void onSelectNodeVersion(version)}
+        onDelete={requestDelete}
+      />
     {/if}
 
     <div class="runtime-footer-meta">
@@ -370,109 +335,6 @@
     color: var(--color-boulder-500);
     font-size: 13px;
     margin: 0;
-  }
-
-  .installed-versions-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .runtime-row {
-    align-items: center;
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 14px;
-    transition: border-color 150ms ease;
-  }
-
-  .runtime-row.is-active {
-    border-color: var(--color-east-bay-300);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
-  }
-
-  .runtime-info {
-    align-items: center;
-    display: flex;
-    gap: 10px;
-  }
-
-  .version-name {
-    color: var(--color-boulder-950);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 13.5px;
-    font-weight: 650;
-  }
-
-  .channel-tag {
-    background: var(--color-boulder-100);
-    border-radius: 999px;
-    color: var(--color-boulder-700);
-    font-size: 10.5px;
-    font-weight: 600;
-    padding: 2px 7px;
-  }
-
-  .active-tag {
-    background: var(--color-east-bay-100);
-    border-radius: 999px;
-    color: var(--color-east-bay-800);
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 2px 8px;
-    text-transform: uppercase;
-  }
-
-  .runtime-actions {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-  }
-
-  .btn-activate {
-    background: var(--color-boulder-100);
-    border: 0;
-    border-radius: 4px;
-    color: var(--color-boulder-700);
-    cursor: pointer;
-    font: inherit;
-    font-size: 11.5px;
-    font-weight: 600;
-    padding: 5px 10px;
-    transition:
-      background-color 150ms ease,
-      color 150ms ease;
-  }
-
-  .btn-activate:hover {
-    background: var(--color-east-bay-100);
-    color: var(--color-east-bay-800);
-  }
-
-  .btn-delete-icon {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: 4px;
-    color: var(--color-boulder-400);
-    cursor: pointer;
-    display: inline-flex;
-    height: 28px;
-    justify-content: center;
-    padding: 0;
-    transition:
-      background-color 150ms ease,
-      color 150ms ease;
-    width: 28px;
-  }
-
-  .btn-delete-icon:hover {
-    background: #fef2f2;
-    color: #dc2626;
   }
 
   .runtime-footer-meta {
