@@ -82,6 +82,12 @@
 </section>
 
 <style>
+  .settings-section {
+    background: #fff;
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 8px;
+    min-width: 0;
+  }
   .section-heading {
     align-items: center;
     border-bottom: 1px solid var(--color-boulder-100);
