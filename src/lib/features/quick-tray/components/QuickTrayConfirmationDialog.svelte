@@ -4,39 +4,39 @@
 
   type Props = {
     open: boolean;
-    kind: "production" | "delete";
+    kind: "activation" | "delete";
     onConfirm: () => void;
   };
 
   let { open = $bindable(), kind, onConfirm }: Props = $props();
-  let isProduction = $derived(kind === "production");
+  let isActivation = $derived(kind === "activation");
 </script>
 
 <AlertDialog.Root bind:open>
   <AlertDialog.Portal>
     <AlertDialog.Overlay class="modal-backdrop" />
     <AlertDialog.Content class="dialog-content confirmation-dialog">
-      <div class:danger={!isProduction} class="warning-icon-wrapper" aria-hidden="true">
-        {#if isProduction}<ShieldAlert size={22} strokeWidth={2.2} />{:else}<Trash2
+      <div class:danger={!isActivation} class="warning-icon-wrapper" aria-hidden="true">
+        {#if isActivation}<ShieldAlert size={22} strokeWidth={2.2} />{:else}<Trash2
             size={22}
             strokeWidth={2.2}
           />{/if}
       </div>
       <AlertDialog.Title class="dialog-title">
-        {isProduction ? "¿Activar entorno de producción?" : "¿Eliminar variable?"}
+        {isActivation ? "¿Activar este entorno?" : "¿Eliminar variable?"}
       </AlertDialog.Title>
       <AlertDialog.Description class="dialog-description">
-        {isProduction
-          ? "Esto cargará las variables de producción en el sistema y en PowerShell. Confirma solo si es intencional."
+        {isActivation
+          ? "Esto cargará las variables del entorno en el sistema y en PowerShell. Confirma para continuar."
           : "Esta acción eliminará la variable del entorno. Esta acción no se puede deshacer."}
       </AlertDialog.Description>
       <div class="dialog-footer">
         <AlertDialog.Cancel class="secondary-button btn-sm">Cancelar</AlertDialog.Cancel>
         <AlertDialog.Action
-          class={`primary-button btn-sm warning-action-btn${isProduction ? "" : " danger-action-btn"}`}
+          class={`primary-button btn-sm warning-action-btn${isActivation ? "" : " danger-action-btn"}`}
           onclick={onConfirm}
         >
-          <span>{isProduction ? "Activar producción" : "Eliminar"}</span>
+          <span>{isActivation ? "Activar entorno" : "Eliminar"}</span>
         </AlertDialog.Action>
       </div>
     </AlertDialog.Content>

@@ -111,7 +111,6 @@
           <span class="select-profile-name"
             >{selectedEnvironment?.displayName || "Seleccionar entorno"}</span
           >
-          {#if selectedEnvironment?.isProduction}<span class="prod-tag">Prod</span>{/if}
         </div>
         <ChevronDown size={14} strokeWidth={2.2} class="select-chevron" />
       </Select.Trigger>
@@ -130,8 +129,7 @@
                       class={environment.id === secrets.activeEnvironmentId
                         ? "active-dot"
                         : "dot-placeholder"}
-                    ></span><span class="item-name">{environment.displayName}</span
-                    >{#if environment.isProduction}<span class="prod-tag">Prod</span>{/if}
+                    ></span><span class="item-name">{environment.displayName}</span>
                   </div>
                   {#if selected}<Check size={14} strokeWidth={2.4} class="item-check" />{/if}
                 {/snippet}

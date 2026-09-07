@@ -1,28 +1,26 @@
 <script lang="ts">
   import { Check, Layers } from "@lucide/svelte";
-  import { Button, Dialog, Switch } from "bits-ui";
+  import { Button, Dialog } from "bits-ui";
 
   type EnvironmentDialogProps = {
     open: boolean;
     projectName: string;
-    onCreate: (environmentName: string, isProduction: boolean) => void;
+    onCreate: (environmentName: string) => void;
   };
 
   let { open = $bindable(), projectName, onCreate }: EnvironmentDialogProps = $props();
   let environmentName = $state("Development");
-  let isProduction = $state(false);
 
   $effect(() => {
     if (!open) {
       environmentName = "Development";
-      isProduction = false;
     }
   });
 
   function submit() {
     const normalizedEnvironmentName = environmentName.trim();
     if (!normalizedEnvironmentName) return;
-    onCreate(normalizedEnvironmentName, isProduction);
+    onCreate(normalizedEnvironmentName);
     open = false;
   }
 </script>
@@ -48,20 +46,6 @@
         placeholder="e.g. Staging"
         bind:value={environmentName}
       />
-
-      <div class="production-setting">
-        <span
-          ><strong>Production environment</strong><small
-            >Requires a confirmation before shell activation.</small
-          ></span
-        >
-        <Switch.Root
-          class="production-switch"
-          bind:checked={isProduction}
-          aria-label="Production environment"
-          ><Switch.Thumb class="production-switch-thumb" /></Switch.Root
-        >
-      </div>
 
       <div class="dialog-actions">
         <Dialog.Close class="secondary-button">Cancel</Dialog.Close>
@@ -152,51 +136,6 @@
   .text-input:focus {
     border-color: var(--color-east-bay-500);
     box-shadow: 0 0 0 3px rgb(113 132 192 / 16%);
-  }
-  .production-setting {
-    align-items: center;
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    margin-top: 4px;
-    padding: 10px;
-  }
-  .production-setting strong {
-    color: var(--color-boulder-800);
-    display: block;
-    font-size: 12px;
-  }
-  .production-setting small {
-    color: var(--color-boulder-500);
-    display: block;
-    font-size: 11px;
-    margin-top: 2px;
-  }
-  :global(.production-switch) {
-    background: var(--color-boulder-300);
-    border-radius: 999px;
-    cursor: pointer;
-    height: 22px;
-    position: relative;
-    width: 38px;
-  }
-  :global(.production-switch[data-state="checked"]) {
-    background: #b45309;
-  }
-  :global(.production-switch-thumb) {
-    background: #fff;
-    border-radius: 999px;
-    display: block;
-    height: 18px;
-    margin: 2px;
-    transform: translateX(0);
-    transition: transform 0.15s ease;
-    width: 18px;
-  }
-  :global(.production-switch[data-state="checked"] .production-switch-thumb) {
-    transform: translateX(16px);
   }
   .dialog-actions {
     display: flex;

@@ -1,20 +1,14 @@
 <script lang="ts">
   import { Check } from "@lucide/svelte";
-  import { Button, Dialog, Switch } from "bits-ui";
+  import { Button, Dialog } from "bits-ui";
 
   type Props = {
     open: boolean;
     name: string;
-    isProduction: boolean;
     onCreate: () => void;
   };
 
-  let {
-    open = $bindable(),
-    name = $bindable(),
-    isProduction = $bindable(),
-    onCreate,
-  }: Props = $props();
+  let { open = $bindable(), name = $bindable(), onCreate }: Props = $props();
 </script>
 
 <Dialog.Root bind:open>
@@ -37,15 +31,6 @@
             placeholder="EJ: Staging, Local, QA"
             bind:value={name}
           />
-        </div>
-        <div class="production-switch-row">
-          <div class="switch-info">
-            <span class="switch-title">Entorno de Producción</span>
-            <span class="switch-desc">Solicitará confirmación antes de activarse</span>
-          </div>
-          <Switch.Root class="production-switch" bind:checked={isProduction}>
-            <Switch.Thumb class="production-switch-thumb" />
-          </Switch.Root>
         </div>
       </div>
 

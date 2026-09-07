@@ -62,7 +62,7 @@ type SecretsStore = {
   selectEnvironment: (projectId: number, environmentId: number) => void;
   prepareEnvironmentCreation: (projectId: number | null) => boolean;
   createProject: (name: string, environmentName: string) => void;
-  createEnvironment: (name: string, isProduction: boolean) => void;
+  createEnvironment: (name: string) => void;
   renameProject: (name: string) => void;
   saveEnvironment: (name: string, isProduction: boolean) => void;
   addVariable: () => number | null;
@@ -227,10 +227,10 @@ export function createSecretsStore(): SecretsStore {
     scheduleSave();
   }
 
-  function createEnvironment(name: string, isProduction: boolean) {
+  function createEnvironment(name: string) {
     if (selectedProjectId === null) return;
     const environmentId = nextEnvironmentId++;
-    projects = appendEnvironment(projects, selectedProjectId, environmentId, name, isProduction);
+    projects = appendEnvironment(projects, selectedProjectId, environmentId, name, false);
     scheduleSave();
     selectedEnvironmentId = environmentId;
   }

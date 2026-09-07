@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronDown, ChevronRight, FolderGit2, Lock, Plus, Search, X } from "@lucide/svelte";
+  import { ChevronDown, ChevronRight, FolderGit2, Plus, Search, X } from "@lucide/svelte";
   import { t } from "$lib/i18n";
   import { Button, ScrollArea } from "bits-ui";
   import type { Project } from "../types";
@@ -122,7 +122,6 @@
                     >
                       <span class={`status-dot${isActive ? " active" : ""}`}></span>
                       <span class="environment-name">{environment.name}</span>
-                      {#if environment.isProduction}<Lock size={11} class="production-lock" />{/if}
                     </Button.Root>
                   {/each}
                 </div>
@@ -302,11 +301,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  :global(.production-lock) {
-    color: #b45309;
-    flex-shrink: 0;
-    margin-left: auto;
   }
   .empty-state {
     color: var(--color-boulder-400);

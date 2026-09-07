@@ -71,13 +71,9 @@
   async function requestActivation() {
     const environment = secrets.selectedEnvironment;
     if (!environment) return;
-    if (environment.isProduction) {
-      pendingActivationId = environment.id;
-      pendingActivationLabel = `${secrets.selectedProject?.name ?? "Project"} / ${environment.name}`;
-      productionDialogOpen = true;
-      return;
-    }
-    await secrets.activateEnvironment(environment.id);
+    pendingActivationId = environment.id;
+    pendingActivationLabel = `${secrets.selectedProject?.name ?? "Project"} / ${environment.name}`;
+    productionDialogOpen = true;
   }
 
   function confirmProductionActivation() {

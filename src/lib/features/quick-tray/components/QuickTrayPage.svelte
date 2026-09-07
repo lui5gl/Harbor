@@ -45,7 +45,6 @@
   // Environment Dialog State
   let isEnvironmentDialogOpen = $state(false);
   let newEnvironmentName = $state("");
-  let newEnvironmentIsProduction = $state(false);
 
   // Confirmations
   let isProductionDialogOpen = $state(false);
@@ -86,7 +85,7 @@
     if (environmentId === null) return;
     const environment = secrets.selectedEnvironment;
     if (!environment) return;
-    if (environment.isProduction && environment.id !== secrets.activeEnvironmentId) {
+    if (environment.id !== secrets.activeEnvironmentId) {
       isProductionDialogOpen = true;
       return;
     }
@@ -167,7 +166,6 @@
 
   function openCreateEnvironmentDialog() {
     newEnvironmentName = "";
-    newEnvironmentIsProduction = false;
     isEnvironmentDialogOpen = true;
   }
 
@@ -175,7 +173,7 @@
     const name = newEnvironmentName.trim();
     if (!name) return;
     if (!secrets.prepareEnvironmentCreation(secrets.selectedProjectId)) return;
-    secrets.createEnvironment(name, newEnvironmentIsProduction);
+    secrets.createEnvironment(name);
     isEnvironmentDialogOpen = false;
   }
 
@@ -299,13 +297,12 @@
 <QuickTrayEnvironmentDialog
   bind:open={isEnvironmentDialogOpen}
   bind:name={newEnvironmentName}
-  bind:isProduction={newEnvironmentIsProduction}
   onCreate={saveNewEnvironment}
 />
 
 <QuickTrayConfirmationDialog
   bind:open={isProductionDialogOpen}
-  kind="production"
+  kind="activation"
   onConfirm={() => {
     if (secrets.selectedEnvironment) void executeActivation(secrets.selectedEnvironment.id);
   }}
@@ -509,18 +506,6 @@
     .dot-placeholder {
       height: 7px;
       width: 7px;
-      flex-shrink: 0;
-    }
-
-    .prod-tag {
-      background: #fff1f2;
-      border: 1px solid #fecdd3;
-      border-radius: 4px;
-      color: #be123c;
-      font-size: 9.5px;
-      font-weight: 700;
-      line-height: 1;
-      padding: 2px 5px;
       flex-shrink: 0;
     }
 
@@ -1261,53 +1246,6 @@
       font-size: 11.5px;
       margin-bottom: 12px;
       padding: 6px 10px;
-    }
-
-    .production-switch-row {
-      align-items: center;
-      display: flex;
-      justify-content: space-between;
-      padding-top: 4px;
-    }
-
-    .switch-title {
-      color: var(--color-boulder-900);
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .switch-desc {
-      color: var(--color-boulder-500);
-      display: block;
-      font-size: 11px;
-    }
-
-    :global(.production-switch) {
-      background: var(--color-boulder-300);
-      border-radius: 9999px;
-      height: 18px;
-      position: relative;
-      width: 32px;
-      transition: background 0.15s ease;
-    }
-
-    :global(.production-switch[data-state="checked"]) {
-      background: var(--color-east-bay-800);
-    }
-
-    :global(.production-switch-thumb) {
-      background: #ffffff;
-      border-radius: 9999px;
-      display: block;
-      height: 14px;
-      transform: translateX(2px);
-      width: 14px;
-      transition: transform 0.15s ease;
-    }
-
-    :global(.production-switch[data-state="checked"] .production-switch-thumb) {
-      transform: translateX(16px);
     }
 
     .dialog-footer {

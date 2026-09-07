@@ -6,7 +6,6 @@
     FileUp,
     FolderGit2,
     KeyRound,
-    Lock,
     MoreHorizontal,
     Pencil,
     Shield,
@@ -85,7 +84,6 @@
     >
       <span class:active={item.id === activeEnvironmentId} class="tab-dot"></span>
       {item.name}
-      {#if item.isProduction}<Lock size={11} />{/if}
     </Button.Root>
   {/each}
 </nav>
@@ -94,8 +92,6 @@
   <div>
     <div class="title-row">
       <h3>{environment.name}</h3>
-      {#if environment.isProduction}<span class="production-tag">{t("secrets.production")}</span
-        >{/if}
     </div>
     <p>
       {environment.secrets.length}
@@ -251,17 +247,6 @@
     color: var(--color-boulder-500);
     font-size: 11px;
     margin: 4px 0 0;
-  }
-  .production-tag {
-    background: #fff7ed;
-    border: 1px solid #fed7aa;
-    border-radius: 4px;
-    color: #9a3412;
-    font-size: 9px;
-    font-weight: 700;
-    margin-left: 8px;
-    padding: 2px 5px;
-    text-transform: uppercase;
   }
   .active-label {
     color: #15803d;

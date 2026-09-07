@@ -23,16 +23,16 @@
     <AlertDialog.Content class="confirmation-dialog">
       <div class="warning-icon" aria-hidden="true"><ShieldAlert size={22} strokeWidth={2} /></div>
       <AlertDialog.Title class="confirmation-dialog-title"
-        >Activate production environment?</AlertDialog.Title
+        >Activate this environment?</AlertDialog.Title
       >
       <AlertDialog.Description class="confirmation-dialog-description"
-        >{environmentLabel} will become available to new PowerShell sessions. This may connect development
-        tools to production services.</AlertDialog.Description
+        >{environmentLabel} will become available to new PowerShell sessions and system processes. Confirm
+        to continue.</AlertDialog.Description
       >
       <div class="dialog-actions">
         <AlertDialog.Cancel class="secondary-button">Cancel</AlertDialog.Cancel>
         <AlertDialog.Action class="primary-button warning-button" onclick={onConfirm}
-          >Activate production</AlertDialog.Action
+          >Activate environment</AlertDialog.Action
         >
       </div>
     </AlertDialog.Content>

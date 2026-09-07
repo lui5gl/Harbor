@@ -42,7 +42,7 @@
 <AlertDialog.Root bind:open {onOpenChange}>
   <AlertDialog.Portal>
     <AlertDialog.Overlay class="modal-backdrop" />
-    <AlertDialog.Content class="dialog-content">
+    <AlertDialog.Content class="delete-dialog-content">
       <form onsubmit={handleSubmit} class="dialog-form">
         <div class="dialog-header">
           <div class="alert-icon-box" aria-hidden="true">
@@ -101,7 +101,7 @@
     z-index: 100;
   }
 
-  :global(.dialog-content) {
+  :global(.delete-dialog-content) {
     background: #ffffff;
     border: 1px solid var(--color-boulder-200);
     border-radius: 10px;
