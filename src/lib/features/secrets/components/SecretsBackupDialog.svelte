@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/i18n";
   import { Button, Dialog } from "bits-ui";
   import { Download, Upload } from "@lucide/svelte";
   import { decryptBackup, encryptBackup } from "../application/secretsBackup";
@@ -76,45 +77,43 @@
         if (busy) event.preventDefault();
       }}
     >
-      <Dialog.Title class="backup-title"
-        >{mode === "export" ? "Encrypted backup" : "Restore encrypted backup"}</Dialog.Title
-      >
-      <Dialog.Description class="backup-description"
-        >{mode === "export"
-          ? "Keep the passphrase separately. It cannot be recovered by Harbor."
-          : "Restoring replaces all projects. Published environments must be deactivated first."}</Dialog.Description
-      >
-      {#if mode === "restore"}<label
-          >Backup file<input
+      <Dialog.Title class="backup-title">
+        {mode === "export" ? t("secrets.backupExportTitle") : t("secrets.backupRestoreTitle")}
+      </Dialog.Title>
+      <Dialog.Description class="backup-description">
+        {mode === "export" ? t("secrets.backupExportDesc") : t("secrets.backupRestoreDesc")}
+      </Dialog.Description>
+      {#if mode === "restore"}
+        <label>
+          {t("secrets.backupFile")}
+          <input
             type="file"
             accept=".harbor,application/json"
             disabled={busy}
             onchange={(event) => (file = event.currentTarget.files?.[0] ?? null)}
-          /></label
-        >{/if}
-      <label
-        >Passphrase<input
-          type="password"
-          autocomplete="off"
-          bind:value={password}
-          disabled={busy}
-        /></label
-      >
-      {#if mode === "export"}<label
-          >Confirm passphrase<input
-            type="password"
-            autocomplete="off"
-            bind:value={confirmation}
-            disabled={busy}
-          /></label
-        >{/if}
-      {#if mode === "restore"}<label class="backup-confirm"
-          ><input type="checkbox" bind:checked={confirmed} disabled={busy} />Replace all current
-          projects and environments</label
-        >{/if}
+          />
+        </label>
+      {/if}
+      <label>
+        {t("secrets.passphrase")}
+        <input type="password" autocomplete="off" bind:value={password} disabled={busy} />
+      </label>
+      {#if mode === "export"}
+        <label>
+          {t("secrets.confirmPassphrase")}
+          <input type="password" autocomplete="off" bind:value={confirmation} disabled={busy} />
+        </label>
+      {/if}
+      {#if mode === "restore"}
+        <label class="backup-confirm">
+          <input type="checkbox" bind:checked={confirmed} disabled={busy} />
+          {t("secrets.replaceConfirm")}
+        </label>
+      {/if}
       {#if error}<p role="alert">{error}</p>{/if}
       <div class="backup-actions">
-        <Dialog.Close disabled={busy}>Cancel</Dialog.Close><Button.Root
+        <Dialog.Close disabled={busy}>{t("secrets.cancel")}</Dialog.Close>
+        <Button.Root
           type="button"
           disabled={busy ||
             !password ||
@@ -122,12 +121,16 @@
               ? password.length < 12 || password !== confirmation
               : !file || !confirmed)}
           onclick={() => void submit()}
-          >{#if mode === "export"}<Download size={15} />{:else}<Upload size={15} />{/if}{busy
-            ? "Processing..."
-            : mode === "export"
-              ? "Download backup"
-              : "Restore backup"}</Button.Root
         >
+          {#if mode === "export"}<Download size={14} />{:else}<Upload size={14} />{/if}
+          <span>
+            {busy
+              ? t("secrets.processing")
+              : mode === "export"
+                ? t("secrets.downloadBackup")
+                : t("secrets.restoreBackupBtn")}
+          </span>
+        </Button.Root>
       </div>
     </Dialog.Content>
   </Dialog.Portal>

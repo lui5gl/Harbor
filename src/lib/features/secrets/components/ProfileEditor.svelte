@@ -130,52 +130,14 @@
   .editor-panel {
     background: #fff;
     border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     height: 100%;
-    max-height: 580px;
+    min-height: 560px;
     min-width: 0;
-    padding: 16px 18px;
-  }
-  :global(.secondary-action),
-  :global(.primary-action),
-  :global(.activate-button) {
-    align-items: center;
-    border: 0;
-    border-radius: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 650;
-    gap: 5px;
-    height: 32px;
-    padding: 0 10px;
-  }
-  :global(.secondary-action) {
-    background: var(--color-boulder-100);
-    color: var(--color-boulder-800);
-  }
-  :global(.primary-action) {
-    background: var(--color-east-bay-900);
-    color: #fff;
-  }
-  :global(.scrollbar) {
-    display: flex;
-    padding: 2px;
-    width: 6px;
-  }
-  :global(.scroll-thumb) {
-    background: var(--color-boulder-300);
-    border-radius: 99px;
-    flex: 1;
-  }
-  @media (max-width: 700px) {
-    .editor-panel {
-      max-height: none;
-      min-height: 570px;
-    }
+    padding: 16px 20px;
   }
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/i18n";
   import { Check, Copy, Eye, EyeOff, GitCompare, Info } from "@lucide/svelte";
   import { Button, Dialog, ScrollArea, Select } from "bits-ui";
   import type { Environment } from "../types";
@@ -88,18 +89,22 @@
       <div class="dialog-header">
         <div class="dialog-icon-box"><GitCompare size={20} strokeWidth={2.2} /></div>
         <div class="header-text">
-          <Dialog.Title class="dialog-title">Compare environments</Dialog.Title>
+          <Dialog.Title class="dialog-title">{t("secrets.compareEnvironmentsTitle")}</Dialog.Title>
           <Dialog.Description id="compare-description" class="dialog-description">
-            Comparing <strong>{currentEnvironment.name}</strong> against another environment.
+            {t("secrets.comparingAgainst")} <strong>{currentEnvironment.name}</strong>
+            {t("secrets.against")}
+            {targetEnvironment?.name ?? ""}.
           </Dialog.Description>
         </div>
       </div>
 
       <div class="target-selector">
-        <span class="selector-label">Compare with:</span>
+        <span class="selector-label">{t("secrets.compareWith")}</span>
         <select class="environment-dropdown" bind:value={targetIdStr}>
           {#each availableEnvironments as env (env.id)}
-            <option value={String(env.id)}>{env.name} ({env.secrets.length} vars)</option>
+            <option value={String(env.id)}
+              >{env.name} ({env.secrets.length} {t("secrets.variables")})</option
+            >
           {/each}
         </select>
         <Button.Root
@@ -107,23 +112,28 @@
           type="button"
           onclick={() => (showValues = !showValues)}
         >
-          {#if showValues}<EyeOff size={13} />Hide values{:else}<Eye size={13} />Reveal values{/if}
+          {#if showValues}<EyeOff size={13} />{t("secrets.hideValues")}{:else}<Eye size={13} />{t(
+              "secrets.revealValues",
+            )}{/if}
         </Button.Root>
       </div>
 
       <div class="stats-bar">
         <span class="badge diff-current"
-          >{rows.filter((r) => r.status === "only-current").length} only in {currentEnvironment.name}</span
+          >{rows.filter((r) => r.status === "only-current").length}
+          {t("secrets.onlyIn")}
+          {currentEnvironment.name}</span
         >
         <span class="badge diff-target"
-          >{rows.filter((r) => r.status === "only-target").length} only in {targetEnvironment?.name ??
-            "target"}</span
+          >{rows.filter((r) => r.status === "only-target").length}
+          {t("secrets.onlyIn")}
+          {targetEnvironment?.name ?? "target"}</span
         >
         <span class="badge diff-mismatch"
-          >{rows.filter((r) => r.status === "different").length} values differ</span
+          >{rows.filter((r) => r.status === "different").length} {t("secrets.valuesDiffer")}</span
         >
         <span class="badge diff-match"
-          >{rows.filter((r) => r.status === "match").length} identical</span
+          >{rows.filter((r) => r.status === "match").length} {t("secrets.identical")}</span
         >
       </div>
 
@@ -131,8 +141,8 @@
         <ScrollArea.Viewport class="diff-viewport">
           <div class="diff-table">
             <div class="diff-row header-row">
-              <span class="col-key">Variable key</span>
-              <span class="col-status">Status</span>
+              <span class="col-key">{t("secrets.key")}</span>
+              <span class="col-status">Estado</span>
               <span class="col-val">{currentEnvironment.name}</span>
               <span class="col-val">{targetEnvironment?.name ?? "Target"}</span>
             </div>
@@ -141,25 +151,25 @@
                 <span class="col-key">{row.key}</span>
                 <span class="col-status">
                   {#if row.status === "only-current"}
-                    <span class="tag tag-current">Only here</span>
+                    <span class="tag tag-current">{t("secrets.statusOnlyHere")}</span>
                   {:else if row.status === "only-target"}
-                    <span class="tag tag-target">Missing</span>
+                    <span class="tag tag-target">{t("secrets.statusMissing")}</span>
                   {:else if row.status === "different"}
-                    <span class="tag tag-different">Different</span>
+                    <span class="tag tag-different">{t("secrets.statusDifferent")}</span>
                   {:else}
-                    <span class="tag tag-match">Match</span>
+                    <span class="tag tag-match">{t("secrets.statusMatch")}</span>
                   {/if}
                 </span>
                 <span class="col-val mono">
                   {#if row.currentValue !== undefined}
-                    {showValues ? row.currentValue || "<empty>" : "••••••••"}
+                    {showValues ? row.currentValue || "<vacío>" : "••••••••"}
                   {:else}
                     <em class="not-set">—</em>
                   {/if}
                 </span>
                 <span class="col-val mono">
                   {#if row.targetValue !== undefined}
-                    {showValues ? row.targetValue || "<empty>" : "••••••••"}
+                    {showValues ? row.targetValue || "<vacío>" : "••••••••"}
                   {:else}
                     <em class="not-set">—</em>
                   {/if}
@@ -181,14 +191,10 @@
             onclick={importMissing}
           >
             <Copy size={14} />
-            <span
-              >Copy {missingInCurrent.length} missing {missingInCurrent.length === 1
-                ? "var"
-                : "vars"} from {targetEnvironment?.name}</span
-            >
+            <span>{t("secrets.copyMissingVars")} ({missingInCurrent.length})</span>
           </Button.Root>
         {/if}
-        <Dialog.Close class="secondary-button">Close</Dialog.Close>
+        <Dialog.Close class="secondary-button">{t("secrets.close")}</Dialog.Close>
       </div>
     </Dialog.Content>
   </Dialog.Portal>

@@ -122,6 +122,10 @@
                     >
                       <span class={`status-dot${isActive ? " active" : ""}`}></span>
                       <span class="environment-name">{environment.name}</span>
+                      {#if environment.isProduction}
+                        <span class="prod-badge" title="Production environment">PROD</span>
+                      {/if}
+                      <span class="count-pill">{environment.secrets.length}</span>
                     </Button.Root>
                   {/each}
                 </div>
@@ -141,18 +145,19 @@
   .projects-panel {
     background: #fff;
     border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     height: 100%;
-    max-height: 580px;
+    min-height: 560px;
     padding: 14px;
   }
   .panel-header {
-    border-bottom: 1px solid var(--color-boulder-100);
+    border-bottom: 1px solid var(--color-boulder-150, #ececec);
     margin-bottom: 10px;
-    padding: 0 4px 10px;
+    padding: 2px 4px 10px;
   }
   h2,
   p {
@@ -161,12 +166,13 @@
   h2 {
     color: var(--color-boulder-950);
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 750;
+    letter-spacing: -0.01em;
   }
   .panel-header p {
     color: var(--color-boulder-500);
     font-size: 11px;
-    margin-top: 3px;
+    margin-top: 2px;
   }
   .search-box {
     align-items: center;
@@ -178,14 +184,20 @@
     gap: 6px;
     margin-bottom: 10px;
     padding: 0 8px;
+    transition: all 0.12s ease;
+  }
+  .search-box:focus-within {
+    background: #fff;
+    border-color: var(--color-east-bay-400);
+    box-shadow: 0 0 0 2px rgb(113 132 192 / 14%);
   }
   .search-input {
     background: transparent;
     border: 0;
-    color: var(--color-boulder-800);
+    color: var(--color-boulder-850);
     font: inherit;
     font-size: 12px;
-    height: 30px;
+    height: 29px;
     outline: none;
     width: 100%;
   }
@@ -202,6 +214,7 @@
     justify-content: center;
     padding: 0;
     width: 22px;
+    transition: all 0.1s ease;
   }
   :global(.clear-search:hover),
   :global(.add-environment:hover) {
@@ -219,7 +232,7 @@
   .project-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     padding-right: 3px;
   }
   .project-group {
@@ -234,18 +247,19 @@
     align-items: center;
     background: transparent;
     border: 0;
-    border-radius: 4px;
-    color: var(--color-boulder-800);
+    border-radius: 5px;
+    color: var(--color-boulder-850);
     cursor: pointer;
     display: flex;
     flex: 1;
     font: inherit;
     font-size: 12px;
     font-weight: 700;
-    gap: 5px;
+    gap: 6px;
     min-width: 0;
-    padding: 5px;
+    padding: 5px 6px;
     text-align: left;
+    transition: background 0.1s ease;
   }
   :global(.project-toggle:hover) {
     background: var(--color-boulder-50);
@@ -259,26 +273,28 @@
     flex-direction: column;
     gap: 2px;
     margin-top: 2px;
-    padding-left: 22px;
+    padding-left: 20px;
   }
   :global(.environment-item) {
     align-items: center;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 5px;
+    border-radius: 6px;
     color: var(--color-boulder-700);
     cursor: pointer;
     display: flex;
     font: inherit;
     font-size: 12px;
-    gap: 6px;
+    gap: 7px;
     min-height: 29px;
-    padding: 0 7px;
+    padding: 0 8px;
     text-align: left;
     width: 100%;
+    transition: all 0.1s ease;
   }
   :global(.environment-item:hover) {
     background: var(--color-boulder-50);
+    color: var(--color-boulder-950);
   }
   :global(.environment-item.selected) {
     background: var(--color-east-bay-50);
@@ -287,7 +303,7 @@
     font-weight: 650;
   }
   .status-dot {
-    background: var(--color-boulder-300);
+    background: var(--color-boulder-350, #bebebe);
     border-radius: 50%;
     flex-shrink: 0;
     height: 6px;
@@ -295,12 +311,33 @@
   }
   .status-dot.active {
     background: #16a34a;
-    box-shadow: 0 0 0 2px rgb(22 163 74 / 18%);
+    box-shadow: 0 0 0 2px rgb(22 163 74 / 20%);
   }
   .environment-name {
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .prod-badge {
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    border-radius: 3px;
+    color: #92400e;
+    font-size: 8.5px;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    padding: 1px 3.5px;
+    text-transform: uppercase;
+  }
+  .count-pill {
+    color: var(--color-boulder-400);
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: auto;
+  }
+  :global(.environment-item.selected .count-pill) {
+    color: var(--color-east-bay-600);
   }
   .empty-state {
     color: var(--color-boulder-400);

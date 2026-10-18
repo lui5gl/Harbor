@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Copy, Layers } from "@lucide/svelte";
+  import { t } from "#lib/i18n";
+  import { Copy } from "@lucide/svelte";
   import { Button, Dialog } from "bits-ui";
 
   type CloneEnvironmentDialogProps = {
@@ -21,7 +22,7 @@
 
   $effect(() => {
     if (open) {
-      environmentName = `${sourceEnvironmentName} (Copy)`;
+      environmentName = `${sourceEnvironmentName} (${t("secrets.cloneButton")})`;
     }
   });
 
@@ -40,15 +41,17 @@
       <div class="dialog-heading">
         <div class="dialog-icon"><Copy size={19} strokeWidth={2.2} /></div>
         <div>
-          <Dialog.Title class="dialog-title">Clone environment</Dialog.Title>
+          <Dialog.Title class="dialog-title">{t("secrets.cloneEnvironmentTitle")}</Dialog.Title>
           <Dialog.Description id="clone-environment-description" class="dialog-description">
-            Duplicate "{sourceEnvironmentName}" with its {variableCount}
-            {variableCount === 1 ? "variable" : "variables"} inside {projectName}.
+            "{sourceEnvironmentName}" ({variableCount}
+            {variableCount === 1 ? t("secrets.variable") : t("secrets.variables")}) • {projectName}
           </Dialog.Description>
         </div>
       </div>
 
-      <label class="field-label" for="clone-environment-name">New environment name</label>
+      <label class="field-label" for="clone-environment-name"
+        >{t("secrets.newEnvironmentName")}</label
+      >
       <input
         id="clone-environment-name"
         class="text-input"
@@ -57,14 +60,16 @@
       />
 
       <div class="dialog-actions">
-        <Dialog.Close class="secondary-button">Cancel</Dialog.Close>
+        <Dialog.Close class="secondary-button">{t("secrets.cancel")}</Dialog.Close>
         <Button.Root
           class="primary-button"
           type="button"
           onclick={submit}
           disabled={!environmentName.trim()}
-          ><Copy size={15} strokeWidth={2.2} /><span>Clone environment</span></Button.Root
         >
+          <Copy size={14} strokeWidth={2.2} />
+          <span>{t("secrets.cloneButton")}</span>
+        </Button.Root>
       </div>
     </Dialog.Content>
   </Dialog.Portal>
