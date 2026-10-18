@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "#lib/i18n";
   import { invoke, isTauri } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import {
@@ -204,7 +205,7 @@
           onclick={() => (currentTab = "secrets")}
         >
           <KeyRound size={13} strokeWidth={2.2} />
-          <span>Secrets</span>
+          <span>{t("secrets.title")}</span>
         </button>
         <button
           type="button"
@@ -212,7 +213,7 @@
           onclick={() => (currentTab = "services")}
         >
           <Boxes size={13} strokeWidth={2.2} />
-          <span>Services</span>
+          <span>{t("services.titleShort")}</span>
         </button>
       </div>
     </div>
@@ -222,12 +223,14 @@
         <Tooltip.Trigger
           class="header-action-btn"
           onclick={openMainWindow}
-          aria-label="Abrir aplicación completa"
+          aria-label={t("secrets.quickTrayOpenFull")}
         >
           <Maximize2 size={13} strokeWidth={2.2} />
         </Tooltip.Trigger>
         <Tooltip.Portal>
-          <Tooltip.Content class="tooltip-content" sideOffset={6}>Abrir Harbor</Tooltip.Content>
+          <Tooltip.Content class="tooltip-content" sideOffset={6}
+            >{t("secrets.quickTrayOpenFull")}</Tooltip.Content
+          >
         </Tooltip.Portal>
       </Tooltip.Root>
 
@@ -235,12 +238,14 @@
         <Tooltip.Trigger
           class="header-action-btn"
           onclick={closeQuickTray}
-          aria-label="Cerrar panel"
+          aria-label={t("secrets.quickTrayHide")}
         >
           <X size={14} strokeWidth={2.2} />
         </Tooltip.Trigger>
         <Tooltip.Portal>
-          <Tooltip.Content class="tooltip-content" sideOffset={6}>Ocultar</Tooltip.Content>
+          <Tooltip.Content class="tooltip-content" sideOffset={6}
+            >{t("secrets.quickTrayHide")}</Tooltip.Content
+          >
         </Tooltip.Portal>
       </Tooltip.Root>
     </div>
@@ -334,7 +339,8 @@
       appearance: none;
       -webkit-appearance: none;
       background: transparent;
-      border: none;
+      border: 0;
+      box-sizing: border-box;
       outline: none;
       font-family: inherit;
       cursor: pointer;
@@ -381,6 +387,8 @@
 
     .tab-btn {
       align-items: center;
+      background: transparent;
+      border: 0;
       border-radius: 4px;
       color: var(--color-boulder-600);
       display: inline-flex;
@@ -435,265 +443,6 @@
       background: var(--color-boulder-50);
     }
 
-    /* Profile Toolbar (Select & Activation) */
-    .profile-toolbar {
-      background: #ffffff;
-      border-bottom: 1px solid var(--color-boulder-200);
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .profile-select-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-    }
-
-    :global(.profile-select-trigger) {
-      align-items: center;
-      background: #ffffff;
-      border: 1px solid var(--color-boulder-300) !important;
-      border-radius: 6px;
-      color: var(--color-boulder-900);
-      cursor: pointer;
-      display: flex;
-      flex: 1;
-      height: 32px;
-      justify-content: space-between;
-      padding: 0 10px;
-      transition: all 0.15s ease;
-    }
-
-    :global(.profile-select-trigger:hover) {
-      background: var(--color-boulder-50);
-      border-color: var(--color-boulder-400) !important;
-    }
-
-    .select-label-wrapper {
-      align-items: center;
-      display: flex;
-      gap: 7px;
-      overflow: hidden;
-    }
-
-    .select-profile-name {
-      font-size: 12.5px;
-      font-weight: 650;
-      color: var(--color-boulder-950);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    :global(.select-chevron) {
-      color: var(--color-boulder-400);
-      flex-shrink: 0;
-    }
-
-    .active-dot {
-      background: #10b981;
-      border-radius: 50%;
-      box-shadow: 0 0 4px #10b981;
-      height: 7px;
-      width: 7px;
-      flex-shrink: 0;
-    }
-
-    .dot-placeholder {
-      height: 7px;
-      width: 7px;
-      flex-shrink: 0;
-    }
-
-    :global(.new-profile-btn) {
-      font-size: 12px;
-      font-weight: 600;
-      height: 32px;
-      padding: 0 10px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    /* Profile Select Dropdown Menu */
-    :global(.profile-select-content) {
-      background: #ffffff;
-      border: 1px solid var(--color-boulder-200);
-      border-radius: 8px;
-      box-shadow: 0 12px 32px rgb(11 11 11 / 14%);
-      min-width: 220px;
-      overflow: hidden;
-      padding: 4px;
-      z-index: 100;
-    }
-
-    :global(.profile-select-viewport) {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    :global(.profile-select-item) {
-      align-items: center;
-      border-radius: 5px;
-      color: var(--color-boulder-800);
-      cursor: pointer;
-      display: flex;
-      font-size: 12.5px;
-      font-weight: 550;
-      justify-content: space-between;
-      height: 32px;
-      outline: none;
-      padding: 0 10px;
-      transition: background 0.1s ease;
-    }
-
-    :global(.profile-select-item[data-highlighted]) {
-      background: var(--color-east-bay-50);
-      color: var(--color-east-bay-900);
-    }
-
-    .item-left {
-      align-items: center;
-      display: flex;
-      gap: 7px;
-    }
-
-    .item-name {
-      font-weight: 600;
-    }
-
-    :global(.item-check) {
-      color: var(--color-east-bay-700);
-    }
-
-    /* Activation Row */
-    .activation-row {
-      align-items: center;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .active-status-tag {
-      align-items: center;
-      background: #ecfdf5;
-      border: 1px solid #a7f3d0;
-      border-radius: 6px;
-      color: #047857;
-      display: flex;
-      font-size: 11.5px;
-      font-weight: 600;
-      gap: 6px;
-      padding: 4px 10px;
-      width: 100%;
-    }
-
-    .active-pulse {
-      background: #10b981;
-      border-radius: 50%;
-      height: 6px;
-      width: 6px;
-    }
-
-    .inactive-status-row {
-      align-items: center;
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-    }
-
-    .inactive-label {
-      color: var(--color-boulder-500);
-      font-size: 12px;
-    }
-
-    :global(.activate-action-btn) {
-      align-items: center;
-      background: var(--color-east-bay-700);
-      border: none !important;
-      border-radius: 5px;
-      color: #ffffff;
-      display: inline-flex;
-      gap: 5px;
-      font-size: 11.5px;
-      font-weight: 650;
-      height: 26px;
-      padding: 0 10px;
-      transition: background 0.15s ease;
-    }
-
-    :global(.activate-action-btn:hover) {
-      background: var(--color-east-bay-900);
-    }
-
-    /* Search & Action Toolbar */
-    .search-section {
-      align-items: center;
-      background: #ffffff;
-      border-bottom: 1px solid var(--color-boulder-200);
-      box-sizing: border-box;
-      display: flex;
-      gap: 8px;
-      padding: 8px 14px;
-      flex-shrink: 0;
-    }
-
-    .search-input-wrapper {
-      align-items: center;
-      background: var(--color-boulder-100);
-      border: 1px solid transparent;
-      border-radius: 6px;
-      box-sizing: border-box;
-      display: flex;
-      flex: 1;
-      height: 30px;
-      padding: 0 8px;
-      transition: all 0.15s ease;
-    }
-
-    .search-input-wrapper:focus-within {
-      background: #ffffff;
-      border-color: var(--color-east-bay-400);
-      box-shadow: 0 0 0 2px rgb(113 132 192 / 14%);
-    }
-
-    :global(.search-icon) {
-      color: var(--color-boulder-400);
-      flex-shrink: 0;
-      margin-right: 6px;
-    }
-
-    .clear-search-btn {
-      align-items: center;
-      color: var(--color-boulder-400);
-      display: inline-flex;
-      height: 16px;
-      justify-content: center;
-      width: 16px;
-    }
-
-    :global(.add-var-btn) {
-      align-items: center;
-      background: var(--color-east-bay-50);
-      border: 1px solid var(--color-east-bay-200) !important;
-      border-radius: 6px;
-      color: var(--color-east-bay-800);
-      display: inline-flex;
-      font-size: 11.5px;
-      font-weight: 600;
-      gap: 4px;
-      height: 30px;
-      padding: 0 10px;
-      white-space: nowrap;
-    }
-
-    :global(.add-var-btn:hover) {
-      background: var(--color-east-bay-100);
-    }
-
     /* Feedback */
     .feedback-banner {
       font-size: 11.5px;
@@ -710,135 +459,6 @@
     .feedback-banner.error {
       background: #fef2f2;
       color: #991b1b;
-    }
-
-    /* Secrets List Area */
-    .secrets-container {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    :global(.variables-scroll-area) {
-      flex: 1;
-      min-height: 0;
-      height: 100%;
-    }
-
-    :global(.variables-viewport) {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 10px 14px;
-      box-sizing: border-box;
-    }
-
-    .secret-card {
-      align-items: center;
-      background: #ffffff;
-      border: 1px solid var(--color-boulder-200);
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 10px;
-      transition: border-color 0.15s ease;
-    }
-
-    .secret-card:hover {
-      border-color: var(--color-boulder-300);
-    }
-
-    .secret-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .secret-key-line {
-      align-items: center;
-      display: flex;
-      gap: 5px;
-    }
-
-    .secret-key-text {
-      color: var(--color-boulder-950);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 12px;
-      font-weight: 700;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .copy-key-btn {
-      align-items: center;
-      color: var(--color-boulder-400);
-      display: inline-flex;
-      height: 16px;
-      justify-content: center;
-      width: 16px;
-      border-radius: 3px;
-    }
-
-    .copy-key-btn:hover {
-      color: var(--color-boulder-700);
-      background: var(--color-boulder-100);
-    }
-
-    .copy-key-btn.copied {
-      color: #10b981;
-    }
-
-    .secret-val-line {
-      min-width: 0;
-    }
-
-    .secret-val-text {
-      color: var(--color-boulder-600);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 11px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      display: block;
-    }
-
-    .secret-val-masked {
-      color: var(--color-boulder-400);
-      font-size: 10px;
-      letter-spacing: 2px;
-    }
-
-    .secret-card-actions {
-      align-items: center;
-      display: flex;
-      gap: 2px;
-      margin-left: 8px;
-      flex-shrink: 0;
-    }
-
-    :global(.action-icon-btn) {
-      align-items: center;
-      border-radius: 4px;
-      color: var(--color-boulder-400);
-      display: inline-flex;
-      height: 24px;
-      justify-content: center;
-      width: 24px;
-      transition: all 0.1s ease;
-    }
-
-    :global(.action-icon-btn:hover) {
-      background: var(--color-boulder-100);
-      color: var(--color-boulder-800);
-    }
-
-    :global(.action-icon-btn.copied) {
-      color: #10b981;
     }
 
     /* Services Tab Views */
