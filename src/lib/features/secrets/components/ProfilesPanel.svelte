@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ChevronDown, ChevronRight, FolderGit2, Plus, Search, X } from "@lucide/svelte";
-  import { t } from "$lib/i18n";
+  import { t } from "#lib/i18n";
   import { Button, ScrollArea } from "bits-ui";
   import type { Project } from "../types";
 

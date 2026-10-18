@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Maximize2, Play, Square } from "@lucide/svelte";
   import { Button } from "bits-ui";
-  import type { QuickTrayServices } from "$lib/features/quick-tray/application/quickTrayServices.svelte";
+  import type { QuickTrayServices } from "#lib/features/quick-tray/application/quickTrayServices.svelte";
 
   type Props = {
     services: QuickTrayServices;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { Anchor, Boxes, KeyRound, Settings } from "@lucide/svelte";
-  import { t } from "$lib/i18n";
+  import { t } from "#lib/i18n";
 
   const applicationName = "Harbor";
 </script>

@@ -14,14 +14,14 @@
   } from "@lucide/svelte";
   import { AlertDialog, Button, Dialog, Switch, Tooltip } from "bits-ui";
   import { onMount } from "svelte";
-  import type { Secret } from "$lib/features/secrets/types";
-  import { createSecretsStore } from "$lib/features/secrets/application/secretsStore.svelte";
-  import { createQuickTrayServices } from "$lib/features/quick-tray/application/quickTrayServices.svelte";
-  import QuickTrayConfirmationDialog from "$lib/features/quick-tray/components/QuickTrayConfirmationDialog.svelte";
-  import QuickTrayEnvironmentDialog from "$lib/features/quick-tray/components/QuickTrayEnvironmentDialog.svelte";
-  import QuickTraySecretsPanel from "$lib/features/quick-tray/components/QuickTraySecretsPanel.svelte";
-  import QuickTrayServicesPanel from "$lib/features/quick-tray/components/QuickTrayServicesPanel.svelte";
-  import QuickTrayVariableDialog from "$lib/features/quick-tray/components/QuickTrayVariableDialog.svelte";
+  import type { Secret } from "#lib/features/secrets/types";
+  import { createSecretsStore } from "#lib/features/secrets/application/secretsStore.svelte";
+  import { createQuickTrayServices } from "#lib/features/quick-tray/application/quickTrayServices.svelte";
+  import QuickTrayConfirmationDialog from "#lib/features/quick-tray/components/QuickTrayConfirmationDialog.svelte";
+  import QuickTrayEnvironmentDialog from "#lib/features/quick-tray/components/QuickTrayEnvironmentDialog.svelte";
+  import QuickTraySecretsPanel from "#lib/features/quick-tray/components/QuickTraySecretsPanel.svelte";
+  import QuickTrayServicesPanel from "#lib/features/quick-tray/components/QuickTrayServicesPanel.svelte";
+  import QuickTrayVariableDialog from "#lib/features/quick-tray/components/QuickTrayVariableDialog.svelte";
 
   const isNativeApp = isTauri();
   const secrets = createSecretsStore();

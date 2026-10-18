@@ -10,7 +10,7 @@
     Settings2,
   } from "@lucide/svelte";
   import { Button, Select, Switch } from "bits-ui";
-  import { i18n, t, type Locale } from "$lib/i18n";
+  import { i18n, t, type Locale } from "#lib/i18n";
   import { createSettingsStore, type ProxySettings } from "../application/settingsStore.svelte";
   import { openWorkspaceDirectory } from "../infrastructure/settingsRepository";
   import ProxySettingsSection from "./ProxySettingsSection.svelte";

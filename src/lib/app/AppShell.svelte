@@ -1,6 +1,6 @@
 <script lang="ts">
-  import NavigationBar from "$lib/app/navigation/NavigationBar.svelte";
-  import StatusBar from "$lib/app/status-bar/StatusBar.svelte";
+  import NavigationBar from "#lib/app/navigation/NavigationBar.svelte";
+  import StatusBar from "#lib/app/status-bar/StatusBar.svelte";
 
   let { children } = $props();
 </script>

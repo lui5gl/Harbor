@@ -2,12 +2,12 @@
   import { RefreshCw } from "@lucide/svelte";
   import { Button } from "bits-ui";
   import { onMount } from "svelte";
-  import { createRuntimesStore } from "$lib/features/services/application/runtimesStore.svelte";
-  import NodeRuntimeEditor from "$lib/features/services/components/NodeRuntimeEditor.svelte";
-  import PhpWebStackEditor from "$lib/features/services/components/PhpWebStackEditor.svelte";
-  import ServicesPanel from "$lib/features/services/components/ServicesPanel.svelte";
-  import type { ServiceId } from "$lib/features/services/types";
-  import { t } from "$lib/i18n";
+  import { createRuntimesStore } from "#lib/features/services/application/runtimesStore.svelte";
+  import NodeRuntimeEditor from "#lib/features/services/components/NodeRuntimeEditor.svelte";
+  import PhpWebStackEditor from "#lib/features/services/components/PhpWebStackEditor.svelte";
+  import ServicesPanel from "#lib/features/services/components/ServicesPanel.svelte";
+  import type { ServiceId } from "#lib/features/services/types";
+  import { t } from "#lib/i18n";
 
   const runtimes = createRuntimesStore();
   let selectedServiceId = $state<ServiceId>("php-web");

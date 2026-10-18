@@ -3,8 +3,8 @@
   import "@fontsource-variable/geist-mono";
   import { Tooltip } from "bits-ui";
   import { page } from "$app/state";
-  import AppShell from "$lib/app/AppShell.svelte";
-  import QuickTrayShell from "$lib/app/QuickTrayShell.svelte";
+  import AppShell from "#lib/app/AppShell.svelte";
+  import QuickTrayShell from "#lib/app/QuickTrayShell.svelte";
 
   let { children } = $props();
 

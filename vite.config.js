@@ -11,7 +11,6 @@ export default defineConfig(async () => ({
   plugins: [
     sveltekit({
       preprocess: vitePreprocess(),
-      alias: { $lib: "src/lib" },
       adapter: adapter({
         fallback: "index.html",
       }),

@@ -6,8 +6,8 @@ import {
   setActiveVersion,
   startPhp,
   stopPhp,
-} from "$lib/features/services/infrastructure/runtimesRepository";
-import { RuntimeService, RuntimeTiming } from "$lib/features/services/runtimeConstants";
+} from "#lib/features/services/infrastructure/runtimesRepository";
+import { RuntimeService, RuntimeTiming } from "#lib/features/services/runtimeConstants";
 
 const isNativeApp = isTauri();
 

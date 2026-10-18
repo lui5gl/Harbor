@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "description": "",
   "type": "module",
+  "imports": {
+    "#lib/*": [
+      "./src/lib/*",
+      "./src/lib/*.ts",
+      "./src/lib/*/index.ts"
+    ]
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "svelte-kit sync && vite build",

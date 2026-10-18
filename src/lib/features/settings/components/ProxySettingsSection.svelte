@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Network } from "@lucide/svelte";
   import { Switch } from "bits-ui";
-  import { t } from "$lib/i18n";
+  import { t } from "#lib/i18n";
 
   type Props = {
     enabled: boolean;

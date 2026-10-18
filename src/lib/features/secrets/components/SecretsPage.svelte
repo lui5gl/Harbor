@@ -9,7 +9,7 @@
   import ProfilesPanel from "./ProfilesPanel.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
   import { createSecretsStore } from "../application/secretsStore.svelte";
-  import { t } from "$lib/i18n";
+  import { t } from "#lib/i18n";
 
   const secrets = createSecretsStore();
 

@@ -3,10 +3,10 @@
   import { listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
   import { KeyRound, Server, ShieldAlert } from "@lucide/svelte";
-  import type { SecretsConfiguration } from "$lib/features/secrets/types";
-  import { loadSecretProfiles } from "$lib/features/secrets/infrastructure/secretsRepository";
-  import { getPhpStatus } from "$lib/features/services/infrastructure/runtimesRepository";
-  import { t } from "$lib/i18n";
+  import type { SecretsConfiguration } from "#lib/features/secrets/types";
+  import { loadSecretProfiles } from "#lib/features/secrets/infrastructure/secretsRepository";
+  import { getPhpStatus } from "#lib/features/services/infrastructure/runtimesRepository";
+  import { t } from "#lib/i18n";
 
   const isNativeApp = isTauri();
   const pollIntervalMs = 5_000;

@@ -16,8 +16,8 @@
     X,
   } from "@lucide/svelte";
   import { Button, DropdownMenu, ScrollArea, Select, Tooltip } from "bits-ui";
-  import type { Environment, Project, Secret } from "$lib/features/secrets/types";
-  import type { createSecretsStore } from "$lib/features/secrets/application/secretsStore.svelte";
+  import type { Environment, Project, Secret } from "#lib/features/secrets/types";
+  import type { createSecretsStore } from "#lib/features/secrets/application/secretsStore.svelte";
 
   type SecretsStore = ReturnType<typeof createSecretsStore>;
   type FlatEnvironment = Environment & {

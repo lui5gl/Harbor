@@ -1,5 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { persistLocale, type Locale } from "$lib/i18n";
+import { persistLocale, type Locale } from "#lib/i18n";
 
 const SETTINGS_STORAGE_KEY = "harbor-settings";
 const WORKSPACE_PATH = "C:\\Harbor";

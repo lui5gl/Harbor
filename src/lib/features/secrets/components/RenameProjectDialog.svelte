@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, Dialog } from "bits-ui";
-  import { t } from "$lib/i18n";
+  import { t } from "#lib/i18n";
 
   type Props = {
     open: boolean;
