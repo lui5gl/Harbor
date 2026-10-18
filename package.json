@@ -18,7 +18,8 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run format:check && npm run check",
+    "test:unit": "vitest run",
+    "test": "npm run format:check && npm run check && npm run test:unit",
     "tauri": "tauri"
   },
   "license": "MIT",
@@ -29,6 +30,7 @@
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-opener": "^2.7.2",
     "bits-ui": "2.19.5",
+    "dotenv": "^18.0.8",
     "simple-icons": "16.35.0"
   },
   "devDependencies": {
@@ -41,6 +43,7 @@
     "svelte": "5.57.2",
     "svelte-check": "4.7.7",
     "typescript": "6.0.3",
-    "vite": "8.3.4"
+    "vite": "8.3.4",
+    "vitest": "^5.0.5"
   }
 }

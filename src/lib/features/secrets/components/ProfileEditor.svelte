@@ -1,4 +1,6 @@
 ﻿<script lang="ts">
+  import CloneEnvironmentDialog from "./CloneEnvironmentDialog.svelte";
+  import CompareEnvironmentsDialog from "./CompareEnvironmentsDialog.svelte";
   import ImportVariablesDialog from "./ImportVariablesDialog.svelte";
   import ProfileHeader from "./ProfileHeader.svelte";
   import ProfileSettingsDialog from "./ProfileSettingsDialog.svelte";
@@ -9,6 +11,8 @@
   import type { Environment, Project } from "../types";
 
   type Props = {
+    disabled?: boolean;
+    busy?: boolean;
     project: Project;
     environment: Environment;
     activeEnvironmentId: number | null;
@@ -17,14 +21,18 @@
     onRequestDeleteProject: () => void;
     onSaveEnvironment: (name: string, isProduction: boolean) => void;
     onRequestDeleteEnvironment: () => void;
+    onCloneEnvironment: (name: string) => void;
     onAddVariable: () => number | null;
     onAddCustomVariable: (key: string, value: string) => void;
     onImportVariables: (variables: { key: string; value: string }[], replaceAll: boolean) => void;
     onUpdateVariable: (id: number, field: "key" | "value", value: string) => void;
     onRequestDeleteVariable: (id: number) => void;
     onActivateEnvironment: () => void;
+    onOpenTerminal: () => void;
   };
   let {
+    disabled = false,
+    busy = false,
     project,
     environment,
     activeEnvironmentId,
@@ -33,15 +41,19 @@
     onRequestDeleteProject,
     onSaveEnvironment,
     onRequestDeleteEnvironment,
+    onCloneEnvironment,
     onAddVariable,
     onAddCustomVariable,
     onImportVariables,
     onUpdateVariable,
     onRequestDeleteVariable,
     onActivateEnvironment,
+    onOpenTerminal,
   }: Props = $props();
   let settingsOpen = $state(false);
   let importOpen = $state(false);
+  let cloneOpen = $state(false);
+  let compareOpen = $state(false);
   let generatorOpen = $state(false);
   let renameOpen = $state(false);
 
@@ -56,6 +68,8 @@
 
 <section class="editor-panel" aria-labelledby="environment-title">
   <ProfileHeader
+    {disabled}
+    {busy}
     {project}
     {environment}
     {activeEnvironmentId}
@@ -65,14 +79,40 @@
     onOpenSettings={() => (settingsOpen = true)}
     onOpenGenerator={() => (generatorOpen = true)}
     onOpenImport={() => (importOpen = true)}
+    onOpenClone={() => (cloneOpen = true)}
+    onOpenCompare={() => (compareOpen = true)}
     onCopyEnvironment={() => void copyEnv()}
     onDownloadEnvironment={downloadEnv}
     {onRequestDeleteEnvironment}
     {onActivateEnvironment}
+    {onOpenTerminal}
   />
-  <VariablesTable {environment} {onAddVariable} {onUpdateVariable} {onRequestDeleteVariable} />
+  <VariablesTable
+    {disabled}
+    {environment}
+    {onAddVariable}
+    {onUpdateVariable}
+    {onRequestDeleteVariable}
+  />
 </section>
-<ImportVariablesDialog bind:open={importOpen} onImport={onImportVariables} />
+<ImportVariablesDialog
+  bind:open={importOpen}
+  existingKeys={environment.secrets.map((secret) => secret.key)}
+  onImport={onImportVariables}
+/>
+<CloneEnvironmentDialog
+  bind:open={cloneOpen}
+  projectName={project.name}
+  sourceEnvironmentName={environment.name}
+  variableCount={environment.secrets.length}
+  onClone={onCloneEnvironment}
+/>
+<CompareEnvironmentsDialog
+  bind:open={compareOpen}
+  currentEnvironment={environment}
+  availableEnvironments={project.environments.filter((e) => e.id !== environment.id)}
+  onImportMissing={(missing) => onImportVariables(missing, false)}
+/>
 <ProfileSettingsDialog
   bind:open={settingsOpen}
   name={environment.name}

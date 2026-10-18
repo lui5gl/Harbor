@@ -1,5 +1,16 @@
 <script lang="ts">
-  import { Loader2, Plus, ShieldCheck } from "@lucide/svelte";
+  import {
+    Loader2,
+    Plus,
+    ShieldCheck,
+    RefreshCw,
+    Save,
+    Power,
+    Download,
+    Upload,
+    Lock,
+    Unlock,
+  } from "@lucide/svelte";
   import { Button } from "bits-ui";
   import { onMount } from "svelte";
   import DeleteConfirmationDialog from "./DeleteConfirmationDialog.svelte";
@@ -8,6 +19,7 @@
   import ProfileEditor from "./ProfileEditor.svelte";
   import ProfilesPanel from "./ProfilesPanel.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
+  import SecretsBackupDialog from "./SecretsBackupDialog.svelte";
   import { createSecretsStore } from "../application/secretsStore.svelte";
   import { t } from "#lib/i18n";
 
@@ -21,6 +33,14 @@
   let pendingVariableId = $state<number | null>(null);
   let pendingActivationId = $state<number | null>(null);
   let pendingActivationLabel = $state("");
+  let backupOpen = $state(false);
+  let backupMode = $state<"export" | "restore">("export");
+
+  async function openBackup(mode: "export" | "restore") {
+    if (!(await secrets.flush())) return;
+    backupMode = mode;
+    backupOpen = true;
+  }
 
   let targetActivationLabel = $derived(
     secrets.selectedProject && secrets.selectedEnvironment
@@ -99,7 +119,9 @@
           <span class="save-status">
             {#if secrets.isSaving}
               <Loader2 size={12} class="spin" />{t("secrets.saving")}
-            {:else if !secrets.error}
+            {:else if secrets.hasUnsavedChanges}
+              <Save size={13} />Unsaved changes
+            {:else if !secrets.error && secrets.canWrite}
               <ShieldCheck size={13} />{t("secrets.encryptedKeyring")}
             {/if}
           </span>
@@ -111,16 +133,78 @@
     <Button.Root
       class="new-project-button"
       type="button"
+      disabled={!secrets.canWrite}
       onclick={() => (projectDialogOpen = true)}
     >
       <Plus size={17} />{t("secrets.newProject")}
     </Button.Root>
   </header>
 
-  {#if secrets.error}<p class="error" role="alert">{secrets.error}</p>{/if}
+  <div class="backup-toolbar">
+    <Button.Root
+      type="button"
+      disabled={!secrets.canWrite || secrets.isSaving}
+      onclick={() => void openBackup("export")}><Download size={14} />Encrypted backup</Button.Root
+    >
+    <Button.Root
+      type="button"
+      disabled={!secrets.canWrite || secrets.isSaving || secrets.activeEnvironmentId !== null}
+      onclick={() => void openBackup("restore")}><Upload size={14} />Restore backup</Button.Root
+    >
+    <Button.Root
+      type="button"
+      class="lock-toolbar-btn"
+      disabled={secrets.isLocked || !secrets.canWrite}
+      onclick={() => secrets.lock()}><Lock size={14} />Lock vault</Button.Root
+    >
+  </div>
+
+  {#if secrets.error}
+    <div class="error" role="alert">
+      <p>{secrets.error}</p>
+      <Button.Root
+        type="button"
+        disabled={secrets.isBusy || secrets.isSaving}
+        onclick={() => void secrets.reload()}><RefreshCw size={14} />Reload</Button.Root
+      >
+      {#if secrets.hasUnsavedChanges}<Button.Root
+          type="button"
+          disabled={secrets.isBusy || secrets.isSaving}
+          onclick={() => void secrets.flush()}><Save size={14} />Retry save</Button.Root
+        >{/if}
+    </div>
+  {/if}
+  {#if secrets.activeEnvironmentId !== null}
+    <div class="publication-status">
+      <span>Published to Windows. Existing terminals keep their own copies after deactivation.</span
+      >
+      <Button.Root
+        type="button"
+        disabled={secrets.isBusy || secrets.isSaving}
+        onclick={() => void secrets.deactivateEnvironment()}
+        ><Power size={14} />Deactivate</Button.Root
+      >
+    </div>
+  {/if}
 
   {#if secrets.isLoading}
     <div class="loading" role="status">{t("secrets.loading")}</div>
+  {:else if secrets.isLocked}
+    <div class="locked-workspace">
+      <div class="lock-icon-box"><Lock size={32} /></div>
+      <h2>Secrets vault is locked</h2>
+      <p>
+        All sensitive credentials have been unloaded from application memory to protect your
+        privacy.
+      </p>
+      <Button.Root
+        class="primary-button unlock-btn"
+        type="button"
+        onclick={() => void secrets.unlock()}
+      >
+        <Unlock size={15} /><span>Unlock vault</span>
+      </Button.Root>
+    </div>
   {:else if secrets.projects.length === 0}
     <div class="empty-workspace">
       <h2>{t("secrets.noProjects")}</h2>
@@ -128,6 +212,7 @@
       <Button.Root
         class="new-project-button"
         type="button"
+        disabled={!secrets.canWrite}
         onclick={() => (projectDialogOpen = true)}
       >
         <Plus size={16} />{t("secrets.createProject")}
@@ -148,23 +233,43 @@
           project={secrets.selectedProject}
           environment={secrets.selectedEnvironment}
           activeEnvironmentId={secrets.activeEnvironmentId}
+          disabled={!secrets.canWrite ||
+            secrets.selectedEnvironment.id === secrets.activeEnvironmentId}
+          busy={secrets.isBusy || secrets.isSaving || !secrets.canWrite}
           onSelectEnvironment={(id) => secrets.selectEnvironment(secrets.selectedProject!.id, id)}
           onRenameProject={secrets.renameProject}
           onRequestDeleteProject={() => requestDelete("project")}
           onSaveEnvironment={secrets.saveEnvironment}
           onRequestDeleteEnvironment={() => requestDelete("environment")}
+          onCloneEnvironment={secrets.cloneEnvironment}
           onAddVariable={secrets.addVariable}
           onAddCustomVariable={secrets.addCustomVariable}
           onImportVariables={secrets.importVariables}
           onUpdateVariable={secrets.updateVariable}
           onRequestDeleteVariable={(id) => requestDelete("variable", id)}
           onActivateEnvironment={() => void requestActivation()}
+          onOpenTerminal={() => {
+            if (!secrets.selectedEnvironment) return;
+            if (
+              !secrets.selectedEnvironment.isProduction ||
+              window.confirm(
+                `Open an isolated terminal with production secrets for ${targetActivationLabel}?`,
+              )
+            )
+              void secrets.openTerminal(secrets.selectedEnvironment.id);
+          }}
         />
       {/if}
     </div>
   {/if}
 </main>
 
+<SecretsBackupDialog
+  bind:open={backupOpen}
+  mode={backupMode}
+  configuration={secrets.exportConfiguration}
+  onRestore={secrets.restoreConfiguration}
+/>
 <ProjectDialog bind:open={projectDialogOpen} onCreate={secrets.createProject} />
 <EnvironmentDialog
   bind:open={environmentDialogOpen}
@@ -288,6 +393,54 @@
     margin: 20px 0 0;
     padding: 10px 12px;
   }
+  .error p {
+    margin: 0 0 8px;
+  }
+  .backup-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .backup-toolbar :global(button) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--color-boulder-300);
+    border-radius: 5px;
+    padding: 7px 10px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .publication-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--color-boulder-700);
+  }
+  .publication-status :global(button),
+  .error :global(button) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    background: white;
+    border: 1px solid var(--color-boulder-300);
+    border-radius: 5px;
+    padding: 7px 10px;
+    font: inherit;
+    margin-right: 6px;
+  }
+  :global(button:disabled) {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
   .workspace {
     display: grid;
     gap: 16px;
@@ -296,7 +449,8 @@
     min-height: 580px;
   }
   .loading,
-  .empty-workspace {
+  .empty-workspace,
+  .locked-workspace {
     align-items: center;
     color: var(--color-boulder-500);
     display: flex;
@@ -306,6 +460,37 @@
     justify-content: center;
     min-height: 360px;
     text-align: center;
+  }
+  .locked-workspace {
+    background: #fff;
+    border: 1px solid var(--color-boulder-200);
+    border-radius: 8px;
+    margin-top: 28px;
+    min-height: 420px;
+    padding: 32px;
+  }
+  .lock-icon-box {
+    align-items: center;
+    background: var(--color-east-bay-50);
+    border: 1px solid var(--color-east-bay-200);
+    border-radius: 50%;
+    color: var(--color-east-bay-700);
+    display: flex;
+    height: 64px;
+    justify-content: center;
+    margin-bottom: 16px;
+    width: 64px;
+  }
+  .locked-workspace h2 {
+    color: var(--color-boulder-950);
+    font-size: 20px;
+    margin: 0;
+  }
+  .locked-workspace p {
+    color: var(--color-boulder-600);
+    font-size: 13px;
+    margin: 8px 0 20px;
+    max-width: 440px;
   }
   .empty-workspace h2 {
     color: var(--color-boulder-900);

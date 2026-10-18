@@ -10,11 +10,15 @@
     Pencil,
     Shield,
     Trash2,
+    Terminal,
+    GitCompare,
   } from "@lucide/svelte";
   import { Button, DropdownMenu } from "bits-ui";
   import type { Environment, Project } from "../types";
 
   type Props = {
+    disabled?: boolean;
+    busy?: boolean;
     project: Project;
     environment: Environment;
     activeEnvironmentId: number | null;
@@ -24,13 +28,18 @@
     onOpenSettings: () => void;
     onOpenGenerator: () => void;
     onOpenImport: () => void;
+    onOpenClone: () => void;
+    onOpenCompare: () => void;
     onCopyEnvironment: () => void;
     onDownloadEnvironment: () => void;
     onRequestDeleteEnvironment: () => void;
     onActivateEnvironment: () => void;
+    onOpenTerminal: () => void;
   };
 
   let {
+    disabled = false,
+    busy = false,
     project,
     environment,
     activeEnvironmentId,
@@ -40,10 +49,13 @@
     onOpenSettings,
     onOpenGenerator,
     onOpenImport,
+    onOpenClone,
+    onOpenCompare,
     onCopyEnvironment,
     onDownloadEnvironment,
     onRequestDeleteEnvironment,
     onActivateEnvironment,
+    onOpenTerminal,
   }: Props = $props();
 
   let isActive = $derived(environment.id === activeEnvironmentId);
@@ -100,8 +112,16 @@
     </p>
   </div>
   <div class="header-actions">
+    <Button.Root class="secondary-action" type="button" disabled={busy} onclick={onOpenTerminal}
+      ><Terminal size={14} />Open terminal</Button.Root
+    >
     {#if !isActive}
-      <Button.Root class="activate-button" type="button" onclick={onActivateEnvironment}>
+      <Button.Root
+        class="activate-button"
+        type="button"
+        disabled={busy}
+        onclick={onActivateEnvironment}
+      >
         <Shield size={14} />{t("secrets.activate")}
       </Button.Root>
     {/if}
@@ -111,15 +131,23 @@
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content class="actions-menu" sideOffset={6} align="end">
-          <DropdownMenu.Item class="menu-item" onclick={onOpenSettings}>
+          <DropdownMenu.Item class="menu-item" {disabled} onclick={onOpenSettings}>
             <Pencil size={14} />{t("secrets.environmentSettings")}
           </DropdownMenu.Item>
-          <DropdownMenu.Item class="menu-item" onclick={onOpenGenerator}>
+          <DropdownMenu.Item class="menu-item" {disabled} onclick={onOpenGenerator}>
             <KeyRound size={14} />{t("secrets.generateSecret")}
           </DropdownMenu.Item>
-          <DropdownMenu.Item class="menu-item" onclick={onOpenImport}>
+          <DropdownMenu.Item class="menu-item" {disabled} onclick={onOpenImport}>
             <FileUp size={14} />{t("secrets.importEnv")}
           </DropdownMenu.Item>
+          <DropdownMenu.Item class="menu-item" disabled={busy} onclick={onOpenClone}>
+            <Copy size={14} />Clone environment
+          </DropdownMenu.Item>
+          {#if project.environments.length > 1}
+            <DropdownMenu.Item class="menu-item" onclick={onOpenCompare}>
+              <GitCompare size={14} />Compare environments
+            </DropdownMenu.Item>
+          {/if}
           <DropdownMenu.Item class="menu-item" onclick={onCopyEnvironment}>
             <Copy size={14} />{t("secrets.copyEnv")}
           </DropdownMenu.Item>
@@ -127,7 +155,11 @@
             <Download size={14} />{t("secrets.downloadEnv")}
           </DropdownMenu.Item>
           <DropdownMenu.Separator class="menu-separator" />
-          <DropdownMenu.Item class="menu-item destructive" onclick={onRequestDeleteEnvironment}>
+          <DropdownMenu.Item
+            class="menu-item destructive"
+            {disabled}
+            onclick={onRequestDeleteEnvironment}
+          >
             <Trash2 size={14} />{t("secrets.deleteEnvironment")}
           </DropdownMenu.Item>
         </DropdownMenu.Content>

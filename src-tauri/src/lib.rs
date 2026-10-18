@@ -803,7 +803,7 @@ async fn load_secret_profiles() -> Result<secrets_config::SecretsConfiguration, 
 #[tauri::command]
 async fn save_secret_profiles(
     configuration: secrets_config::SecretsConfiguration,
-) -> Result<(), String> {
+) -> Result<u64, String> {
     tauri::async_runtime::spawn_blocking(move || secrets_config::save(configuration))
         .await
         .map_err(|error| format!("Unable to save secret profiles: {error}"))?
@@ -816,6 +816,20 @@ async fn activate_secret_profile_for_powershell(profile_id: u64) -> Result<(), S
     })
     .await
     .map_err(|error| format!("Unable to activate secret profile: {error}"))?
+}
+
+#[tauri::command]
+async fn deactivate_secret_environment() -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(secrets_config::deactivate)
+        .await
+        .map_err(|error| format!("Unable to deactivate secret environment: {error}"))?
+}
+
+#[tauri::command]
+async fn open_secret_terminal(profile_id: u64, revision: u64) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || secrets_config::open_terminal(profile_id, revision))
+        .await
+        .map_err(|error| format!("Unable to open secret terminal: {error}"))?
 }
 
 static IS_EXITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -1022,6 +1036,8 @@ pub fn run() {
             load_secret_profiles,
             save_secret_profiles,
             activate_secret_profile_for_powershell,
+            deactivate_secret_environment,
+            open_secret_terminal,
             show_main_window,
             hide_quick_tray,
             toggle_quick_tray,

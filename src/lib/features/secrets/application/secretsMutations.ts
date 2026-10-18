@@ -80,6 +80,39 @@ export function appendEnvironment(
   }));
 }
 
+export function cloneEnvironment(
+  projects: readonly Project[],
+  projectId: number,
+  sourceEnvironmentId: number,
+  newEnvironmentId: number,
+  name: string,
+  startSecretId: number,
+): Project[] {
+  const project = projects.find((p) => p.id === projectId);
+  const source = project?.environments.find((e) => e.id === sourceEnvironmentId);
+  if (!project || !source) return [...projects];
+
+  let currentSecretId = startSecretId;
+  const clonedSecrets = source.secrets.map((secret) => ({
+    id: currentSecretId++,
+    key: secret.key,
+    value: secret.value,
+  }));
+
+  return updateProject(projects, projectId, (p) => ({
+    ...p,
+    environments: [
+      ...p.environments,
+      {
+        id: newEnvironmentId,
+        name,
+        isProduction: false,
+        secrets: clonedSecrets,
+      },
+    ],
+  }));
+}
+
 export function appendSecret(
   projects: readonly Project[],
   projectId: number | null,

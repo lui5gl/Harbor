@@ -7,8 +7,12 @@ export function validateSecretKey(key: string): string | null {
     return "The variable name is required";
   }
 
-  if (!/^[A-Za-z0-9_]+$/.test(normalizedKey)) {
-    return "Only letters, numbers, and underscores are allowed";
+  if (normalizedKey.length > 256 || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(normalizedKey)) {
+    return "Use 1-256 letters, numbers, or underscores; start with a letter or underscore";
+  }
+
+  if (normalizedKey.toUpperCase().startsWith("HARBOR_")) {
+    return "Variable names beginning with HARBOR_ are reserved";
   }
 
   return null;

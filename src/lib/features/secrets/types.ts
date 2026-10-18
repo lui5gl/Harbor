@@ -20,4 +20,5 @@ export type Project = {
 export type SecretsConfiguration = {
   projects: Project[];
   activeEnvironmentId: number | null;
+  revision: number;
 };

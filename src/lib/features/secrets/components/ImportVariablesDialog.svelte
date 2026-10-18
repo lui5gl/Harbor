@@ -1,6 +1,7 @@
 <script lang="ts">
   import { FileUp, Info } from "@lucide/svelte";
   import { Button, Dialog } from "bits-ui";
+  import { parseEnvironment } from "../application/environmentFormat";
 
   type ParsedVariable = {
     key: string;
@@ -9,69 +10,40 @@
 
   type ImportVariablesDialogProps = {
     open: boolean;
+    existingKeys?: string[];
     onImport: (variables: ParsedVariable[], replaceAll: boolean) => void;
   };
 
-  let { open = $bindable(), onImport }: ImportVariablesDialogProps = $props();
+  let { open = $bindable(), onImport, existingKeys = [] }: ImportVariablesDialogProps = $props();
 
   let rawContent = $state("");
   let replaceExisting = $state(false);
 
-  function parseEnvContent(text: string): { valid: ParsedVariable[]; ignoredCount: number } {
-    const lines = text.split(/\r?\n/);
-    const valid: ParsedVariable[] = [];
-    const seenKeys = new Set<string>();
-    let ignoredCount = 0;
-
-    for (const rawLine of lines) {
-      let line = rawLine.trim();
-      if (!line || line.startsWith("#")) {
-        continue;
-      }
-
-      if (line.startsWith("export ")) {
-        line = line.slice(7).trim();
-      }
-
-      const equalsIndex = line.indexOf("=");
-      if (equalsIndex <= 0) {
-        ignoredCount++;
-        continue;
-      }
-
-      let key = line.slice(0, equalsIndex).trim();
-      let value = line.slice(equalsIndex + 1).trim();
-
-      // Strip matching quotes around value
-      if (
-        (value.startsWith('"') && value.endsWith('"') && value.length >= 2) ||
-        (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
-      ) {
-        value = value.slice(1, -1);
-      }
-
-      // Check key validity
-      if (!/^[a-zA-Z0-9_]+$/.test(key) || key.length > 256) {
-        ignoredCount++;
-        continue;
-      }
-
-      // Avoid duplicates within the pasted block (keep last or first)
-      if (seenKeys.has(key.toUpperCase())) {
-        // Update existing in parsed list
-        const existing = valid.find((v) => v.key.toUpperCase() === key.toUpperCase());
-        if (existing) existing.value = value;
-      } else {
-        seenKeys.add(key.toUpperCase());
-        valid.push({ key, value });
-      }
+  let confirmed = $state(false);
+  let parseResult = $derived.by(() => {
+    try {
+      return parseEnvironment(rawContent);
+    } catch (error) {
+      return { variables: [], errors: [String(error)], duplicates: 0 };
     }
+  });
+  let conflicts = $derived(
+    parseResult.variables.filter((variable) =>
+      existingKeys.some((key) => key.toUpperCase() === variable.key.toUpperCase()),
+    ),
+  );
+  let destructive = $derived(replaceExisting || conflicts.length > 0);
+  let canImport = $derived(
+    parseResult.variables.length > 0 &&
+      parseResult.errors.length === 0 &&
+      (!destructive || confirmed),
+  );
 
-    return { valid, ignoredCount };
-  }
-
-  let parseResult = $derived(parseEnvContent(rawContent));
-  let canImport = $derived(parseResult.valid.length > 0);
+  $effect(() => {
+    rawContent;
+    replaceExisting;
+    confirmed = false;
+  });
 
   $effect(() => {
     if (!open) {
@@ -82,7 +54,7 @@
 
   function handleImport() {
     if (!canImport) return;
-    onImport(parseResult.valid, replaceExisting);
+    onImport(parseResult.variables, replaceExisting);
     open = false;
   }
 </script>
@@ -116,11 +88,9 @@
             <span class="summary-text">
               <Info size={13} strokeWidth={2} />
               <span>
-                Found <strong>{parseResult.valid.length}</strong>
-                {parseResult.valid.length === 1 ? "variable" : "variables"}
-                {#if parseResult.ignoredCount > 0}
-                  ({parseResult.ignoredCount} ignored)
-                {/if}
+                Found <strong>{parseResult.variables.length}</strong>
+                {parseResult.variables.length === 1 ? "variable" : "variables"}
+                ({conflicts.length} existing keys will be overwritten)
               </span>
             </span>
           {:else}
@@ -131,10 +101,19 @@
         </div>
       </div>
 
+      {#if parseResult.errors.length}<p role="alert">{parseResult.errors.join("; ")}</p>{/if}
+      {#if conflicts.length}<p>
+          Conflicting keys: {conflicts.map((variable) => variable.key).join(", ")}
+        </p>{/if}
       <label class="replace-option">
         <input type="checkbox" bind:checked={replaceExisting} />
         <span>Replace all existing variables in this profile</span>
       </label>
+      {#if destructive}<label class="replace-option"
+          ><input type="checkbox" bind:checked={confirmed} /><span
+            >Confirm replacement of existing variables</span
+          ></label
+        >{/if}
 
       <div class="dialog-actions">
         <Dialog.Close class="secondary-button">Cancel</Dialog.Close>
@@ -145,7 +124,11 @@
           onclick={handleImport}
         >
           <FileUp size={15} strokeWidth={2.2} aria-hidden="true" />
-          <span>Import {parseResult.valid.length > 0 ? `(${parseResult.valid.length})` : ""}</span>
+          <span
+            >Import {parseResult.variables.length > 0
+              ? `(${parseResult.variables.length})`
+              : ""}</span
+          >
         </Button.Root>
       </div>
     </Dialog.Content>

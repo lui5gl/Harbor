@@ -1,22 +1,37 @@
 <script lang="ts">
-  import { Check, Copy, Eye, EyeOff, Trash2 } from "@lucide/svelte";
+  import { Check, Copy, Eye, EyeOff, Trash2, Search } from "@lucide/svelte";
   import { Button, ScrollArea } from "bits-ui";
+  import { onMount } from "svelte";
   import type { Environment, Secret } from "../types";
 
   type Props = {
+    disabled?: boolean;
     environment: Environment;
     onAddVariable: () => number | null;
     onUpdateVariable: (id: number, field: "key" | "value", value: string) => void;
     onRequestDeleteVariable: (id: number) => void;
   };
 
-  let { environment, onAddVariable, onUpdateVariable, onRequestDeleteVariable }: Props = $props();
+  let {
+    disabled = false,
+    environment,
+    onAddVariable,
+    onUpdateVariable,
+    onRequestDeleteVariable,
+  }: Props = $props();
 
   let revealed = $state<number[]>([]);
   let copied = $state<number | null>(null);
   let draftKey = $state("");
+  let query = $state("");
+  let clipboardError = $state("");
+  let revealTimer: number | undefined;
   let secrets = $derived(
-    environment.secrets.filter((secret) => secret.key.trim() || secret.value.trim()),
+    environment.secrets.filter(
+      (secret) =>
+        (secret.key.trim() || secret.value.trim()) &&
+        secret.key.toLowerCase().includes(query.trim().toLowerCase()),
+    ),
   );
   let allRevealed = $derived(
     environment.secrets.length > 0 &&
@@ -25,21 +40,51 @@
 
   function toggle(id: number) {
     revealed = revealed.includes(id) ? revealed.filter((item) => item !== id) : [...revealed, id];
+    resetRevealTimer();
   }
 
   function toggleAll() {
     revealed = allRevealed ? [] : environment.secrets.map((secret) => secret.id);
+    resetRevealTimer();
   }
+
+  function resetRevealTimer() {
+    window.clearTimeout(revealTimer);
+    revealTimer = window.setTimeout(() => (revealed = []), 30_000);
+  }
+
+  $effect(() => {
+    environment.id;
+    revealed = [];
+    query = "";
+    draftKey = "";
+  });
+
+  onMount(() => {
+    const hide = () => {
+      revealed = [];
+      copied = null;
+    };
+    window.addEventListener("blur", hide);
+    document.addEventListener("visibilitychange", hide);
+    return () => {
+      window.removeEventListener("blur", hide);
+      document.removeEventListener("visibilitychange", hide);
+      window.clearTimeout(revealTimer);
+    };
+  });
 
   async function copyValue(secret: Secret) {
     try {
       await navigator.clipboard.writeText(secret.value);
+      clipboardError = "";
       copied = secret.id;
       window.setTimeout(() => {
         if (copied === secret.id) copied = null;
       }, 1400);
     } catch {
       copied = null;
+      clipboardError = "Unable to copy the secret. Check clipboard permissions.";
     }
   }
 
@@ -80,6 +125,15 @@
   }
 </script>
 
+<label class="variable-search"
+  ><Search size={15} /><input
+    type="search"
+    aria-label="Search variable names"
+    placeholder="Search variable names"
+    bind:value={query}
+  /></label
+>
+{#if clipboardError}<p role="alert">{clipboardError}</p>{/if}
 <ScrollArea.Root class="variables-scroll" type="auto">
   <ScrollArea.Viewport class="variables-table">
     <div class="table-header">
@@ -97,6 +151,9 @@
       <div class="variable-row">
         <input
           class="input"
+          {disabled}
+          aria-label={`Variable name ${secret.key}`}
+          spellcheck="false"
           placeholder="VARIABLE_NAME"
           value={secret.key}
           oninput={(event) => onUpdateVariable(secret.id, "key", event.currentTarget.value)}
@@ -105,6 +162,10 @@
         <div class="value-input">
           <input
             class="input"
+            {disabled}
+            aria-label={`Value for ${secret.key}`}
+            autocomplete="off"
+            spellcheck="false"
             type={shown ? "text" : "password"}
             placeholder="Value"
             value={secret.value}
@@ -131,6 +192,7 @@
           <Button.Root
             class="danger-icon"
             type="button"
+            {disabled}
             onclick={() => onRequestDeleteVariable(secret.id)}
             aria-label="Delete variable"
             title="Delete variable"><Trash2 size={14} /></Button.Root
@@ -141,6 +203,8 @@
     <div class="variable-row draft-row">
       <input
         class="input"
+        {disabled}
+        aria-label="New variable name"
         placeholder="VARIABLE_NAME"
         value={draftKey}
         oninput={(event) => updateDraftKey(event.currentTarget.value)}
@@ -156,6 +220,22 @@
 </ScrollArea.Root>
 
 <style>
+  .variable-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    color: var(--color-boulder-500);
+  }
+  .variable-search input {
+    width: 100%;
+    min-width: 0;
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid var(--color-boulder-300);
+    border-radius: 5px;
+    padding: 7px 9px;
+  }
   :global(.variables-scroll) {
     flex: 1;
     min-height: 0;

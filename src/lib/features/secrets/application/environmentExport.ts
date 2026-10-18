@@ -1,17 +1,8 @@
 import type { Environment, Project } from "../types";
+import { formatEnvironment } from "./environmentFormat";
 
 export function exportEnvironmentText(environment: Environment): string {
-  return environment.secrets
-    .filter((secret) => secret.key.trim())
-    .map((secret) =>
-      secret.value.includes(" ") ||
-      secret.value.includes("\n") ||
-      secret.value.includes('"') ||
-      secret.value.includes("#")
-        ? `${secret.key}="${secret.value.replace(/"/g, '\\"')}"`
-        : `${secret.key}=${secret.value}`,
-    )
-    .join("\n");
+  return formatEnvironment(environment.secrets);
 }
 
 export async function copyEnvironment(environment: Environment): Promise<void> {

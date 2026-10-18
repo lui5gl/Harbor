@@ -10,6 +10,7 @@
     Maximize2,
     Pencil,
     Play,
+    Power,
     Plus,
     Search,
     Trash2,
@@ -73,10 +74,7 @@
     if (!selectedEnvironment) return [];
     const query = searchQuery.trim().toLowerCase();
     return query
-      ? selectedEnvironment.secrets.filter(
-          (secret) =>
-            secret.key.toLowerCase().includes(query) || secret.value.toLowerCase().includes(query),
-        )
+      ? selectedEnvironment.secrets.filter((secret) => secret.key.toLowerCase().includes(query))
       : selectedEnvironment.secrets;
   });
 
@@ -149,12 +147,20 @@
   <div class="activation-row">
     {#if isActive}<div class="active-status-tag">
         <span class="active-pulse"></span><span>Entorno activo en el sistema</span>
+        <Button.Root
+          class="action-icon-btn"
+          type="button"
+          title="Desactivar entorno"
+          aria-label="Desactivar entorno"
+          disabled={secrets.isBusy}
+          onclick={() => void secrets.deactivateEnvironment()}><Power size={14} /></Button.Root
+        >
       </div>
     {:else}<div class="inactive-status-row">
         <span class="inactive-label">Este entorno no está activo</span><Button.Root
           class="activate-action-btn"
           type="button"
-          disabled={isActivating}
+          disabled={isActivating || !secrets.canWrite}
           onclick={onActivate}
           ><Play size={11} strokeWidth={2.2} /><span
             >{isActivating ? "Activando..." : "Activar en shell"}</span
@@ -177,7 +183,11 @@
         aria-label="Limpiar búsqueda"><X size={12} strokeWidth={2.4} /></button
       >{/if}
   </div>
-  <Button.Root class="add-var-btn" type="button" onclick={onOpenAddVariable}
+  <Button.Root
+    class="add-var-btn"
+    type="button"
+    disabled={isActive || !secrets.canWrite}
+    onclick={onOpenAddVariable}
     ><Plus size={13} strokeWidth={2.2} /><span>Variable</span></Button.Root
   >
 </section>

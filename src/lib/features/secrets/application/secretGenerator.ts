@@ -24,38 +24,42 @@ function generateUuid(): string {
 
 function generateToken(length: number): string {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const bytes = generateRandomBytes(length);
   let result = "";
   for (let index = 0; index < length; index++) {
-    result += characters[bytes[index] % characters.length];
+    result += characters[randomIndex(characters.length)];
   }
   return result;
 }
 
 function generateStrongPassword(length: number): string {
+  if (!Number.isInteger(length) || length < 8 || length > 256)
+    throw new Error("Password length must be an integer between 8 and 256");
   const lower = "abcdefghijklmnopqrstuvwxyz";
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const numbers = "0123456789";
   const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
   const allCharacters = lower + upper + numbers + symbols;
 
-  const bytes = generateRandomBytes(length);
-  let password = "";
-  password += lower[bytes[0] % lower.length];
-  password += upper[bytes[1] % upper.length];
-  password += numbers[bytes[2] % numbers.length];
-  password += symbols[bytes[3] % symbols.length];
-
-  for (let index = 4; index < length; index++) {
-    password += allCharacters[bytes[index] % allCharacters.length];
+  while (true) {
+    let password = "";
+    for (let index = 0; index < length; index++)
+      password += allCharacters[randomIndex(allCharacters.length)];
+    if (
+      [lower, upper, numbers, symbols].every((group) =>
+        [...password].some((character) => group.includes(character)),
+      )
+    )
+      return password;
   }
+}
 
-  const characters = password.split("");
-  for (let index = characters.length - 1; index > 0; index--) {
-    const swapIndex = bytes[index % bytes.length] % (index + 1);
-    [characters[index], characters[swapIndex]] = [characters[swapIndex], characters[index]];
-  }
-  return characters.join("");
+function randomIndex(size: number): number {
+  const limit = 256 - (256 % size);
+  let value: number;
+  do {
+    value = generateRandomBytes(1)[0];
+  } while (value >= limit);
+  return value % size;
 }
 
 export function generateSecret(type: GeneratorType, passwordLength: number): string {
