@@ -3,8 +3,11 @@
   import { Menu } from "@ark-ui/svelte/menu";
   import {
     Copy,
+    Code2,
     Download,
     FileUp,
+    FlaskConical,
+    FolderGit2,
     GitCompare,
     KeyRound,
     MoreHorizontal,
@@ -59,9 +62,25 @@
 <header class="mb-3 flex flex-col gap-3 border-b border-boulder-200 pb-3.5">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div class="flex min-w-0 items-center gap-2">
-      <span class="max-w-40 truncate text-sm font-semibold text-boulder-500">{project.name}</span>
+      <div class="flex min-w-0 items-center gap-1.5">
+        <FolderGit2 size={14} class="shrink-0 text-east-bay-700" aria-hidden="true" />
+        <span class="max-w-40 truncate text-sm font-semibold text-boulder-500">{project.name}</span>
+      </div>
       <span class="text-sm font-medium text-boulder-300">/</span>
-      <div class="flex min-w-0 items-center gap-2">
+      <div class="flex min-w-0 items-center gap-1.5">
+        {#if environment.isProduction}<ShieldAlert
+            size={14}
+            class="shrink-0 text-amber-700"
+            aria-hidden="true"
+          />{:else if environment.name.toLowerCase() === "development"}<Code2
+            size={14}
+            class="shrink-0 text-east-bay-700"
+            aria-hidden="true"
+          />{:else if environment.name.toLowerCase() === "staging"}<FlaskConical
+            size={14}
+            class="shrink-0 text-violet-700"
+            aria-hidden="true"
+          />{/if}
         <h2 id="environment-title" class="truncate text-sm font-semibold text-boulder-950">
           {environment.name}
         </h2>
