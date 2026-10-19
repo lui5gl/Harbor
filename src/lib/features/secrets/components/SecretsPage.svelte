@@ -20,6 +20,17 @@
   let pendingVariableId = $state<number | null>(null);
   let pendingActivationId = $state<number | null>(null);
   let pendingActivationLabel = $state("");
+  let inactivityTimer: number | undefined;
+  function resetInactivityTimer() {
+    window.clearTimeout(inactivityTimer);
+    if (!secrets.isLocked) {
+      inactivityTimer = window.setTimeout(() => void secrets.lock(), 5 * 60 * 1000);
+    }
+  }
+  async function unlockSecrets() {
+    await secrets.unlock();
+    resetInactivityTimer();
+  }
   let targetActivationLabel = $derived(
     secrets.selectedProject && secrets.selectedEnvironment
       ? `${secrets.selectedProject.name} / ${secrets.selectedEnvironment.name}`
@@ -57,7 +68,14 @@
   onMount(() => {
     secrets.start();
     void secrets.load();
-    return () => secrets.dispose();
+    const activityEvents = ["pointerdown", "keydown", "touchstart"] as const;
+    activityEvents.forEach((event) => window.addEventListener(event, resetInactivityTimer));
+    resetInactivityTimer();
+    return () => {
+      window.clearTimeout(inactivityTimer);
+      activityEvents.forEach((event) => window.removeEventListener(event, resetInactivityTimer));
+      secrets.dispose();
+    };
   });
 
   function openEnvironmentDialog(projectId = secrets.selectedProjectId) {
@@ -96,8 +114,6 @@
     if (id !== null) void secrets.activateEnvironment(id);
   }
 
-  const secondaryButtonClass =
-    "inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-2.5 text-xs font-semibold text-boulder-800 transition-colors hover:border-boulder-400 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50";
   const primaryButtonClass =
     "inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-east-bay-900 px-3 text-xs font-bold text-white transition-colors hover:bg-east-bay-950 disabled:cursor-not-allowed disabled:opacity-50";
 </script>
@@ -143,15 +159,6 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <button
-        class={secondaryButtonClass}
-        type="button"
-        disabled={secrets.isLocked || !secrets.canWrite}
-        onclick={() => secrets.lock()}
-        title={t("secrets.vaultLockedDesc")}
-        aria-label={t("secrets.lockVault")}
-        ><Lock size={14} /><span>{t("secrets.lockVault")}</span></button
-      >
       <button
         class={primaryButtonClass}
         type="button"
@@ -240,7 +247,7 @@
       <button
         class={`mt-3 ${primaryButtonClass}`}
         type="button"
-        onclick={() => void secrets.unlock()}
+        onclick={() => void unlockSecrets()}
         ><Unlock size={15} strokeWidth={2.2} /><span>{t("secrets.unlockVault")}</span></button
       >
     </div>

@@ -64,7 +64,7 @@ type SecretsStore = {
   load: () => Promise<void>;
   reload: () => Promise<void>;
   flush: () => Promise<boolean>;
-  lock: () => void;
+  lock: () => Promise<boolean>;
   unlock: () => Promise<void>;
   dispose: () => void;
   selectEnvironment: (projectId: number, environmentId: number) => void;
@@ -525,13 +525,14 @@ export function createSecretsStore(): SecretsStore {
     unlisten?.();
   }
 
-  function lock() {
-    if (hasUnsavedChanges) void flush();
+  async function lock(): Promise<boolean> {
+    if (isLocked) return true;
+    if (!(await flush())) return false;
     projects = [];
     selectedProjectId = null;
     selectedEnvironmentId = null;
-    activeEnvironmentId = null;
     isLocked = true;
+    return true;
   }
 
   async function unlock() {
