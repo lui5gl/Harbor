@@ -5,9 +5,9 @@
   let { children } = $props();
 </script>
 
-<div class="flex min-h-screen flex-col bg-boulder-50 text-boulder-950">
+<div class="flex h-dvh flex-col overflow-hidden bg-boulder-50 text-boulder-950">
   <NavigationBar />
-  <div class="flex flex-1 flex-col">
+  <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
     {@render children()}
   </div>
   <StatusBar />

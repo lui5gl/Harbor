@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-east-bay-50: #f4f6fa;
+  --color-east-bay-50: #f3f5fb;
   --color-east-bay-100: #e5e9f4;
   --color-east-bay-200: #d1d9ec;
   --color-east-bay-300: #b1c0df;
-  --color-east-bay-400: #8ca0ce;
-  --color-east-bay-500: #7184c0;
-  --color-east-bay-600: #5e6db2;
-  --color-east-bay-700: #535da2;
-  --color-east-bay-800: #484e85;
-  --color-east-bay-900: #424874;
+  --color-east-bay-400: #8b9fcf;
+  --color-east-bay-500: #6f82c2;
+  --color-east-bay-600: #5c6ab4;
+  --color-east-bay-700: #515aa4;
+  --color-east-bay-800: #464b87;
+  --color-east-bay-900: #3c416c;
   --color-east-bay-950: #282a43;
 
   --color-boulder-50: #fafafa;
@@ -35,7 +35,9 @@
 @layer base {
   html,
   body {
+    height: 100%;
     min-height: 100%;
+    overflow: hidden;
     margin: 0;
     background: var(--color-boulder-50);
     color: var(--color-boulder-950);
