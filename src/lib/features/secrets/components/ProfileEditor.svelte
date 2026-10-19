@@ -27,7 +27,6 @@
     onImportVariables: (variables: { key: string; value: string }[], replaceAll: boolean) => void;
     onUpdateVariable: (id: number, field: "key" | "value", value: string) => void;
     onRequestDeleteVariable: (id: number) => void;
-    onActivateEnvironment: () => void;
     onOpenTerminal: () => void;
   };
   let {
@@ -47,7 +46,6 @@
     onImportVariables,
     onUpdateVariable,
     onRequestDeleteVariable,
-    onActivateEnvironment,
     onOpenTerminal,
   }: Props = $props();
   let settingsOpen = $state(false);
@@ -87,7 +85,6 @@
     onCopyEnvironment={() => void copyEnv()}
     onDownloadEnvironment={downloadEnv}
     {onRequestDeleteEnvironment}
-    {onActivateEnvironment}
     {onOpenTerminal}
   />
   <VariablesTable

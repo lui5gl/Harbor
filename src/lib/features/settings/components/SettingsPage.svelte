@@ -8,6 +8,7 @@
     Save,
     Settings2,
     Upload,
+    Terminal,
   } from "@lucide/svelte";
   import { Switch } from "@ark-ui/svelte/switch";
   import { Select, createListCollection } from "@ark-ui/svelte/select";
@@ -29,6 +30,13 @@
     items: [
       { label: t("settings.spanish"), value: "es" },
       { label: t("settings.english"), value: "en" },
+    ],
+  });
+  const terminals = createListCollection({
+    items: [
+      { label: "PowerShell", value: "powershell" },
+      { label: "Git Bash", value: "git-bash" },
+      { label: t("settings.customTerminal"), value: "custom" },
     ],
   });
   let settings = $derived(settingsStore.settings);
@@ -79,6 +87,12 @@
   function changeLocale(details: { value: string[] }) {
     const nextLocale = details.value[0];
     if (nextLocale === "es" || nextLocale === "en") settingsStore.setLocale(nextLocale);
+  }
+  function changeTerminal(details: { value: string[] }) {
+    const terminal = details.value[0];
+    if (terminal === "powershell" || terminal === "git-bash" || terminal === "custom") {
+      settings.terminalType = terminal;
+    }
   }
   async function openWorkspace() {
     await openWorkspaceDirectory(settingsStore.workspacePath);
@@ -310,6 +324,87 @@
       bind:username={settings.proxyUsername}
       bind:password={settings.proxyPassword}
     />
+    <section
+      class="col-span-full min-w-0 rounded-lg border border-boulder-200 bg-white"
+      aria-labelledby="shell-title"
+    >
+      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
+        <span
+          class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+          ><Terminal size={18} /></span
+        >
+        <div>
+          <h2 id="shell-title" class="text-sm font-semibold text-boulder-900">
+            {t("settings.shell")}
+          </h2>
+          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
+            {t("settings.shellDescription")}
+          </p>
+        </div>
+      </div>
+      <div class="grid gap-4 p-4.5 md:grid-cols-2">
+        <Switch.Root
+          class="flex cursor-pointer items-center justify-between gap-4 rounded-md border border-boulder-200 px-3 py-2.5"
+          bind:checked={settings.autoActivateSecrets}
+        >
+          <span class="flex flex-col gap-1">
+            <strong class="text-[13px] font-semibold text-boulder-800">
+              {t("settings.autoActivateSecrets")}
+            </strong>
+            <small class="text-[11px] leading-snug text-boulder-500">
+              {t("settings.autoActivateSecretsDescription")}
+            </small>
+          </span>
+          <Switch.Control
+            class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-boulder-300 transition data-[state=checked]:bg-east-bay-700 after:absolute after:top-0.5 after:left-0.5 after:size-4.5 after:rounded-full after:bg-white after:transition-transform data-[state=checked]:after:translate-x-4"
+            ><Switch.Thumb class="sr-only" /></Switch.Control
+          ><Switch.HiddenInput />
+        </Switch.Root>
+        <Field.Root class="flex flex-col gap-1.5">
+          <Field.Label class="text-xs font-semibold text-boulder-700">
+            {t("settings.terminal")}
+          </Field.Label>
+          <Select.Root
+            collection={terminals}
+            value={[settings.terminalType]}
+            onValueChange={changeTerminal}
+            positioning={{ sameWidth: true }}
+          >
+            <Select.Control class="flex w-full">
+              <Select.Trigger
+                class="flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus-visible:border-east-bay-400 focus-visible:ring-2 focus-visible:ring-east-bay-100"
+              >
+                <Select.ValueText />
+                <Select.Indicator aria-hidden="true">⌄</Select.Indicator>
+              </Select.Trigger>
+            </Select.Control>
+            <Select.Positioner>
+              <Select.Content
+                class="z-50 min-w-[var(--reference-width)] rounded-md border border-boulder-200 bg-white p-1 shadow-lg outline-none"
+              >
+                {#each terminals.items as item (item.value)}
+                  <Select.Item
+                    {item}
+                    class="flex h-8 cursor-pointer items-center justify-between rounded px-2 text-xs text-boulder-800 outline-none data-[highlighted]:bg-boulder-100 data-[state=checked]:font-semibold"
+                  >
+                    <Select.ItemText>{item.label}</Select.ItemText>
+                    <Select.ItemIndicator aria-hidden="true">✓</Select.ItemIndicator>
+                  </Select.Item>
+                {/each}
+              </Select.Content>
+            </Select.Positioner>
+            <Select.HiddenSelect />
+          </Select.Root>
+          {#if settings.terminalType === "custom"}
+            <Field.Input
+              class="h-9 w-full rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus:border-east-bay-400 focus:ring-2 focus:ring-east-bay-100"
+              bind:value={settings.customTerminalPath}
+              placeholder={t("settings.customTerminalPath")}
+            />
+          {/if}
+        </Field.Root>
+      </div>
+    </section>
     <section
       class="col-span-full min-w-0 rounded-lg border border-boulder-200 bg-white"
       aria-labelledby="secrets-data-title"

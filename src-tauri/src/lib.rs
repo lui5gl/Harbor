@@ -826,8 +826,8 @@ async fn deactivate_secret_environment() -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn open_secret_terminal(profile_id: u64, revision: u64) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || secrets_config::open_terminal(profile_id, revision))
+async fn open_secret_terminal(profile_id: u64, terminal_executable: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || secrets_config::open_terminal(profile_id, &terminal_executable))
         .await
         .map_err(|error| format!("Unable to open secret terminal: {error}"))?
 }

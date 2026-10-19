@@ -10,7 +10,6 @@
     KeyRound,
     MoreHorizontal,
     Pencil,
-    Shield,
     ShieldAlert,
     Terminal,
     Trash2,
@@ -34,7 +33,6 @@
     onCopyEnvironment: () => void;
     onDownloadEnvironment: () => void;
     onRequestDeleteEnvironment: () => void;
-    onActivateEnvironment: () => void;
     onOpenTerminal: () => void;
   };
 
@@ -55,7 +53,6 @@
     onCopyEnvironment,
     onDownloadEnvironment,
     onRequestDeleteEnvironment,
-    onActivateEnvironment,
     onOpenTerminal,
   }: Props = $props();
   let isActive = $derived(environment.id === activeEnvironmentId);
@@ -114,28 +111,6 @@
     </div>
 
     <div class="flex items-center gap-1.5">
-      {#if project.environments.length > 1}<button
-          class="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-2.5 text-xs font-semibold text-boulder-800 hover:bg-boulder-100"
-          type="button"
-          onclick={onOpenCompare}
-          title={t("secrets.compareEnvs")}
-          ><GitCompare size={14} /><span>{t("secrets.compare")}</span></button
-        >{/if}
-      <button
-        class="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-2.5 text-xs font-semibold text-boulder-800 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
-        type="button"
-        disabled={busy}
-        onclick={onOpenTerminal}
-        title={t("secrets.openTerminal")}
-        ><Terminal size={14} /><span>{t("secrets.terminal")}</span></button
-      >
-      {#if !isActive}<button
-          class="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-emerald-800 px-3 text-xs font-semibold text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
-          type="button"
-          disabled={busy}
-          onclick={onActivateEnvironment}
-          ><Shield size={14} /><span>{t("secrets.activate")}</span></button
-        >{/if}
       <Menu.Root positioning={{ placement: "bottom-end", gutter: 6 }}>
         <Menu.Trigger
           class="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-boulder-500 transition-colors hover:bg-boulder-100 hover:text-boulder-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-east-bay-500 data-[state=open]:bg-boulder-100 data-[state=open]:text-boulder-950"
@@ -161,6 +136,13 @@
                 onSelect={onOpenCompare}
                 ><GitCompare size={14} /><span>{t("secrets.compareEnvs")}</span></Menu.Item
               >{/if}
+            <Menu.Item
+              value="terminal"
+              class={menuItemClass}
+              disabled={busy}
+              onSelect={onOpenTerminal}
+              ><Terminal size={14} /><span>{t("secrets.openTerminal")}</span></Menu.Item
+            >
             <Menu.Separator class="mx-2 my-0.5 h-px border-0 bg-boulder-100" />
             <Menu.Item value="copy" class={menuItemClass} onSelect={onCopyEnvironment}
               ><Copy size={14} /><span>{t("secrets.copyEnv")}</span></Menu.Item

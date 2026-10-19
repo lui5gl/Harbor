@@ -16,6 +16,9 @@ export type UserSettings = {
   proxyPort: string;
   proxyUsername: string;
   proxyPassword: string;
+  autoActivateSecrets: boolean;
+  terminalType: "powershell" | "git-bash" | "custom";
+  customTerminalPath: string;
 };
 
 export type ProxySettings = {
@@ -37,6 +40,9 @@ export const defaultSettings: UserSettings = {
   proxyPort: "",
   proxyUsername: "",
   proxyPassword: "",
+  autoActivateSecrets: false,
+  terminalType: "powershell",
+  customTerminalPath: "",
 };
 
 export function createSettingsStore() {

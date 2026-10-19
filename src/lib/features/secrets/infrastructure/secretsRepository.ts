@@ -16,3 +16,8 @@ export function activateSecretProfile(profileId: number): Promise<void> {
 export function deactivateSecretEnvironment(): Promise<void> {
   return invoke("deactivate_secret_environment");
 }
+
+// Opens the secret terminal with the specified profile and terminal executable
+export function openSecretTerminal(profileId: number, terminalExecutable: string): Promise<void> {
+  return invoke("open_secret_terminal", { profileId, terminalExecutable });
+}

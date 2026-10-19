@@ -10,8 +10,10 @@
   import ProfilesPanel from "./ProfilesPanel.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
   import { createSecretsStore } from "../application/secretsStore.svelte";
+  import { createSettingsStore } from "#lib/features/settings/application/settingsStore.svelte";
 
   const secrets = createSecretsStore();
+  const preferences = createSettingsStore();
   let projectDialogOpen = $state(false);
   let environmentDialogOpen = $state(false);
   let productionDialogOpen = $state(false);
@@ -66,6 +68,7 @@
   });
 
   onMount(() => {
+    preferences.load();
     secrets.start();
     void secrets.load();
     const activityEvents = ["pointerdown", "keydown", "touchstart"] as const;
@@ -98,12 +101,27 @@
     deleteDialogOpen = false;
   }
 
-  async function requestActivation() {
-    const environment = secrets.selectedEnvironment;
+  function selectEnvironment(projectId: number, environmentId: number) {
+    secrets.selectEnvironment(projectId, environmentId);
+    if (!preferences.settings.autoActivateSecrets || environmentId === secrets.activeEnvironmentId)
+      return;
+    const environment = secrets.projects
+      .find((project) => project.id === projectId)
+      ?.environments.find((item) => item.id === environmentId);
     if (!environment) return;
-    pendingActivationId = environment.id;
-    pendingActivationLabel = `${secrets.selectedProject?.name ?? "Project"} / ${environment.name}`;
-    productionDialogOpen = true;
+    if (environment.isProduction) {
+      pendingActivationId = environment.id;
+      pendingActivationLabel = `${secrets.projects.find((project) => project.id === projectId)?.name ?? "Project"} / ${environment.name}`;
+      productionDialogOpen = true;
+    } else {
+      void secrets.activateEnvironment(environment.id);
+    }
+  }
+
+  function terminalExecutable() {
+    if (preferences.settings.terminalType === "custom")
+      return preferences.settings.customTerminalPath;
+    return preferences.settings.terminalType;
   }
 
   function confirmProductionActivation() {
@@ -275,7 +293,7 @@
           selectedProjectId={secrets.selectedProjectId}
           selectedEnvironmentId={secrets.selectedEnvironmentId}
           activeEnvironmentId={secrets.activeEnvironmentId}
-          onSelectEnvironment={secrets.selectEnvironment}
+          onSelectEnvironment={selectEnvironment}
           onAddEnvironment={openEnvironmentDialog}
         />
       </div>
@@ -287,7 +305,7 @@
           disabled={!secrets.canWrite ||
             secrets.selectedEnvironment.id === secrets.activeEnvironmentId}
           busy={secrets.isBusy || secrets.isSaving || !secrets.canWrite}
-          onSelectEnvironment={(id) => secrets.selectEnvironment(secrets.selectedProject!.id, id)}
+          onSelectEnvironment={(id) => selectEnvironment(secrets.selectedProject!.id, id)}
           onRenameProject={secrets.renameProject}
           onRequestDeleteProject={() => requestDelete("project")}
           onSaveEnvironment={secrets.saveEnvironment}
@@ -298,7 +316,6 @@
           onImportVariables={secrets.importVariables}
           onUpdateVariable={secrets.updateVariable}
           onRequestDeleteVariable={(id) => requestDelete("variable", id)}
-          onActivateEnvironment={() => void requestActivation()}
           onOpenTerminal={() => {
             if (!secrets.selectedEnvironment) return;
             if (
@@ -307,7 +324,7 @@
                 `Open an isolated terminal with production secrets for ${targetActivationLabel}?`,
               )
             )
-              void secrets.openTerminal(secrets.selectedEnvironment.id);
+              void secrets.openTerminal(secrets.selectedEnvironment.id, terminalExecutable());
           }}
         />
       {/if}

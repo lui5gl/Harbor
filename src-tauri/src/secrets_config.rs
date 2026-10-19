@@ -340,20 +340,46 @@ pub fn deactivate() -> Result<(), String> {
     }
 }
 
-pub fn open_terminal(profile_id: u64, revision: u64) -> Result<(), String> {
+pub fn open_terminal(profile_id: u64, terminal_executable: &str) -> Result<(), String> {
     let _guard = SECRETS_LOCK.lock().map_err(|_| "Secrets storage is unavailable")?;
     let configuration = recover_configuration()?;
-    if configuration.revision != revision {
-        return Err("Secrets changed in another window. Reload before opening a terminal.".to_owned());
-    }
     validate(&configuration)?;
     let profile = configuration.projects.iter().flat_map(|project| &project.environments)
         .find(|environment| environment.id == profile_id)
         .ok_or("The selected environment does not exist")?;
-    let system_root = std::env::var_os("SystemRoot").ok_or("Unable to locate Windows PowerShell")?;
-    let executable = Path::new(&system_root).join("System32/WindowsPowerShell/v1.0/powershell.exe");
+    let (executable, terminal_kind) = match terminal_executable {
+        "powershell" => {
+            let system_root = std::env::var_os("SystemRoot").ok_or("Unable to locate Windows PowerShell")?;
+            (Path::new(&system_root).join("System32/WindowsPowerShell/v1.0/powershell.exe"), "powershell")
+        }
+        "git-bash" => {
+            let candidates = [
+                std::env::var_os("ProgramFiles").map(|root| Path::new(&root).join("Git/bin/bash.exe")),
+                std::env::var_os("ProgramFiles(x86)").map(|root| Path::new(&root).join("Git/bin/bash.exe")),
+                std::env::var_os("LOCALAPPDATA").map(|root| Path::new(&root).join("Programs/Git/bin/bash.exe")),
+            ];
+            let path_candidate = std::env::var_os("PATH").into_iter()
+                .flat_map(|paths| std::env::split_paths(&paths).collect::<Vec<_>>())
+                .map(|directory| directory.join("bash.exe"))
+                .find(|path| path.is_file());
+            let executable = candidates.into_iter().flatten().find(|path| path.is_file())
+                .or(path_candidate)
+                .ok_or("Git Bash was not found. Select its bash.exe using the custom terminal option.")?;
+            (executable, "bash")
+        }
+        custom_path if !custom_path.trim().is_empty() => (Path::new(custom_path).to_path_buf(), "custom"),
+        _ => return Err("Choose a terminal executable in Harbor settings.".to_owned()),
+    };
+    if terminal_kind == "custom" && !executable.is_file() {
+        return Err("The configured terminal executable was not found.".to_owned());
+    }
     let mut command = Command::new(executable);
-    command.args(["-NoLogo", "-NoProfile", "-NoExit"]).creation_flags(0x00000010);
+    if terminal_kind == "powershell" {
+        command.args(["-NoLogo", "-NoProfile", "-NoExit"]);
+    } else if terminal_kind == "bash" {
+        command.args(["--login", "-i"]);
+    }
+    command.creation_flags(0x00000010);
     for variable in &configuration.managed_environment_variables {
         command.env_remove(&variable.key);
         if let Some(previous) = &variable.previous_value {

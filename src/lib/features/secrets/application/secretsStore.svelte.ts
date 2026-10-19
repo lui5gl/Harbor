@@ -4,6 +4,7 @@ import {
   activateSecretProfile,
   deactivateSecretEnvironment,
   loadSecretProfiles,
+  openSecretTerminal,
   saveSecretProfiles,
 } from "../infrastructure/secretsRepository";
 import { createSecretsConfiguration, validateSecretsConfiguration } from "./secretsConfiguration";
@@ -83,7 +84,7 @@ type SecretsStore = {
   importVariables: (items: { key: string; value: string }[], replaceAll: boolean) => void;
   activateEnvironment: (environmentId: number) => Promise<boolean>;
   deactivateEnvironment: () => Promise<boolean>;
-  openTerminal: (environmentId: number) => Promise<boolean>;
+  openTerminal: (environmentId: number, terminalExecutable: string) => Promise<boolean>;
   exportConfiguration: () => SecretsConfiguration;
   restoreConfiguration: (configuration: SecretsConfiguration) => Promise<boolean>;
   isProductionEnvironment: (environmentId: number) => boolean;
@@ -470,14 +471,14 @@ export function createSecretsStore(): SecretsStore {
     }
   }
 
-  async function openTerminal(environmentId: number): Promise<boolean> {
+  async function openTerminal(environmentId: number, terminalExecutable: string): Promise<boolean> {
     if (!writable()) return false;
     isBusy = true;
     try {
       if (!(await flush())) return false;
       if (!isNativeApp)
         throw new Error("Isolated terminals are available in the desktop app only.");
-      await invoke("open_secret_terminal", { profileId: environmentId, revision });
+      await openSecretTerminal(environmentId, terminalExecutable);
       error = "";
       return true;
     } catch (caught) {
