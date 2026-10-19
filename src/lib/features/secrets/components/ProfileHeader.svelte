@@ -61,9 +61,9 @@
   let isActive = $derived(environment.id === activeEnvironmentId);
 
   const menuContentClass =
-    "z-100 min-w-48 rounded-md border border-boulder-200 bg-white p-1 shadow-xl outline-none";
+    "z-100 min-w-52 rounded-md border border-boulder-200 bg-white p-1.5 shadow-lg outline-none";
   const menuItemClass =
-    "flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs font-medium text-boulder-800 outline-none data-highlighted:bg-boulder-100 data-highlighted:text-boulder-950 data-disabled:cursor-not-allowed data-disabled:opacity-40";
+    "flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs font-medium text-boulder-700 outline-none transition-colors data-[highlighted]:bg-boulder-100 data-[highlighted]:text-boulder-950 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40";
 </script>
 
 <header class="mb-3 flex flex-col gap-3 border-b border-boulder-200 pb-3.5">
@@ -76,7 +76,7 @@
         <span class="max-w-32 truncate">{project.name}</span>
         <Menu.Root positioning={{ placement: "bottom-start", gutter: 5 }}>
           <Menu.Trigger
-            class="inline-flex size-4.5 cursor-pointer items-center justify-center rounded text-boulder-500 hover:bg-boulder-200 hover:text-boulder-900"
+            class="inline-flex size-5 cursor-pointer items-center justify-center rounded text-boulder-500 transition-colors hover:bg-boulder-200 hover:text-boulder-900 data-[state=open]:bg-boulder-200 data-[state=open]:text-boulder-950"
             aria-label={t("secrets.actions")}><MoreHorizontal size={13} /></Menu.Trigger
           >
           <Menu.Positioner
@@ -84,7 +84,7 @@
               <Menu.Item value="rename-project" class={menuItemClass} onSelect={onRenameProject}
                 ><Pencil size={13} /><span>{t("secrets.renameProject")}</span></Menu.Item
               >
-              <Menu.Separator class="my-1 h-px bg-boulder-200" />
+              <Menu.Separator class="mx-2 my-0.5 h-px border-0 bg-boulder-100" />
               <Menu.Item
                 value="delete-project"
                 class={`${menuItemClass} text-red-700 data-highlighted:bg-red-50 data-highlighted:text-red-600`}
@@ -138,7 +138,7 @@
         >{/if}
       <Menu.Root positioning={{ placement: "bottom-end", gutter: 6 }}>
         <Menu.Trigger
-          class="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-boulder-500 hover:bg-boulder-100 hover:text-boulder-950"
+          class="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-boulder-500 transition-colors hover:bg-boulder-100 hover:text-boulder-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-east-bay-500 data-[state=open]:bg-boulder-100 data-[state=open]:text-boulder-950"
           aria-label={t("secrets.actions")}><MoreHorizontal size={15} /></Menu.Trigger
         >
         <Menu.Positioner
@@ -161,17 +161,17 @@
                 onSelect={onOpenCompare}
                 ><GitCompare size={14} /><span>{t("secrets.compareEnvs")}</span></Menu.Item
               >{/if}
-            <Menu.Separator class="my-1 h-px bg-boulder-200" />
+            <Menu.Separator class="mx-2 my-0.5 h-px border-0 bg-boulder-100" />
             <Menu.Item value="copy" class={menuItemClass} onSelect={onCopyEnvironment}
               ><Copy size={14} /><span>{t("secrets.copyEnv")}</span></Menu.Item
             >
             <Menu.Item value="download" class={menuItemClass} onSelect={onDownloadEnvironment}
               ><Download size={14} /><span>{t("secrets.downloadEnv")}</span></Menu.Item
             >
-            <Menu.Separator class="my-1 h-px bg-boulder-200" />
+            <Menu.Separator class="mx-2 my-0.5 h-px border-0 bg-boulder-100" />
             <Menu.Item
               value="delete"
-              class={`${menuItemClass} text-red-700 data-highlighted:bg-red-50 data-highlighted:text-red-600`}
+              class={`${menuItemClass} text-red-700 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-700`}
               {disabled}
               onSelect={onRequestDeleteEnvironment}
               ><Trash2 size={14} /><span>{t("secrets.deleteEnvironment")}</span></Menu.Item
