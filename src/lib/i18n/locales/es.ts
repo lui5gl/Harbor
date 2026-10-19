@@ -32,6 +32,8 @@ export const es = {
     openWorkspace: "Abrir carpeta del espacio de trabajo",
     proxy: "Proxy",
     proxyDescription: "Configura la conexión de Harbor a Internet.",
+    secretsData: "Datos de secretos",
+    secretsDataDescription: "Exporta o restaura una copia cifrada de tus proyectos y entornos.",
     enabled: "Activado",
     disabled: "Desactivado",
     optional: "opcional",

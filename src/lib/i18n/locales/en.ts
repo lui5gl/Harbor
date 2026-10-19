@@ -31,6 +31,9 @@ export const en = {
     openWorkspace: "Open workspace folder",
     proxy: "Proxy",
     proxyDescription: "Configure Harbor's Internet connection.",
+    secretsData: "Secrets data",
+    secretsDataDescription:
+      "Export or restore an encrypted backup of your projects and environments.",
     enabled: "Enabled",
     disabled: "Disabled",
     optional: "optional",

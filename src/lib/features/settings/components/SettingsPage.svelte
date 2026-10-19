@@ -1,16 +1,30 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { FolderOpen, MonitorCog, RotateCcw, Save, Settings2 } from "@lucide/svelte";
+  import {
+    Download,
+    FolderOpen,
+    MonitorCog,
+    RotateCcw,
+    Save,
+    Settings2,
+    Upload,
+  } from "@lucide/svelte";
   import { Switch } from "@ark-ui/svelte/switch";
   import { Select, createListCollection } from "@ark-ui/svelte/select";
   import { Field } from "@ark-ui/svelte/field";
   import { Fieldset } from "@ark-ui/svelte/fieldset";
+  import { Menu } from "@ark-ui/svelte/menu";
   import { i18n, t } from "#lib/i18n";
   import { createSettingsStore, type ProxySettings } from "../application/settingsStore.svelte";
   import { openWorkspaceDirectory } from "../infrastructure/settingsRepository";
+  import { createSecretsStore } from "#lib/features/secrets/application/secretsStore.svelte";
+  import SecretsBackupDialog from "#lib/features/secrets/components/SecretsBackupDialog.svelte";
   import ProxySettingsSection from "./ProxySettingsSection.svelte";
 
   const settingsStore = createSettingsStore();
+  const secretsStore = createSecretsStore();
+  let backupOpen = $state(false);
+  let backupMode = $state<"export" | "restore">("export");
   const locales = createListCollection({
     items: [
       { label: t("settings.spanish"), value: "es" },
@@ -21,7 +35,17 @@
   let workspacePath = $derived(settingsStore.workspacePath);
   let saved = $derived(settingsStore.saved);
   let error = $derived(settingsStore.error);
-  onMount(() => settingsStore.load());
+  onMount(() => {
+    void settingsStore.load();
+    secretsStore.start();
+    void secretsStore.load();
+    return () => secretsStore.dispose();
+  });
+  async function openBackup(mode: "export" | "restore") {
+    if (!(await secretsStore.flush())) return;
+    backupMode = mode;
+    backupOpen = true;
+  }
   function saveSettings() {
     const current = settingsStore.settings;
     const port = Number(current.proxyPort);
@@ -286,5 +310,58 @@
       bind:username={settings.proxyUsername}
       bind:password={settings.proxyPassword}
     />
+    <section
+      class="col-span-full min-w-0 rounded-lg border border-boulder-200 bg-white"
+      aria-labelledby="secrets-data-title"
+    >
+      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
+        <span
+          class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+          ><Settings2 size={18} /></span
+        >
+        <div>
+          <h2 id="secrets-data-title" class="text-sm font-semibold text-boulder-900">
+            {t("settings.secretsData")}
+          </h2>
+          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
+            {t("settings.secretsDataDescription")}
+          </p>
+        </div>
+        <Menu.Root positioning={{ placement: "bottom-end", gutter: 6 }}>
+          <Menu.Trigger
+            class="ml-auto inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-2.5 text-xs font-semibold text-boulder-800 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!secretsStore.canWrite || secretsStore.isSaving}
+          >
+            <Download size={14} /><span>{t("secrets.encryptedBackup")}</span>
+          </Menu.Trigger>
+          <Menu.Positioner>
+            <Menu.Content
+              class="z-100 min-w-52 rounded-md border border-boulder-200 bg-white p-1 shadow-xl outline-none"
+            >
+              <Menu.Item
+                value="export"
+                class="flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs text-boulder-800 outline-none data-highlighted:bg-boulder-100"
+                onSelect={() => void openBackup("export")}
+                ><Download size={14} /><span>{t("secrets.exportBackupItem")}</span></Menu.Item
+              >
+              <Menu.Item
+                value="restore"
+                class="flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs text-boulder-800 outline-none data-highlighted:bg-boulder-100 data-disabled:cursor-not-allowed data-disabled:opacity-40"
+                disabled={secretsStore.activeEnvironmentId !== null}
+                onSelect={() => void openBackup("restore")}
+                ><Upload size={14} /><span>{t("secrets.restoreBackup")}</span></Menu.Item
+              >
+            </Menu.Content>
+          </Menu.Positioner>
+        </Menu.Root>
+      </div>
+    </section>
   </div>
 </main>
+
+<SecretsBackupDialog
+  bind:open={backupOpen}
+  mode={backupMode}
+  configuration={secretsStore.exportConfiguration}
+  onRestore={secretsStore.restoreConfiguration}
+/>

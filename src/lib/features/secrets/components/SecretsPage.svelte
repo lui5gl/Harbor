@@ -1,19 +1,7 @@
 <script lang="ts">
   import { t } from "#lib/i18n";
   import { Menu } from "@ark-ui/svelte/menu";
-  import {
-    ChevronDown,
-    Download,
-    Loader2,
-    Lock,
-    Plus,
-    Power,
-    RefreshCw,
-    Save,
-    ShieldCheck,
-    Unlock,
-    Upload,
-  } from "@lucide/svelte";
+  import { Loader2, Lock, Plus, Power, RefreshCw, Save, ShieldCheck, Unlock } from "@lucide/svelte";
   import { onMount } from "svelte";
   import DeleteConfirmationDialog from "./DeleteConfirmationDialog.svelte";
   import EnvironmentDialog from "./EnvironmentDialog.svelte";
@@ -21,7 +9,6 @@
   import ProfileEditor from "./ProfileEditor.svelte";
   import ProfilesPanel from "./ProfilesPanel.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
-  import SecretsBackupDialog from "./SecretsBackupDialog.svelte";
   import { createSecretsStore } from "../application/secretsStore.svelte";
 
   const secrets = createSecretsStore();
@@ -33,15 +20,6 @@
   let pendingVariableId = $state<number | null>(null);
   let pendingActivationId = $state<number | null>(null);
   let pendingActivationLabel = $state("");
-  let backupOpen = $state(false);
-  let backupMode = $state<"export" | "restore">("export");
-
-  async function openBackup(mode: "export" | "restore") {
-    if (!(await secrets.flush())) return;
-    backupMode = mode;
-    backupOpen = true;
-  }
-
   let targetActivationLabel = $derived(
     secrets.selectedProject && secrets.selectedEnvironment
       ? `${secrets.selectedProject.name} / ${secrets.selectedEnvironment.name}`
@@ -165,35 +143,6 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <Menu.Root positioning={{ placement: "bottom-end", gutter: 6 }}>
-        <Menu.Trigger
-          class={secondaryButtonClass}
-          disabled={!secrets.canWrite || secrets.isSaving}
-          aria-label={t("secrets.encryptedBackup")}
-          ><Download size={14} /><span>{t("secrets.encryptedBackup")}</span><ChevronDown
-            size={12}
-          /></Menu.Trigger
-        >
-        <Menu.Positioner
-          ><Menu.Content
-            class="z-100 min-w-48 rounded-md border border-boulder-200 bg-white p-1 shadow-xl outline-none"
-          >
-            <Menu.Item
-              value="export"
-              class="flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs text-boulder-800 outline-none data-highlighted:bg-boulder-100"
-              onSelect={() => void openBackup("export")}
-              ><Download size={14} /><span>{t("secrets.exportBackupItem")}</span></Menu.Item
-            >
-            <Menu.Item
-              value="restore"
-              class="flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs text-boulder-800 outline-none data-highlighted:bg-boulder-100 data-disabled:cursor-not-allowed data-disabled:opacity-40"
-              disabled={secrets.activeEnvironmentId !== null}
-              onSelect={() => void openBackup("restore")}
-              ><Upload size={14} /><span>{t("secrets.restoreBackup")}</span></Menu.Item
-            >
-          </Menu.Content></Menu.Positioner
-        >
-      </Menu.Root>
       <button
         class={secondaryButtonClass}
         type="button"
@@ -359,12 +308,6 @@
   {/if}
 </main>
 
-<SecretsBackupDialog
-  bind:open={backupOpen}
-  mode={backupMode}
-  configuration={secrets.exportConfiguration}
-  onRestore={secrets.restoreConfiguration}
-/>
 <ProjectDialog bind:open={projectDialogOpen} onCreate={secrets.createProject} />
 <EnvironmentDialog
   bind:open={environmentDialogOpen}
