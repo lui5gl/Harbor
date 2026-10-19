@@ -89,7 +89,7 @@ export const en = {
     eyebrow: "Environment configuration",
     title: "Secrets",
     description:
-      "Keep variables in projects, then activate an environment only when you need it in PowerShell.",
+      "Organize variables by project and environment. Harbor encrypts them on this device and only publishes them to PowerShell when you activate an environment.",
     saving: "Saving...",
     encryptedKeyring: "Encrypted keyring",
     newProject: "New project",
@@ -138,7 +138,7 @@ export const en = {
     deactivateFromWindows: "Deactivate",
     publishedToWindows:
       "Active in system. New PowerShell sessions and system processes will receive these credentials.",
-    vaultStatus: "AES-256-GCM Vault",
+    vaultStatus: "Secrets encrypted and protected",
     unsavedChanges: "Unsaved changes",
     activeInPowerShell: "Active in PowerShell",
     vaultLockedTitle: "Secrets vault is locked",

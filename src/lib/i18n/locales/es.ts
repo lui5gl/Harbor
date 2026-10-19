@@ -90,7 +90,7 @@ export const es = {
     eyebrow: "Configuración de entornos",
     title: "Secretos",
     description:
-      "Organiza variables por proyecto y activa un entorno solo cuando lo necesites en PowerShell.",
+      "Organiza tus variables por proyecto y entorno. Harbor las cifra en el dispositivo y solo las publica en PowerShell cuando activas un entorno.",
     saving: "Guardando...",
     encryptedKeyring: "Almacén de claves cifrado",
     newProject: "Nuevo proyecto",
@@ -139,7 +139,7 @@ export const es = {
     deactivateFromWindows: "Desactivar",
     publishedToWindows:
       "Activo en el sistema. Los procesos y sesiones nuevas de PowerShell recibirán estas credenciales.",
-    vaultStatus: "Bóveda AES-256-GCM",
+    vaultStatus: "Secretos cifrados y protegidos",
     unsavedChanges: "Cambios sin guardar",
     activeInPowerShell: "Activo en PowerShell",
     vaultLockedTitle: "La bóveda de secretos está bloqueada",
