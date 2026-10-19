@@ -1,13 +1,8 @@
 <script lang="ts">
-  import { Button, Dialog } from "bits-ui";
   import { t } from "#lib/i18n";
+  import { Dialog } from "@ark-ui/svelte/dialog";
 
-  type Props = {
-    open: boolean;
-    initialName: string;
-    onSave: (name: string) => void;
-  };
-
+  type Props = { open: boolean; initialName: string; onSave: (name: string) => void };
   let { open = $bindable(), initialName, onSave }: Props = $props();
   let draftName = $state("");
 
@@ -24,13 +19,18 @@
 </script>
 
 <Dialog.Root bind:open>
-  <Dialog.Portal>
-    <Dialog.Overlay class="rename-backdrop" />
-    <Dialog.Content class="rename-dialog" aria-describedby="rename-project-description">
-      <Dialog.Title class="rename-title">{t("secrets.renameProject")}</Dialog.Title>
-      <Dialog.Description id="rename-project-description" class="sr-only">
-        {t("secrets.renameProject")}
-      </Dialog.Description>
+  <Dialog.Backdrop class="fixed inset-0 z-50 bg-black/35 backdrop-blur-xs" />
+  <Dialog.Positioner class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Dialog.Content
+      class="w-full max-w-sm rounded-lg border border-boulder-200 bg-white p-4.5 shadow-2xl outline-none"
+      aria-describedby="rename-project-description"
+    >
+      <Dialog.Title class="mb-3 text-[15px] font-bold text-boulder-900"
+        >{t("secrets.renameProject")}</Dialog.Title
+      >
+      <Dialog.Description id="rename-project-description" class="sr-only"
+        >{t("secrets.renameProject")}</Dialog.Description
+      >
       <form
         onsubmit={(event) => {
           event.preventDefault();
@@ -38,88 +38,23 @@
         }}
       >
         <label class="sr-only" for="project-name">{t("secrets.renameProject")}</label>
-        <input id="project-name" class="input" bind:value={draftName} />
-        <div class="dialog-actions">
-          <Dialog.Close class="dialog-button">{t("common.cancel")}</Dialog.Close>
-          <Button.Root class="dialog-button save-button" type="submit">
-            {t("common.save")}
-          </Button.Root>
+        <input
+          id="project-name"
+          class="h-8 w-full rounded-md border border-boulder-300 px-2 text-xs text-boulder-900 outline-none focus:border-east-bay-500 focus:ring-2 focus:ring-east-bay-500/15"
+          bind:value={draftName}
+        />
+        <div class="mt-3 flex justify-end gap-2">
+          <Dialog.CloseTrigger
+            class="h-8 cursor-pointer rounded-md bg-boulder-100 px-2.5 text-xs font-semibold text-boulder-700 hover:bg-boulder-200"
+            >{t("common.cancel")}</Dialog.CloseTrigger
+          >
+          <button
+            class="h-8 cursor-pointer rounded-md bg-east-bay-900 px-2.5 text-xs font-semibold text-white hover:bg-east-bay-950 disabled:opacity-50"
+            type="submit"
+            disabled={!draftName.trim()}>{t("common.save")}</button
+          >
         </div>
       </form>
     </Dialog.Content>
-  </Dialog.Portal>
+  </Dialog.Positioner>
 </Dialog.Root>
-
-<style>
-  :global(.rename-backdrop) {
-    background: rgb(0 0 0 / 35%);
-    inset: 0;
-    position: fixed;
-    z-index: 100;
-  }
-  :global(.rename-dialog) {
-    background: #fff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
-    box-shadow: 0 15px 40px rgb(0 0 0 / 15%);
-    left: 50%;
-    padding: 18px;
-    position: fixed;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(360px, calc(100vw - 32px));
-    z-index: 101;
-  }
-  :global(.rename-title) {
-    color: var(--color-boulder-900);
-    font-size: 15px;
-    margin: 0 0 12px;
-  }
-  .input {
-    background: #fff;
-    border: 1px solid var(--color-boulder-300);
-    border-radius: 5px;
-    box-sizing: border-box;
-    color: var(--color-boulder-900);
-    font: inherit;
-    font-size: 12px;
-    height: 32px;
-    outline: none;
-    padding: 0 8px;
-    width: 100%;
-  }
-  .input:focus {
-    border-color: var(--color-east-bay-500);
-    box-shadow: 0 0 0 2px rgb(113 132 192 / 15%);
-  }
-  .dialog-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 12px;
-  }
-  :global(.dialog-button) {
-    background: var(--color-boulder-100);
-    border: 0;
-    border-radius: 5px;
-    color: var(--color-boulder-700);
-    cursor: pointer;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 650;
-    height: 32px;
-    padding: 0 10px;
-  }
-  :global(.save-button) {
-    background: var(--color-east-bay-900);
-    color: #fff;
-  }
-  .sr-only {
-    clip: rect(0 0 0 0);
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    position: absolute;
-    width: 1px;
-  }
-</style>

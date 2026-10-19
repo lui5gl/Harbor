@@ -85,162 +85,64 @@
   });
 </script>
 
-<footer class="status-bar" aria-label={t("status.application")}>
-  <div class="status-group">
-    <a href="/secrets" class="status-item status-link" title={t("status.activeProfile")}>
+<footer
+  class="flex min-h-7 shrink-0 select-none items-center justify-between bg-east-bay-950 px-3 text-[11.5px] text-east-bay-100 max-sm:gap-2 max-sm:px-2"
+  aria-label={t("status.application")}
+>
+  <div class="flex min-w-0 items-center gap-2">
+    <a
+      href="/secrets"
+      class="inline-flex min-h-7 items-center gap-1.5 whitespace-nowrap rounded px-1 text-inherit no-underline hover:bg-white/8"
+      title={t("status.activeProfile")}
+    >
       {#if isProduction}
-        <ShieldAlert size={13} strokeWidth={2.4} class="alert-icon" aria-hidden="true" />
+        <ShieldAlert size={13} strokeWidth={2.4} class="text-amber-500" aria-hidden="true" />
       {:else}
-        <KeyRound size={13} strokeWidth={2.2} aria-hidden="true" />
+        <KeyRound size={13} strokeWidth={2.2} class="text-east-bay-300" aria-hidden="true" />
       {/if}
-      <span class="label">{t("status.environment")}</span>
+      <span class="font-medium text-east-bay-300">{t("status.environment")}</span>
       {#if activeProfileName}
-        <strong class={isProduction ? "production-name" : ""}>{activeProfileName}</strong>
+        <strong class={`font-semibold ${isProduction ? "text-amber-300" : "text-white"}`}
+          >{activeProfileName}</strong
+        >
         {#if isProduction}
-          <span class="prod-badge">PROD</span>
+          <span
+            class="rounded-[3px] bg-amber-600 px-1 py-0.5 text-[9px] leading-none font-bold tracking-[0.04em] text-white"
+            >PROD</span
+          >
         {/if}
       {:else}
-        <span class="muted-text">{t("common.none")}</span>
+        <span class="text-east-bay-400">{t("common.none")}</span>
       {/if}
     </a>
   </div>
 
-  <div class="status-group">
-    <a href="/services" class="status-item status-link" title={t("status.phpService")}>
-      <span class={`status-dot ${isPhpRunning ? "running" : "stopped"}`} aria-hidden="true"></span>
-      <Server size={13} strokeWidth={2} aria-hidden="true" />
-      <span class="label">FastCGI:</span>
-      <strong>{isPhpRunning ? "127.0.0.1:9070" : t("common.stopped")}</strong>
+  <div class="flex min-w-0 items-center gap-2">
+    <a
+      href="/services"
+      class="inline-flex min-h-7 items-center gap-1.5 whitespace-nowrap rounded px-1 text-inherit no-underline hover:bg-white/8"
+      title={t("status.phpService")}
+    >
+      <span
+        class={`size-1.75 rounded-full ${isPhpRunning ? "bg-green-500 shadow-[0_0_6px_rgb(34_197_94/60%)]" : "bg-east-bay-600"}`}
+        aria-hidden="true"
+      ></span>
+      <Server size={13} strokeWidth={2} class="text-east-bay-300" aria-hidden="true" />
+      <span class="font-medium text-east-bay-300">FastCGI:</span>
+      <strong class="font-semibold text-white"
+        >{isPhpRunning ? "127.0.0.1:9070" : t("common.stopped")}</strong
+      >
     </a>
 
-    <span class="status-divider" aria-hidden="true"></span>
+    <span class="h-3 w-px bg-east-bay-800 max-sm:hidden" aria-hidden="true"></span>
 
     <span
-      class="status-item"
+      class="inline-flex min-h-7 items-center gap-1.5 whitespace-nowrap"
       title={isNativeApp ? t("status.tauriRuntime") : t("status.webPreview")}
     >
-      <span class="platform-badge">{isNativeApp ? t("common.native") : t("common.web")}</span>
+      <span class="text-[10.5px] font-semibold text-east-bay-400 max-sm:hidden"
+        >{isNativeApp ? t("common.native") : t("common.web")}</span
+      >
     </span>
   </div>
 </footer>
-
-<style>
-  .status-bar {
-    align-items: center;
-    background: var(--color-east-bay-950);
-    box-sizing: border-box;
-    color: var(--color-east-bay-100);
-    display: flex;
-    flex-shrink: 0;
-    font-size: 11.5px;
-    justify-content: space-between;
-    min-height: 28px;
-    padding: 0 12px;
-    user-select: none;
-  }
-
-  .status-group {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  .status-item {
-    align-items: center;
-    color: inherit;
-    display: inline-flex;
-    gap: 6px;
-    min-height: 28px;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .status-link {
-    border-radius: 4px;
-    cursor: pointer;
-    padding: 0 4px;
-    transition: background 0.12s ease;
-  }
-
-  .status-link:hover {
-    background: rgb(255 255 255 / 8%);
-  }
-
-  .status-item :global(svg) {
-    color: var(--color-east-bay-300);
-  }
-
-  .status-item :global(svg.alert-icon) {
-    color: #f59e0b;
-  }
-
-  .label {
-    color: var(--color-east-bay-300);
-    font-weight: 500;
-  }
-
-  .status-item strong {
-    color: #ffffff;
-    font-weight: 600;
-  }
-
-  .production-name {
-    color: #fbbf24 !important;
-  }
-
-  .prod-badge {
-    background: #d97706;
-    border-radius: 3px;
-    color: #ffffff;
-    font-size: 9px;
-    font-weight: 750;
-    letter-spacing: 0.04em;
-    line-height: 1;
-    padding: 2px 4px;
-  }
-
-  .muted-text {
-    color: var(--color-east-bay-400);
-  }
-
-  .status-dot {
-    border-radius: 999px;
-    display: inline-block;
-    height: 7px;
-    width: 7px;
-  }
-
-  .status-dot.running {
-    background: #22c55e;
-    box-shadow: 0 0 6px rgb(34 197 94 / 60%);
-  }
-
-  .status-dot.stopped {
-    background: var(--color-east-bay-600);
-  }
-
-  .status-divider {
-    background: var(--color-east-bay-800);
-    height: 12px;
-    width: 1px;
-  }
-
-  .platform-badge {
-    color: var(--color-east-bay-400);
-    font-size: 10.5px;
-    font-weight: 600;
-  }
-
-  @media (max-width: 540px) {
-    .status-bar {
-      gap: 8px;
-      padding: 0 8px;
-    }
-
-    .platform-badge,
-    .status-divider {
-      display: none;
-    }
-  }
-</style>

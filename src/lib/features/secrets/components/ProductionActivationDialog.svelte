@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { Dialog } from "@ark-ui/svelte/dialog";
   import { ShieldAlert } from "@lucide/svelte";
-  import { AlertDialog } from "bits-ui";
 
   type ProductionActivationDialogProps = {
     open: boolean;
@@ -8,7 +8,6 @@
     onOpenChange: (open: boolean) => void;
     onConfirm: () => void;
   };
-
   let {
     open = $bindable(),
     environmentLabel,
@@ -17,116 +16,35 @@
   }: ProductionActivationDialogProps = $props();
 </script>
 
-<AlertDialog.Root bind:open {onOpenChange}>
-  <AlertDialog.Portal>
-    <AlertDialog.Overlay class="modal-backdrop" />
-    <AlertDialog.Content class="confirmation-dialog">
-      <div class="warning-icon" aria-hidden="true"><ShieldAlert size={22} strokeWidth={2} /></div>
-      <AlertDialog.Title class="confirmation-dialog-title"
-        >Activate this environment?</AlertDialog.Title
+<Dialog.Root bind:open role="alertdialog" onOpenChange={(details) => onOpenChange(details.open)}>
+  <Dialog.Backdrop class="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs" />
+  <Dialog.Positioner class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Dialog.Content
+      class="w-full max-w-md rounded-lg border border-boulder-200 bg-white p-6 shadow-2xl outline-none"
+    >
+      <div
+        class="flex size-10.5 items-center justify-center rounded-md bg-amber-100 text-amber-800"
       >
-      <AlertDialog.Description class="confirmation-dialog-description"
+        <ShieldAlert size={22} strokeWidth={2} />
+      </div>
+      <Dialog.Title class="mt-4.5 text-lg font-semibold text-boulder-950"
+        >Activate this environment?</Dialog.Title
+      >
+      <Dialog.Description class="mt-2.5 text-sm leading-relaxed text-boulder-600"
         >{environmentLabel} will become available to new PowerShell sessions and system processes. Confirm
-        to continue.</AlertDialog.Description
+        to continue.</Dialog.Description
       >
-      <div class="dialog-actions">
-        <AlertDialog.Cancel class="secondary-button">Cancel</AlertDialog.Cancel>
-        <AlertDialog.Action class="primary-button warning-button" onclick={onConfirm}
-          >Activate environment</AlertDialog.Action
+      <div class="mt-6 flex items-center justify-end gap-2.5">
+        <Dialog.CloseTrigger
+          class="h-9 cursor-pointer rounded-md bg-boulder-100 px-3 text-sm font-semibold text-boulder-800 hover:bg-boulder-200"
+          >Cancel</Dialog.CloseTrigger
+        >
+        <button
+          class="h-9 cursor-pointer rounded-md bg-amber-700 px-3.5 text-sm font-semibold text-white hover:bg-amber-800"
+          type="button"
+          onclick={onConfirm}>Activate environment</button
         >
       </div>
-    </AlertDialog.Content>
-  </AlertDialog.Portal>
-</AlertDialog.Root>
-
-<style>
-  :global(.modal-backdrop) {
-    background: rgb(11 11 11 / 45%);
-    inset: 0;
-    position: fixed;
-    z-index: 100;
-  }
-
-  :global(.confirmation-dialog) {
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
-    box-shadow: 0 20px 60px rgb(11 11 11 / 20%);
-    box-sizing: border-box;
-    left: 50%;
-    max-width: 420px;
-    padding: 24px;
-    position: fixed;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(calc(100% - 48px), 420px);
-    z-index: 101;
-  }
-
-  .warning-icon {
-    align-items: center;
-    background: #fff1dc;
-    border-radius: 6px;
-    color: #965d00;
-    display: flex;
-    height: 42px;
-    justify-content: center;
-    width: 42px;
-  }
-
-  :global(.confirmation-dialog-title) {
-    color: var(--color-boulder-950);
-    font-size: 19px;
-    font-weight: 650;
-    margin-top: 18px;
-  }
-
-  :global(.confirmation-dialog-description) {
-    color: var(--color-boulder-600);
-    font-size: 14px;
-    line-height: 1.5;
-    margin-top: 10px;
-  }
-
-  .dialog-actions {
-    align-items: center;
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 24px;
-  }
-
-  :global(.primary-button),
-  :global(.secondary-button) {
-    align-items: center;
-    border: 0;
-    border-radius: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-weight: 650;
-    justify-content: center;
-  }
-
-  :global(.primary-button) {
-    background: var(--color-east-bay-900);
-    color: #ffffff;
-    min-height: 38px;
-    padding: 0 14px;
-  }
-
-  :global(.secondary-button) {
-    background: var(--color-boulder-100);
-    color: var(--color-boulder-800);
-    min-height: 36px;
-    padding: 0 12px;
-  }
-
-  :global(.warning-button) {
-    background: #9b5c00;
-  }
-
-  :global(.warning-button:hover) {
-    background: #764600;
-  }
-</style>
+    </Dialog.Content>
+  </Dialog.Positioner>
+</Dialog.Root>

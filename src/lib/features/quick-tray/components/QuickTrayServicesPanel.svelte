@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Maximize2, Play, Square } from "@lucide/svelte";
-  import { Button } from "bits-ui";
   import type { QuickTrayServices } from "#lib/features/quick-tray/application/quickTrayServices.svelte";
 
   type Props = {
@@ -11,19 +10,24 @@
   let { services, onOpenMainWindow }: Props = $props();
 </script>
 
-<div class="services-tray-view">
-  <div class="services-tray-list">
-    <div class="service-tray-card">
-      <div class="service-tray-header">
-        <div class="service-tray-title">
-          <span class="service-icon-badge php-badge">PHP</span>
+<div class="flex min-h-0 flex-1 flex-col">
+  <div class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-3.5">
+    <section
+      class="flex flex-col gap-2.5 rounded-lg border border-boulder-200 bg-white px-3.5 py-3"
+    >
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span
+            class="inline-flex h-7 w-8 items-center justify-center rounded-md bg-violet-100 text-[10px] font-extrabold text-violet-700"
+            >PHP</span
+          >
           <div>
-            <h3 class="service-name">PHP</h3>
-            <p class="service-subtitle">FastCGI & CLI</p>
+            <h3 class="text-sm font-bold text-boulder-950">PHP</h3>
+            <p class="text-[11px] text-boulder-500">FastCGI & CLI</p>
           </div>
         </div>
-        <Button.Root
-          class={`service-toggle-btn${services.isPhpRunning ? " running" : ""}`}
+        <button
+          class={`inline-flex h-7 cursor-pointer items-center gap-1 rounded-md px-2.5 text-[11.5px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${services.isPhpRunning ? "bg-rose-600 hover:bg-rose-700" : "bg-east-bay-900 hover:bg-east-bay-950"}`}
           type="button"
           disabled={services.isBusy || services.php.installedVersions.length === 0}
           onclick={() => void services.togglePhp()}
@@ -31,14 +35,14 @@
         >
           {#if services.isPhpRunning}<Square size={13} strokeWidth={2} /><span>Detener</span
             >{:else}<Play size={13} strokeWidth={2} /><span>Iniciar</span>{/if}
-        </Button.Root>
-      </div>
-      <div class="service-tray-body">
-        <div class="service-field">
-          <span class="field-desc">Versión CLI / FastCGI:</span>
+        </button>
+      </header>
+      <div class="flex flex-col gap-2 border-t border-boulder-100 pt-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-boulder-600">Versión CLI / FastCGI:</span>
           {#if services.php.installedVersions.length > 0}
             <select
-              class="service-select"
+              class="h-6.5 rounded-md border border-boulder-300 bg-boulder-50 px-1.5 text-xs font-semibold text-boulder-900 outline-none focus:border-east-bay-500"
               value={services.php.selectedVersion}
               disabled={services.isBusy}
               onchange={(event) => void services.selectPhpVersion(event.currentTarget.value)}
@@ -47,34 +51,42 @@
                   >{version}</option
                 >{/each}
             </select>
-          {:else}<span class="not-installed-label">No instalado</span>{/if}
+          {:else}
+            <span class="text-[11.5px] italic text-boulder-400">No instalado</span>
+          {/if}
         </div>
-        <div class="service-status-row">
-          <span class={`status-pill ${services.isPhpRunning ? "running" : "stopped"}`}
-            ><span class="status-dot-indicator"></span><span
-              >{services.isPhpRunning ? "FastCGI 127.0.0.1:9070" : "Detenido"}</span
-            ></span
+        <div class="flex items-center">
+          <span
+            class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${services.isPhpRunning ? "bg-emerald-50 text-emerald-700" : "bg-boulder-100 text-boulder-600"}`}
           >
+            <span class="size-1.5 rounded-full bg-current"></span>
+            <span>{services.isPhpRunning ? "FastCGI 127.0.0.1:9070" : "Detenido"}</span>
+          </span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="service-tray-card">
-      <div class="service-tray-header">
-        <div class="service-tray-title">
-          <span class="service-icon-badge node-badge">Node</span>
+    <section
+      class="flex flex-col gap-2.5 rounded-lg border border-boulder-200 bg-white px-3.5 py-3"
+    >
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span
+            class="inline-flex h-7 w-8 items-center justify-center rounded-md bg-emerald-50 text-[10px] font-extrabold text-emerald-700"
+            >Node</span
+          >
           <div>
-            <h3 class="service-name">Node.js</h3>
-            <p class="service-subtitle">JavaScript Runtime</p>
+            <h3 class="text-sm font-bold text-boulder-950">Node.js</h3>
+            <p class="text-[11px] text-boulder-500">JavaScript Runtime</p>
           </div>
         </div>
-      </div>
-      <div class="service-tray-body">
-        <div class="service-field">
-          <span class="field-desc">Versión activa:</span>
+      </header>
+      <div class="flex flex-col gap-2 border-t border-boulder-100 pt-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-boulder-600">Versión activa:</span>
           {#if services.node.installedVersions.length > 0}
             <select
-              class="service-select"
+              class="h-6.5 rounded-md border border-boulder-300 bg-boulder-50 px-1.5 text-xs font-semibold text-boulder-900 outline-none focus:border-east-bay-500"
               value={services.node.selectedVersion}
               disabled={services.isBusy}
               onchange={(event) => void services.selectNodeVersion(event.currentTarget.value)}
@@ -83,226 +95,73 @@
                   >{version}</option
                 >{/each}
             </select>
-          {:else}<span class="not-installed-label">No instalado</span>{/if}
+          {:else}
+            <span class="text-[11.5px] italic text-boulder-400">No instalado</span>
+          {/if}
         </div>
-        <div class="service-status-row">
-          <span class="status-pill ready"
-            ><span class="status-dot-indicator"></span><span
+        <div class="flex items-center">
+          <span
+            class="inline-flex items-center gap-1 rounded-full bg-east-bay-50 px-2 py-0.5 text-[10.5px] font-semibold text-east-bay-800"
+          >
+            <span class="size-1.5 rounded-full bg-current"></span>
+            <span
               >{services.node.selectedVersion
                 ? `v${services.node.selectedVersion} listo`
                 : "Sin versión"}</span
-            ></span
-          >
+            >
+          </span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="service-tray-card">
-      <div class="service-tray-header">
-        <div class="service-tray-title">
-          <span class="service-icon-badge apache-badge">HTTP</span>
+    <section
+      class="flex flex-col gap-2.5 rounded-lg border border-boulder-200 bg-white px-3.5 py-3"
+    >
+      <header class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span
+            class="inline-flex h-7 w-8 items-center justify-center rounded-md bg-amber-100 text-[10px] font-extrabold text-amber-700"
+            >HTTP</span
+          >
           <div>
-            <h3 class="service-name">Apache</h3>
-            <p class="service-subtitle">Servidor Web</p>
+            <h3 class="text-sm font-bold text-boulder-950">Apache</h3>
+            <p class="text-[11px] text-boulder-500">Servidor Web</p>
           </div>
         </div>
-      </div>
-      <div class="service-tray-body">
-        <div class="service-field">
-          <span class="field-desc">Versión instalada:</span
-          >{#if services.apache.installedVersions.length > 0}<span class="service-static-ver"
+      </header>
+      <div class="border-t border-boulder-100 pt-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-boulder-600">Versión instalada:</span>
+          {#if services.apache.installedVersions.length > 0}
+            <span class="font-semibold text-boulder-800"
               >{services.apache.installedVersions[0]}</span
-            >{:else}<span class="not-installed-label">No instalado</span>{/if}
+            >
+          {:else}
+            <span class="text-[11.5px] italic text-boulder-400">No instalado</span>
+          {/if}
         </div>
       </div>
-    </div>
+    </section>
   </div>
 
-  <footer class="tray-footer">
-    <div class="footer-status">
-      <span class="footer-indicator"></span><span
+  <footer
+    class="flex h-9.5 shrink-0 items-center justify-between border-t border-boulder-200 bg-white px-3.5"
+  >
+    <div class="flex items-center gap-1.5 text-[11.5px] text-boulder-500">
+      <span class="size-1 rounded-full bg-boulder-400"></span>
+      <span
         >{services.php.installedVersions.length +
           services.node.installedVersions.length +
           services.apache.installedVersions.length} instalados</span
       >
     </div>
-    <Button.Root class="footer-open-btn" type="button" onclick={onOpenMainWindow}
-      ><span>Descargar más en Harbor</span><Maximize2 size={11} strokeWidth={2.4} /></Button.Root
+    <button
+      class="inline-flex cursor-pointer items-center gap-1.5 text-[11.5px] font-semibold text-east-bay-700 transition-colors hover:text-east-bay-950"
+      type="button"
+      onclick={onOpenMainWindow}
     >
+      <span>Descargar más en Harbor</span>
+      <Maximize2 size={11} strokeWidth={2.4} />
+    </button>
   </footer>
 </div>
-
-<style>
-  .services-tray-view,
-  .services-tray-list,
-  .service-tray-card,
-  .service-tray-body {
-    display: flex;
-    flex-direction: column;
-  }
-  .services-tray-view {
-    flex: 1;
-    min-height: 0;
-  }
-  .services-tray-list {
-    flex: 1;
-    gap: 10px;
-    overflow-y: auto;
-    padding: 14px;
-  }
-  .service-tray-card {
-    background: #fff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
-    gap: 10px;
-    padding: 12px 14px;
-  }
-  .service-tray-header,
-  .service-field {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-  }
-  .service-tray-title {
-    align-items: center;
-    display: flex;
-    gap: 10px;
-  }
-  .service-icon-badge {
-    align-items: center;
-    border-radius: 6px;
-    display: inline-flex;
-    font-size: 10px;
-    font-weight: 800;
-    height: 28px;
-    justify-content: center;
-    width: 32px;
-  }
-  .php-badge {
-    background: #ede9fe;
-    color: #6d28d9;
-  }
-  .node-badge {
-    background: #ecfdf5;
-    color: #047857;
-  }
-  .apache-badge {
-    background: #fef3c7;
-    color: #b45309;
-  }
-  .service-name {
-    color: var(--color-boulder-950);
-    font-size: 13.5px;
-    font-weight: 700;
-    margin: 0;
-  }
-  .service-subtitle {
-    color: var(--color-boulder-500);
-    font-size: 11px;
-    margin: 0;
-  }
-  .service-tray-body {
-    border-top: 1px solid var(--color-boulder-100);
-    gap: 8px;
-    padding-top: 12px;
-  }
-  .field-desc {
-    color: var(--color-boulder-600);
-    font-size: 12px;
-  }
-  .service-select {
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-300);
-    border-radius: 5px;
-    color: var(--color-boulder-900);
-    font: 600 12px var(--font-sans);
-    height: 26px;
-    padding: 0 6px;
-  }
-  .service-static-ver {
-    color: var(--color-boulder-800);
-    font-size: 12px;
-    font-weight: 600;
-  }
-  .not-installed-label {
-    color: var(--color-boulder-400);
-    font-size: 11.5px;
-    font-style: italic;
-  }
-  .service-status-row {
-    align-items: center;
-    display: flex;
-  }
-  .status-pill {
-    align-items: center;
-    border-radius: 12px;
-    display: inline-flex;
-    font-size: 10.5px;
-    font-weight: 600;
-    gap: 5px;
-    padding: 2px 8px;
-  }
-  .status-pill.running {
-    background: #ecfdf5;
-    color: #047857;
-  }
-  .status-pill.stopped {
-    background: var(--color-boulder-100);
-    color: var(--color-boulder-600);
-  }
-  .status-pill.ready {
-    background: var(--color-east-bay-50);
-    color: var(--color-east-bay-800);
-  }
-  .status-dot-indicator {
-    background: currentColor;
-    border-radius: 50%;
-    height: 6px;
-    width: 6px;
-  }
-  .tray-footer {
-    align-items: center;
-    background: #fff;
-    border-top: 1px solid var(--color-boulder-200);
-    display: flex;
-    height: 38px;
-    justify-content: space-between;
-    padding: 0 14px;
-  }
-  .footer-status {
-    align-items: center;
-    color: var(--color-boulder-500);
-    display: flex;
-    font-size: 11.5px;
-    gap: 6px;
-  }
-  .footer-indicator {
-    background: var(--color-boulder-400);
-    border-radius: 50%;
-    height: 5px;
-    width: 5px;
-  }
-  :global(.service-toggle-btn) {
-    align-items: center;
-    background: var(--color-east-bay-900);
-    border-radius: 5px;
-    color: #fff;
-    display: inline-flex;
-    font-size: 11.5px;
-    font-weight: 600;
-    gap: 5px;
-    height: 28px;
-    padding: 0 10px;
-  }
-  :global(.service-toggle-btn.running) {
-    background: #e11d48;
-  }
-  :global(.footer-open-btn) {
-    align-items: center;
-    color: var(--color-east-bay-700);
-    display: inline-flex;
-    font-size: 11.5px;
-    font-weight: 600;
-    gap: 5px;
-  }
-</style>

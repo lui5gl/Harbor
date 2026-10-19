@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { Button, ScrollArea } from "bits-ui";
+  import { t } from "#lib/i18n";
   import { Server, Terminal } from "@lucide/svelte";
   import type { ServiceId } from "../types";
-  import { t } from "#lib/i18n";
-
   type ServicesPanelProps = {
     selectedServiceId: ServiceId;
     activePhpVersion: string | null;
@@ -13,7 +11,6 @@
     installedNodeCount: number;
     onSelect: (id: ServiceId) => void;
   };
-
   let {
     selectedServiceId,
     activePhpVersion,
@@ -25,283 +22,73 @@
   }: ServicesPanelProps = $props();
 </script>
 
-<aside class="services-panel" aria-label={t("services.navigation")}>
-  <div class="panel-header">
-    <div class="header-title-row">
-      <h2>{t("services.titleShort")}</h2>
-      <span class="service-count" title={`2 ${t("services.available")}`}>2</span>
+<aside
+  class="flex h-full max-h-140 flex-col rounded-lg border border-boulder-200 bg-white p-3.5"
+  aria-label={t("services.navigation")}
+>
+  <div class="flex min-h-9.5 items-center justify-between border-b border-boulder-100 pb-3">
+    <div class="flex items-center gap-2">
+      <h2 class="text-[15px] font-semibold text-boulder-950">{t("services.titleShort")}</h2>
+      <span
+        class="min-w-4.5 rounded-full bg-boulder-100 px-1.5 text-center text-[11px] font-semibold text-boulder-700"
+        title={`2 ${t("services.available")}`}>2</span
+      >
     </div>
   </div>
-
-  <ScrollArea.Root class="service-scroll-area" type="auto">
-    <ScrollArea.Viewport class="service-list-viewport">
-      <div class="service-sections">
-        <section class="section-group" aria-label={t("services.webSection")}>
-          <div class="section-heading">
-            <span class="section-title">{t("services.webSection")}</span>
-          </div>
-
-          <div class="service-list">
-            <!-- PHP & Web Stack -->
-            <Button.Root
-              class={`service-item${selectedServiceId === "php-web" ? " selected" : ""}`}
-              type="button"
-              onclick={() => onSelect("php-web")}
-            >
-              <div class="service-item-icon web-stack-icon" aria-hidden="true">
-                <Server size={18} strokeWidth={2} />
-              </div>
-              <div class="service-item-body">
-                <div class="service-primary-row">
-                  <span class="service-name">{t("services.webStack")}</span>
-                  {#if isPhpRunning}
-                    <span class="running-badge">{t("services.running")}</span>
-                  {/if}
-                </div>
-                <div class="service-secondary-row">
-                  <span class="service-meta">
-                    {activePhpVersion
-                      ? `PHP ${activePhpVersion}`
-                      : `${installedPhpCount} ${t("services.installed")}`}
-                  </span>
-                </div>
-              </div>
-            </Button.Root>
-
-            <!-- Node.js Runtime -->
-            <Button.Root
-              class={`service-item${selectedServiceId === "nodejs" ? " selected" : ""}`}
-              type="button"
-              onclick={() => onSelect("nodejs")}
-            >
-              <div class="service-item-icon node-icon" aria-hidden="true">
-                <Terminal size={18} strokeWidth={2} />
-              </div>
-              <div class="service-item-body">
-                <div class="service-primary-row">
-                  <span class="service-name">{t("services.node")}</span>
-                  {#if activeNodeVersion}
-                    <span class="active-badge">{activeNodeVersion}</span>
-                  {/if}
-                </div>
-                <div class="service-secondary-row">
-                  <span class="service-meta">
-                    {installedNodeCount}
-                    {installedNodeCount === 1 ? t("services.version") : t("services.versions")}
-                  </span>
-                </div>
-              </div>
-            </Button.Root>
-          </div>
-        </section>
+  <div class="mt-2.5 min-h-0 flex-1 overflow-y-auto">
+    <section class="flex flex-col gap-1.5" aria-label={t("services.webSection")}>
+      <div class="px-1.5 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-boulder-500">
+        {t("services.webSection")}
       </div>
-    </ScrollArea.Viewport>
-    <ScrollArea.Scrollbar class="service-scrollbar" orientation="vertical">
-      <ScrollArea.Thumb class="service-scrollbar-thumb" />
-    </ScrollArea.Scrollbar>
-  </ScrollArea.Root>
+      <div class="flex flex-col gap-1">
+        <button
+          class={`flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-md border px-2.5 py-2 text-left transition-colors ${selectedServiceId === "php-web" ? "border-east-bay-200 bg-east-bay-50" : "border-transparent hover:bg-boulder-50"}`}
+          type="button"
+          onclick={() => onSelect("php-web")}
+          ><div
+            class="flex size-8.5 shrink-0 items-center justify-center rounded-lg bg-east-bay-100 text-east-bay-800"
+          >
+            <Server size={18} />
+          </div>
+          <div class="flex min-w-0 flex-1 flex-col">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold text-boulder-900">{t("services.webStack")}</span
+              >{#if isPhpRunning}<span
+                  class="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700"
+                  >{t("services.running")}</span
+                >{/if}
+            </div>
+            <span class="text-[11px] text-boulder-500"
+              >{activePhpVersion
+                ? `PHP ${activePhpVersion}`
+                : `${installedPhpCount} ${t("services.installed")}`}</span
+            >
+          </div></button
+        >
+        <button
+          class={`flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-md border px-2.5 py-2 text-left transition-colors ${selectedServiceId === "nodejs" ? "border-east-bay-200 bg-east-bay-50" : "border-transparent hover:bg-boulder-50"}`}
+          type="button"
+          onclick={() => onSelect("nodejs")}
+          ><div
+            class="flex size-8.5 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"
+          >
+            <Terminal size={18} />
+          </div>
+          <div class="flex min-w-0 flex-1 flex-col">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold text-boulder-900">{t("services.node")}</span
+              >{#if activeNodeVersion}<span
+                  class="rounded-full bg-boulder-100 px-1.5 py-0.5 text-[9px] font-bold text-boulder-700"
+                  >{activeNodeVersion}</span
+                >{/if}
+            </div>
+            <span class="text-[11px] text-boulder-500"
+              >{installedNodeCount}
+              {installedNodeCount === 1 ? t("services.version") : t("services.versions")}</span
+            >
+          </div></button
+        >
+      </div>
+    </section>
+  </div>
 </aside>
-
-<style>
-  .services-panel {
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-height: 560px;
-    padding: 14px;
-  }
-
-  .panel-header {
-    align-items: center;
-    border-bottom: 1px solid var(--color-boulder-100);
-    box-sizing: border-box;
-    display: flex;
-    justify-content: space-between;
-    min-height: 38px;
-    padding-bottom: 12px;
-  }
-
-  .header-title-row {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-  }
-
-  h2 {
-    color: var(--color-boulder-950);
-    font-size: 15px;
-    font-weight: 650;
-    margin: 0;
-  }
-
-  .service-count {
-    background: var(--color-boulder-100);
-    border-radius: 999px;
-    color: var(--color-boulder-700);
-    font-size: 11px;
-    font-weight: 600;
-    min-width: 18px;
-    padding: 1px 6px;
-    text-align: center;
-  }
-
-  :global(.service-scroll-area) {
-    display: flex;
-    flex: 1;
-    margin-top: 10px;
-    min-height: 0;
-  }
-
-  :global(.service-list-viewport) {
-    height: 100%;
-    width: 100%;
-  }
-
-  .service-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .section-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .section-heading {
-    color: var(--color-boulder-500);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 4px 6px;
-    text-transform: uppercase;
-  }
-
-  .service-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  :global(.service-item) {
-    align-items: center;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    box-sizing: border-box;
-    cursor: pointer;
-    display: flex;
-    gap: 12px;
-    min-height: 48px;
-    padding: 8px 10px;
-    text-align: left;
-    transition:
-      background-color 150ms ease,
-      border-color 150ms ease;
-    width: 100%;
-  }
-
-  :global(.service-item:hover) {
-    background: var(--color-boulder-50);
-  }
-
-  :global(.service-item.selected) {
-    background: var(--color-east-bay-50);
-    border-color: var(--color-east-bay-200);
-  }
-
-  .service-item-icon {
-    align-items: center;
-    border-radius: 8px;
-    display: flex;
-    flex-shrink: 0;
-    height: 34px;
-    justify-content: center;
-    width: 34px;
-  }
-
-  .web-stack-icon {
-    background: var(--color-east-bay-100);
-    color: var(--color-east-bay-800);
-  }
-
-  .node-icon {
-    background: #ecfdf5;
-    color: #065f46;
-  }
-
-  .service-item-body {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .service-primary-row {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    gap: 6px;
-  }
-
-  .service-name {
-    color: var(--color-boulder-950);
-    font-size: 13px;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .service-secondary-row {
-    align-items: center;
-    display: flex;
-  }
-
-  .service-meta {
-    color: var(--color-boulder-500);
-    font-size: 11.5px;
-    font-weight: 500;
-  }
-
-  .running-badge {
-    background: #dcfce7;
-    border: 1px solid #bbf7d0;
-    border-radius: 999px;
-    color: #166534;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 1px 6px;
-    text-transform: uppercase;
-  }
-
-  .active-badge {
-    background: var(--color-east-bay-100);
-    border-radius: 999px;
-    color: var(--color-east-bay-800);
-    font-size: 10.5px;
-    font-weight: 600;
-    padding: 1px 6px;
-  }
-
-  :global(.service-scrollbar) {
-    background: transparent;
-    display: flex;
-    padding: 2px;
-    user-select: none;
-    width: 6px;
-  }
-
-  :global(.service-scrollbar-thumb) {
-    background: var(--color-boulder-300);
-    border-radius: 4px;
-    flex: 1;
-  }
-</style>

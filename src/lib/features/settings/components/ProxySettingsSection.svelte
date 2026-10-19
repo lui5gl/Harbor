@@ -1,16 +1,7 @@
 <script lang="ts">
   import { Network } from "@lucide/svelte";
-  import { Switch } from "bits-ui";
   import { t } from "#lib/i18n";
-
-  type Props = {
-    enabled: boolean;
-    host: string;
-    port: string;
-    username: string;
-    password: string;
-  };
-
+  type Props = { enabled: boolean; host: string; port: string; username: string; password: string };
   let {
     enabled = $bindable(),
     host = $bindable(),
@@ -20,196 +11,80 @@
   }: Props = $props();
 </script>
 
-<section class="settings-section proxy-section" aria-labelledby="proxy-title">
-  <div class="section-heading">
-    <span class="section-icon"><Network size={18} aria-hidden="true" /></span>
+<section
+  class="col-span-full min-w-0 rounded-lg border border-boulder-200 bg-white"
+  aria-labelledby="proxy-title"
+>
+  <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
+    <span
+      class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+      ><Network size={18} aria-hidden="true" /></span
+    >
     <div>
-      <h2 id="proxy-title">{t("settings.proxy")}</h2>
-      <p>{t("settings.proxyDescription")}</p>
+      <h2 id="proxy-title" class="text-sm font-semibold text-boulder-900">{t("settings.proxy")}</h2>
+      <p class="mt-1 text-xs leading-relaxed text-boulder-500">{t("settings.proxyDescription")}</p>
     </div>
-    <div class="switch-label">
-      <Switch.Root class="settings-switch" bind:checked={enabled} aria-label={t("settings.proxy")}>
-        <Switch.Thumb class="settings-switch-thumb" />
-      </Switch.Root>
-      <span>{enabled ? t("settings.enabled") : t("settings.disabled")}</span>
-    </div>
+    <label
+      class="ml-auto inline-flex cursor-pointer items-center gap-2 text-[11px] font-semibold text-boulder-500"
+      ><input
+        class="peer sr-only"
+        type="checkbox"
+        bind:checked={enabled}
+        aria-label={t("settings.proxy")}
+      /><span
+        class="relative h-5.5 w-9.5 rounded-full bg-boulder-300 transition peer-checked:bg-east-bay-700 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-east-bay-400 after:absolute after:top-0.5 after:left-0.5 after:size-4.5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4"
+      ></span><span>{enabled ? t("settings.enabled") : t("settings.disabled")}</span></label
+    >
   </div>
   {#if enabled}
-    <div class="proxy-form">
-      <div class="form-row">
-        <label for="proxy-host">{t("common.host")}</label>
-        <input
+    <div class="grid grid-cols-[minmax(0,1fr)_150px] gap-x-4 gap-y-3.5 p-4.5 max-md:grid-cols-1">
+      <label class="flex flex-col gap-1.5"
+        ><span class="text-xs font-semibold text-boulder-700">{t("common.host")}</span><input
           id="proxy-host"
+          class="h-9 w-full rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus:border-east-bay-400 focus:ring-2 focus:ring-east-bay-100"
           bind:value={host}
           placeholder="proxy.example.com"
           autocomplete="off"
-        />
-      </div>
-      <div class="form-row port-field">
-        <label for="proxy-port">{t("common.port")}</label>
-        <input
+        /></label
+      >
+      <label class="flex flex-col gap-1.5"
+        ><span class="text-xs font-semibold text-boulder-700">{t("common.port")}</span><input
           id="proxy-port"
+          class="h-9 w-full rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus:border-east-bay-400 focus:ring-2 focus:ring-east-bay-100"
           type="number"
           min="1"
           max="65535"
           bind:value={port}
           placeholder="8080"
           inputmode="numeric"
-        />
-      </div>
-      <div class="form-row">
-        <label for="proxy-username"
-          >{t("common.username")} <span>({t("settings.optional")})</span></label
-        >
-        <input id="proxy-username" bind:value={username} autocomplete="username" />
-      </div>
-      <div class="form-row">
-        <label for="proxy-password"
-          >{t("common.password")} <span>({t("settings.optional")})</span></label
-        >
-        <input
+        /></label
+      >
+      <label class="flex flex-col gap-1.5"
+        ><span class="text-xs font-semibold text-boulder-700"
+          >{t("common.username")}
+          <span class="font-normal text-boulder-500">({t("settings.optional")})</span></span
+        ><input
+          id="proxy-username"
+          class="h-9 w-full rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus:border-east-bay-400 focus:ring-2 focus:ring-east-bay-100"
+          bind:value={username}
+          autocomplete="username"
+        /></label
+      >
+      <label class="flex flex-col gap-1.5"
+        ><span class="text-xs font-semibold text-boulder-700"
+          >{t("common.password")}
+          <span class="font-normal text-boulder-500">({t("settings.optional")})</span></span
+        ><input
           id="proxy-password"
+          class="h-9 w-full rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus:border-east-bay-400 focus:ring-2 focus:ring-east-bay-100"
           type="password"
           bind:value={password}
           autocomplete="current-password"
-        />
-      </div>
-      <p class="hint">{t("settings.proxyHint")}</p>
+        /></label
+      >
+      <p class="col-span-full -mt-0.5 text-xs leading-relaxed text-boulder-500 max-md:col-auto">
+        {t("settings.proxyHint")}
+      </p>
     </div>
-  {:else}
-    <p class="proxy-disabled">{t("settings.directConnection")}</p>
-  {/if}
+  {:else}<p class="p-4.5 text-xs text-boulder-500">{t("settings.directConnection")}</p>{/if}
 </section>
-
-<style>
-  .settings-section {
-    background: #fff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
-    min-width: 0;
-  }
-  .section-heading {
-    align-items: center;
-    border-bottom: 1px solid var(--color-boulder-100);
-    display: flex;
-    gap: 11px;
-    padding: 18px;
-  }
-  .section-icon {
-    align-items: center;
-    background: var(--color-east-bay-50);
-    border: 1px solid var(--color-east-bay-100);
-    border-radius: 6px;
-    color: var(--color-east-bay-700);
-    display: flex;
-    height: 34px;
-    justify-content: center;
-    width: 34px;
-  }
-  h2 {
-    color: var(--color-boulder-900);
-    font-size: 14px;
-    margin: 0;
-  }
-  .section-heading p,
-  .hint {
-    color: var(--color-boulder-500);
-    font-size: 12px;
-    line-height: 1.45;
-    margin: 4px 0 0;
-  }
-  .switch-label {
-    align-items: center;
-    color: var(--color-boulder-500);
-    display: inline-flex;
-    font-size: 11px;
-    font-weight: 650;
-    gap: 7px;
-    margin-left: auto;
-  }
-  :global(.settings-switch) {
-    background: var(--color-boulder-300);
-    border: 0;
-    border-radius: 999px;
-    cursor: pointer;
-    flex: 0 0 auto;
-    height: 22px;
-    padding: 0;
-    position: relative;
-    width: 38px;
-  }
-  :global(.settings-switch[data-state="checked"]) {
-    background: var(--color-east-bay-700);
-  }
-  :global(.settings-switch:focus-visible) {
-    outline: 2px solid var(--color-east-bay-400);
-    outline-offset: 2px;
-  }
-  :global(.settings-switch-thumb) {
-    background: #fff;
-    border-radius: 999px;
-    display: block;
-    height: 18px;
-    margin: 2px;
-    transform: translateX(0);
-    transition: transform 150ms ease;
-    width: 18px;
-  }
-  :global(.settings-switch[data-state="checked"] .settings-switch-thumb) {
-    transform: translateX(16px);
-  }
-  .proxy-form {
-    display: grid;
-    gap: 15px 16px;
-    grid-template-columns: minmax(0, 1fr) 150px;
-    padding: 18px;
-  }
-  .form-row {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-  .form-row label {
-    color: var(--color-boulder-700);
-    font-size: 12px;
-    font-weight: 650;
-  }
-  .form-row label span {
-    color: var(--color-boulder-500);
-    font-weight: 500;
-  }
-  .form-row input {
-    background: #fff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    box-sizing: border-box;
-    color: var(--color-boulder-800);
-    font: inherit;
-    font-size: 12px;
-    height: 36px;
-    padding: 0 10px;
-    width: 100%;
-  }
-  .form-row input:focus {
-    border-color: var(--color-east-bay-400);
-    outline: 2px solid var(--color-east-bay-100);
-  }
-  .proxy-form .hint {
-    grid-column: 1 / -1;
-    margin-top: -2px;
-  }
-  .proxy-disabled {
-    color: var(--color-boulder-500);
-    font-size: 12px;
-    margin: 0;
-    padding: 18px;
-  }
-  @media (max-width: 760px) {
-    .proxy-form {
-      grid-template-columns: 1fr;
-    }
-    .proxy-form .hint {
-      grid-column: auto;
-    }
-  }
-</style>

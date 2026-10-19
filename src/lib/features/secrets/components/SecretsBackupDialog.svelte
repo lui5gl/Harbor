@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/i18n";
-  import { Button, Dialog } from "bits-ui";
+  import { Dialog } from "@ark-ui/svelte/dialog";
   import { Download, Upload } from "@lucide/svelte";
   import { decryptBackup, encryptBackup } from "../application/secretsBackup";
   import type { SecretsConfiguration } from "../types";
@@ -32,6 +32,12 @@
       error = "";
     }
   });
+
+  function handleOpenChange(details: { open: boolean }) {
+    if (busy && !details.open) {
+      open = true;
+    }
+  }
 
   async function submit() {
     if (busy) return;
@@ -65,55 +71,76 @@
   }
 </script>
 
-<Dialog.Root bind:open>
-  <Dialog.Portal>
-    <Dialog.Overlay class="modal-backdrop" />
+<Dialog.Root bind:open onOpenChange={handleOpenChange}>
+  <Dialog.Backdrop class="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs" />
+  <Dialog.Positioner class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <Dialog.Content
-      class="backup-dialog"
-      onInteractOutside={(event) => {
-        if (busy) event.preventDefault();
-      }}
-      onEscapeKeydown={(event) => {
-        if (busy) event.preventDefault();
-      }}
+      class="flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col gap-3.5 overflow-y-auto rounded-lg border border-boulder-200 bg-white p-6 shadow-2xl outline-none"
     >
-      <Dialog.Title class="backup-title">
-        {mode === "export" ? t("secrets.backupExportTitle") : t("secrets.backupRestoreTitle")}
-      </Dialog.Title>
-      <Dialog.Description class="backup-description">
-        {mode === "export" ? t("secrets.backupExportDesc") : t("secrets.backupRestoreDesc")}
-      </Dialog.Description>
+      <Dialog.Title class="text-lg font-bold text-boulder-950"
+        >{mode === "export"
+          ? t("secrets.backupExportTitle")
+          : t("secrets.backupRestoreTitle")}</Dialog.Title
+      >
+      <Dialog.Description class="text-[13px] leading-relaxed text-boulder-600"
+        >{mode === "export"
+          ? t("secrets.backupExportDesc")
+          : t("secrets.backupRestoreDesc")}</Dialog.Description
+      >
       {#if mode === "restore"}
-        <label>
-          {t("secrets.backupFile")}
-          <input
+        <label class="flex flex-col gap-1.5 text-xs font-semibold text-boulder-700"
+          >{t("secrets.backupFile")}<input
+            class="w-full rounded-md border border-boulder-300 bg-white p-2 text-xs font-normal text-boulder-800 file:mr-3 file:rounded file:border-0 file:bg-boulder-100 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-boulder-700"
             type="file"
             accept=".harbor,application/json"
             disabled={busy}
             onchange={(event) => (file = event.currentTarget.files?.[0] ?? null)}
-          />
-        </label>
+          /></label
+        >
       {/if}
-      <label>
-        {t("secrets.passphrase")}
-        <input type="password" autocomplete="off" bind:value={password} disabled={busy} />
-      </label>
-      {#if mode === "export"}
-        <label>
-          {t("secrets.confirmPassphrase")}
-          <input type="password" autocomplete="off" bind:value={confirmation} disabled={busy} />
-        </label>
-      {/if}
-      {#if mode === "restore"}
-        <label class="backup-confirm">
-          <input type="checkbox" bind:checked={confirmed} disabled={busy} />
-          {t("secrets.replaceConfirm")}
-        </label>
-      {/if}
-      {#if error}<p role="alert">{error}</p>{/if}
-      <div class="backup-actions">
-        <Dialog.Close disabled={busy}>{t("secrets.cancel")}</Dialog.Close>
-        <Button.Root
+      <label class="flex flex-col gap-1.5 text-xs font-semibold text-boulder-700"
+        >{t("secrets.passphrase")}<input
+          class="h-9 w-full rounded-md border border-boulder-300 px-2.5 text-[13px] font-normal text-boulder-900 outline-none focus:border-east-bay-500 focus:ring-3 focus:ring-east-bay-500/15"
+          type="password"
+          autocomplete="off"
+          bind:value={password}
+          disabled={busy}
+        /></label
+      >
+      {#if mode === "export"}<label
+          class="flex flex-col gap-1.5 text-xs font-semibold text-boulder-700"
+          >{t("secrets.confirmPassphrase")}<input
+            class="h-9 w-full rounded-md border border-boulder-300 px-2.5 text-[13px] font-normal text-boulder-900 outline-none focus:border-east-bay-500 focus:ring-3 focus:ring-east-bay-500/15"
+            type="password"
+            autocomplete="off"
+            bind:value={confirmation}
+            disabled={busy}
+          /></label
+        >{/if}
+      {#if mode === "restore"}<label
+          class="flex cursor-pointer items-center gap-2 text-xs text-boulder-700"
+          ><input
+            class="size-4 accent-red-600"
+            type="checkbox"
+            bind:checked={confirmed}
+            disabled={busy}
+          />{t("secrets.replaceConfirm")}</label
+        >{/if}
+      {#if error}<p
+          class="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700"
+          role="alert"
+        >
+          {error}
+        </p>{/if}
+      <div class="flex justify-end gap-2">
+        <button
+          class="h-9 cursor-pointer rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-700 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
+          type="button"
+          disabled={busy}
+          onclick={() => (open = false)}>{t("secrets.cancel")}</button
+        >
+        <button
+          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-east-bay-900 px-3 text-xs font-semibold text-white hover:bg-east-bay-950 disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           disabled={busy ||
             !password ||
@@ -121,84 +148,15 @@
               ? password.length < 12 || password !== confirmation
               : !file || !confirmed)}
           onclick={() => void submit()}
-        >
-          {#if mode === "export"}<Download size={14} />{:else}<Upload size={14} />{/if}
-          <span>
-            {busy
+          >{#if mode === "export"}<Download size={14} />{:else}<Upload size={14} />{/if}<span
+            >{busy
               ? t("secrets.processing")
               : mode === "export"
                 ? t("secrets.downloadBackup")
-                : t("secrets.restoreBackupBtn")}
-          </span>
-        </Button.Root>
+                : t("secrets.restoreBackupBtn")}</span
+          ></button
+        >
       </div>
     </Dialog.Content>
-  </Dialog.Portal>
+  </Dialog.Positioner>
 </Dialog.Root>
-
-<style>
-  :global(.backup-dialog) {
-    background: white;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(460px, calc(100vw - 32px));
-    max-height: calc(100dvh - 32px);
-    overflow: auto;
-    padding: 24px;
-    z-index: 101;
-  }
-  :global(.backup-title) {
-    font-size: 18px;
-    font-weight: 700;
-  }
-  :global(.backup-description) {
-    font-size: 13px;
-    color: var(--color-boulder-600);
-    margin: 0;
-  }
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 12px;
-  }
-  input:not([type="checkbox"]) {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 9px;
-    border: 1px solid var(--color-boulder-300);
-    border-radius: 5px;
-    font: inherit;
-  }
-  .backup-confirm {
-    flex-direction: row;
-    align-items: center;
-  }
-  .backup-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-  .backup-actions :global(button) {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid var(--color-boulder-300);
-    border-radius: 5px;
-    padding: 8px 12px;
-    background: white;
-    cursor: pointer;
-  }
-  p[role="alert"] {
-    color: #b91c1c;
-    font-size: 12px;
-  }
-</style>

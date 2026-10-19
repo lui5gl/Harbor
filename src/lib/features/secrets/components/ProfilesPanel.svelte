@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { ChevronDown, ChevronRight, FolderGit2, Plus, Search, X } from "@lucide/svelte";
   import { t } from "#lib/i18n";
-  import { Button, ScrollArea } from "bits-ui";
+  import { ChevronDown, ChevronRight, FolderGit2, Plus, Search, X } from "@lucide/svelte";
   import type { Project } from "../types";
 
   type ProfilesPanelProps = {
@@ -47,312 +46,95 @@
 </script>
 
 <aside
-  class="projects-panel"
+  class="flex h-full min-h-140 flex-col rounded-lg border border-boulder-200 bg-white p-3.5 shadow-sm"
   aria-label={`${t("secrets.projects")} & ${t("secrets.environments")}`}
 >
-  <div class="panel-header">
-    <div>
-      <h2>{t("secrets.projects")}</h2>
-      <p>
-        {projects.length}
-        {projects.length === 1 ? t("secrets.project") : t("secrets.projectPlural")}
-      </p>
-    </div>
+  <div class="mb-2.5 border-b border-boulder-200 px-1 pt-0.5 pb-2.5">
+    <h2 class="text-[13px] font-bold text-boulder-950">{t("secrets.projects")}</h2>
+    <p class="mt-0.5 text-[11px] text-boulder-500">
+      {projects.length}
+      {projects.length === 1 ? t("secrets.project") : t("secrets.projectPlural")}
+    </p>
   </div>
 
   {#if projects.length > 1}
-    <div class="search-box">
+    <div
+      class="mb-2.5 flex items-center gap-1.5 rounded-md border border-boulder-200 bg-boulder-50 px-2 text-boulder-400 transition focus-within:border-east-bay-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-east-bay-400/15"
+    >
       <Search size={13} />
       <input
-        class="search-input"
+        class="h-7.5 min-w-0 flex-1 border-0 bg-transparent text-xs text-boulder-800 outline-none"
         placeholder={t("secrets.searchProjects")}
         bind:value={searchQuery}
       />
-      {#if searchQuery}
-        <Button.Root
-          class="clear-search"
+      {#if searchQuery}<button
+          class="inline-flex size-5 cursor-pointer items-center justify-center rounded text-boulder-400 hover:bg-boulder-100 hover:text-east-bay-800"
           type="button"
           aria-label="Clear search"
-          onclick={() => (searchQuery = "")}><X size={12} /></Button.Root
-        >
-      {/if}
+          onclick={() => (searchQuery = "")}><X size={12} /></button
+        >{/if}
     </div>
   {/if}
 
-  <ScrollArea.Root class="project-scroll-area" type="auto">
-    <ScrollArea.Viewport class="project-list-viewport">
-      {#if filteredProjects.length === 0}
-        <p class="empty-state">{t("secrets.noProjectsFound")}</p>
-      {:else}
-        <div class="project-list">
-          {#each filteredProjects as project (project.id)}
-            {@const isCollapsed = collapsedProjectIds.includes(project.id)}
-            <section
-              class={`project-group${project.id === selectedProjectId ? " selected-project" : ""}`}
-            >
-              <div class="project-heading">
-                <Button.Root
-                  class="project-toggle"
-                  type="button"
-                  aria-expanded={!isCollapsed}
-                  onclick={() => toggleProject(project.id)}
-                >
-                  {#if isCollapsed}<ChevronRight size={13} />{:else}<ChevronDown size={13} />{/if}
-                  <FolderGit2 size={14} class="project-icon" />
-                  <span>{project.name}</span>
-                </Button.Root>
-                <Button.Root
-                  class="add-environment"
-                  type="button"
-                  title={`Add environment to ${project.name}`}
-                  aria-label={`Add environment to ${project.name}`}
-                  onclick={() => onAddEnvironment(project.id)}><Plus size={14} /></Button.Root
-                >
-              </div>
+  <div class="min-h-0 flex-1 overflow-y-auto">
+    {#if filteredProjects.length === 0}
+      <p class="py-8 text-center text-xs text-boulder-500">{t("secrets.noProjectsFound")}</p>
+    {:else}
+      <div class="flex flex-col gap-2 pr-1">
+        {#each filteredProjects as project (project.id)}
+          {@const isCollapsed = collapsedProjectIds.includes(project.id)}
+          <section
+            class={`rounded-md ${project.id === selectedProjectId ? "bg-east-bay-50/40" : ""}`}
+          >
+            <div class="flex items-center justify-between">
+              <button
+                class="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left text-xs font-bold text-boulder-800 hover:bg-boulder-50"
+                type="button"
+                aria-expanded={!isCollapsed}
+                onclick={() => toggleProject(project.id)}
+              >
+                {#if isCollapsed}<ChevronRight size={13} />{:else}<ChevronDown size={13} />{/if}
+                <FolderGit2 size={14} class="shrink-0 text-east-bay-700" />
+                <span class="truncate">{project.name}</span>
+              </button>
+              <button
+                class="inline-flex size-5.5 cursor-pointer items-center justify-center rounded text-boulder-400 hover:bg-boulder-100 hover:text-east-bay-800"
+                type="button"
+                title={`Add environment to ${project.name}`}
+                aria-label={`Add environment to ${project.name}`}
+                onclick={() => onAddEnvironment(project.id)}><Plus size={14} /></button
+              >
+            </div>
 
-              {#if !isCollapsed}
-                <div class="environment-list">
-                  {#each project.environments as environment (environment.id)}
-                    {@const isSelected = environment.id === selectedEnvironmentId}
-                    {@const isActive = environment.id === activeEnvironmentId}
-                    <Button.Root
-                      class={`environment-item${isSelected ? " selected" : ""}`}
-                      type="button"
-                      onclick={() => onSelectEnvironment(project.id, environment.id)}
+            {#if !isCollapsed}
+              <div class="mt-0.5 flex flex-col gap-0.5 pl-5">
+                {#each project.environments as environment (environment.id)}
+                  {@const isSelected = environment.id === selectedEnvironmentId}
+                  {@const isActive = environment.id === activeEnvironmentId}
+                  <button
+                    class={`flex h-7.5 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-xs transition-colors ${isSelected ? "bg-east-bay-100 text-east-bay-950" : "text-boulder-700 hover:bg-boulder-50 hover:text-boulder-950"}`}
+                    type="button"
+                    onclick={() => onSelectEnvironment(project.id, environment.id)}
+                  >
+                    <span
+                      class={`size-1.5 shrink-0 rounded-full ${isActive ? "bg-emerald-500 ring-2 ring-emerald-500/20" : "bg-boulder-300"}`}
+                    ></span>
+                    <span class="min-w-0 flex-1 truncate font-medium">{environment.name}</span>
+                    {#if environment.isProduction}<span
+                        class="rounded border border-amber-200 bg-amber-50 px-1 text-[8px] font-bold text-amber-800"
+                        title="Production environment">PROD</span
+                      >{/if}
+                    <span
+                      class="min-w-5 rounded-full bg-boulder-100 px-1.5 text-center text-[10px] font-semibold text-boulder-500"
+                      >{environment.secrets.length}</span
                     >
-                      <span class={`status-dot${isActive ? " active" : ""}`}></span>
-                      <span class="environment-name">{environment.name}</span>
-                      {#if environment.isProduction}
-                        <span class="prod-badge" title="Production environment">PROD</span>
-                      {/if}
-                      <span class="count-pill">{environment.secrets.length}</span>
-                    </Button.Root>
-                  {/each}
-                </div>
-              {/if}
-            </section>
-          {/each}
-        </div>
-      {/if}
-    </ScrollArea.Viewport>
-    <ScrollArea.Scrollbar class="project-scrollbar" orientation="vertical"
-      ><ScrollArea.Thumb class="project-scrollbar-thumb" /></ScrollArea.Scrollbar
-    >
-  </ScrollArea.Root>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </section>
+        {/each}
+      </div>
+    {/if}
+  </div>
 </aside>
-
-<style>
-  .projects-panel {
-    background: #fff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 560px;
-    padding: 14px;
-  }
-  .panel-header {
-    border-bottom: 1px solid var(--color-boulder-150, #ececec);
-    margin-bottom: 10px;
-    padding: 2px 4px 10px;
-  }
-  h2,
-  p {
-    margin: 0;
-  }
-  h2 {
-    color: var(--color-boulder-950);
-    font-size: 13px;
-    font-weight: 750;
-    letter-spacing: -0.01em;
-  }
-  .panel-header p {
-    color: var(--color-boulder-500);
-    font-size: 11px;
-    margin-top: 2px;
-  }
-  .search-box {
-    align-items: center;
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    color: var(--color-boulder-400);
-    display: flex;
-    gap: 6px;
-    margin-bottom: 10px;
-    padding: 0 8px;
-    transition: all 0.12s ease;
-  }
-  .search-box:focus-within {
-    background: #fff;
-    border-color: var(--color-east-bay-400);
-    box-shadow: 0 0 0 2px rgb(113 132 192 / 14%);
-  }
-  .search-input {
-    background: transparent;
-    border: 0;
-    color: var(--color-boulder-850);
-    font: inherit;
-    font-size: 12px;
-    height: 29px;
-    outline: none;
-    width: 100%;
-  }
-  :global(.clear-search),
-  :global(.add-environment) {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: 4px;
-    color: var(--color-boulder-400);
-    cursor: pointer;
-    display: inline-flex;
-    height: 22px;
-    justify-content: center;
-    padding: 0;
-    width: 22px;
-    transition: all 0.1s ease;
-  }
-  :global(.clear-search:hover),
-  :global(.add-environment:hover) {
-    background: var(--color-boulder-100);
-    color: var(--color-east-bay-800);
-  }
-  :global(.project-scroll-area) {
-    flex: 1;
-    min-height: 0;
-  }
-  :global(.project-list-viewport) {
-    height: 100%;
-    width: 100%;
-  }
-  .project-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-right: 3px;
-  }
-  .project-group {
-    border-radius: 6px;
-  }
-  .project-heading {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-  }
-  :global(.project-toggle) {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: 5px;
-    color: var(--color-boulder-850);
-    cursor: pointer;
-    display: flex;
-    flex: 1;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    gap: 6px;
-    min-width: 0;
-    padding: 5px 6px;
-    text-align: left;
-    transition: background 0.1s ease;
-  }
-  :global(.project-toggle:hover) {
-    background: var(--color-boulder-50);
-  }
-  :global(.project-icon) {
-    color: var(--color-east-bay-700);
-    flex-shrink: 0;
-  }
-  .environment-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-top: 2px;
-    padding-left: 20px;
-  }
-  :global(.environment-item) {
-    align-items: center;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    color: var(--color-boulder-700);
-    cursor: pointer;
-    display: flex;
-    font: inherit;
-    font-size: 12px;
-    gap: 7px;
-    min-height: 29px;
-    padding: 0 8px;
-    text-align: left;
-    width: 100%;
-    transition: all 0.1s ease;
-  }
-  :global(.environment-item:hover) {
-    background: var(--color-boulder-50);
-    color: var(--color-boulder-950);
-  }
-  :global(.environment-item.selected) {
-    background: var(--color-east-bay-50);
-    border-color: var(--color-east-bay-200);
-    color: var(--color-east-bay-950);
-    font-weight: 650;
-  }
-  .status-dot {
-    background: var(--color-boulder-350, #bebebe);
-    border-radius: 50%;
-    flex-shrink: 0;
-    height: 6px;
-    width: 6px;
-  }
-  .status-dot.active {
-    background: #16a34a;
-    box-shadow: 0 0 0 2px rgb(22 163 74 / 20%);
-  }
-  .environment-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .prod-badge {
-    background: #fffbeb;
-    border: 1px solid #fef3c7;
-    border-radius: 3px;
-    color: #92400e;
-    font-size: 8.5px;
-    font-weight: 750;
-    letter-spacing: 0.04em;
-    padding: 1px 3.5px;
-    text-transform: uppercase;
-  }
-  .count-pill {
-    color: var(--color-boulder-400);
-    font-size: 11px;
-    font-weight: 500;
-    margin-left: auto;
-  }
-  :global(.environment-item.selected .count-pill) {
-    color: var(--color-east-bay-600);
-  }
-  .empty-state {
-    color: var(--color-boulder-400);
-    font-size: 12px;
-    padding: 24px 6px;
-    text-align: center;
-  }
-  :global(.project-scrollbar) {
-    display: flex;
-    padding: 2px;
-    width: 6px;
-  }
-  :global(.project-scrollbar-thumb) {
-    background: var(--color-boulder-300);
-    border-radius: 999px;
-    flex: 1;
-  }
-</style>

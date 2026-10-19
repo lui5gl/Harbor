@@ -2,18 +2,6 @@
   let { children } = $props();
 </script>
 
-<div class="quick-tray-shell">
+<div class="flex h-screen flex-col overflow-hidden bg-boulder-50 text-boulder-950">
   {@render children()}
 </div>
-
-<style>
-  .quick-tray-shell {
-    background: var(--color-boulder-50);
-    box-sizing: border-box;
-    color: var(--color-boulder-950);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
-</style>

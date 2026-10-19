@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ShieldAlert, Trash2 } from "@lucide/svelte";
-  import { AlertDialog } from "bits-ui";
+  import { Dialog } from "@ark-ui/svelte/dialog";
 
   type Props = {
     open: boolean;
@@ -12,33 +12,52 @@
   let isActivation = $derived(kind === "activation");
 </script>
 
-<AlertDialog.Root bind:open>
-  <AlertDialog.Portal>
-    <AlertDialog.Overlay class="modal-backdrop" />
-    <AlertDialog.Content class="dialog-content confirmation-dialog">
-      <div class:danger={!isActivation} class="warning-icon-wrapper" aria-hidden="true">
-        {#if isActivation}<ShieldAlert size={22} strokeWidth={2.2} />{:else}<Trash2
-            size={22}
-            strokeWidth={2.2}
-          />{/if}
+<Dialog.Root bind:open role="alertdialog">
+  <Dialog.Backdrop class="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity" />
+  <Dialog.Positioner class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Dialog.Content
+      class="bg-white border border-boulder-200 rounded-xl shadow-2xl p-5 max-w-sm w-full flex flex-col gap-3 outline-none"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isActivation ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-600"}`}
+        >
+          {#if isActivation}
+            <ShieldAlert size={20} strokeWidth={2.2} />
+          {:else}
+            <Trash2 size={20} strokeWidth={2.2} />
+          {/if}
+        </div>
+        <div>
+          <Dialog.Title class="text-sm font-bold text-boulder-950">
+            {isActivation ? "¿Activar este entorno?" : "¿Eliminar variable?"}
+          </Dialog.Title>
+        </div>
       </div>
-      <AlertDialog.Title class="dialog-title">
-        {isActivation ? "¿Activar este entorno?" : "¿Eliminar variable?"}
-      </AlertDialog.Title>
-      <AlertDialog.Description class="dialog-description">
+      <Dialog.Description class="text-xs text-boulder-600 leading-relaxed">
         {isActivation
           ? "Esto cargará las variables del entorno en el sistema y en PowerShell. Confirma para continuar."
           : "Esta acción eliminará la variable del entorno. Esta acción no se puede deshacer."}
-      </AlertDialog.Description>
-      <div class="dialog-footer">
-        <AlertDialog.Cancel class="secondary-button btn-sm">Cancelar</AlertDialog.Cancel>
-        <AlertDialog.Action
-          class={`primary-button btn-sm warning-action-btn${isActivation ? "" : " danger-action-btn"}`}
-          onclick={onConfirm}
+      </Dialog.Description>
+      <div class="flex items-center justify-end gap-2 mt-2">
+        <Dialog.CloseTrigger
+          class="h-8 px-3 text-xs font-semibold text-boulder-700 hover:text-boulder-950 bg-boulder-100 hover:bg-boulder-200 rounded-lg transition-colors cursor-pointer"
         >
-          <span>{isActivation ? "Activar entorno" : "Eliminar"}</span>
-        </AlertDialog.Action>
+          Cancelar
+        </Dialog.CloseTrigger>
+        <button
+          type="button"
+          class={`h-8 px-3 text-xs font-semibold text-white rounded-lg transition-colors cursor-pointer shadow-xs ${
+            isActivation ? "bg-amber-700 hover:bg-amber-800" : "bg-red-600 hover:bg-red-700"
+          }`}
+          onclick={() => {
+            onConfirm();
+            open = false;
+          }}
+        >
+          {isActivation ? "Activar entorno" : "Eliminar"}
+        </button>
       </div>
-    </AlertDialog.Content>
-  </AlertDialog.Portal>
-</AlertDialog.Root>
+    </Dialog.Content>
+  </Dialog.Positioner>
+</Dialog.Root>

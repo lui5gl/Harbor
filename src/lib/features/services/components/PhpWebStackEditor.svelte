@@ -1,21 +1,5 @@
 <script lang="ts">
-  import {
-    AlertCircle,
-    Download,
-    ExternalLink,
-    Folder,
-    FolderOpen,
-    Globe,
-    Layers,
-    Pencil,
-    Play,
-    Plus,
-    Server,
-    Square,
-    Terminal,
-    Trash2,
-  } from "@lucide/svelte";
-  import { Button } from "bits-ui";
+  import { AlertCircle, Download, Play, Square } from "@lucide/svelte";
   import DeleteRuntimeDialog from "./DeleteRuntimeDialog.svelte";
   import PhpStackProfileDialog from "./PhpStackProfileDialog.svelte";
   import PhpWebStackOverview from "./PhpWebStackOverview.svelte";
@@ -253,28 +237,41 @@
   }
 </script>
 
-<section class="editor-panel" aria-labelledby="web-stack-title">
-  <!-- Header -->
-  <header class="editor-header">
-    <div class="header-main">
-      <div class="header-titles">
-        <p class="eyebrow">Entorno Web</p>
-        <h2 id="web-stack-title">PHP & Servidor Web</h2>
+<section
+  class="flex w-full flex-col gap-5 rounded-lg border border-boulder-200 bg-white p-6"
+  aria-labelledby="web-stack-title"
+>
+  <header
+    class="flex items-start justify-between gap-5 border-b border-boulder-100 pb-4.5 max-md:flex-col"
+  >
+    <div class="min-w-0">
+      <div>
+        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-east-bay-700">
+          Entorno Web
+        </p>
+        <h2 id="web-stack-title" class="text-[22px] leading-tight font-semibold text-boulder-950">
+          PHP & Servidor Web
+        </h2>
       </div>
-      <p class="header-sub">
+      <p class="mt-1.5 text-[13.5px] leading-relaxed text-boulder-600">
         Perfiles de desarrollo con PHP y Apache integrados para ejecutar aplicaciones web y comandos
         CLI locales.
       </p>
     </div>
 
-    <div class="header-controls">
-      <div class={`status-pill${isPhpRunning ? " running" : ""}`}>
-        <span class="status-indicator" aria-hidden="true"></span>
-        <span class="status-label">{isPhpRunning ? "Servidor Activo" : "Servidor Detenido"}</span>
+    <div class="flex shrink-0 items-center gap-3">
+      <div
+        class={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${isPhpRunning ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-boulder-200 bg-boulder-100 text-boulder-700"}`}
+      >
+        <span
+          class={`size-1.5 rounded-full ${isPhpRunning ? "bg-emerald-500 ring-3 ring-emerald-500/20" : "bg-boulder-400"}`}
+          aria-hidden="true"
+        ></span>
+        <span>{isPhpRunning ? "Servidor Activo" : "Servidor Detenido"}</span>
       </div>
 
-      <Button.Root
-        class={`toggle-service-btn${isPhpRunning ? " is-stop" : ""}`}
+      <button
+        class={`inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-3.5 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${isPhpRunning ? "bg-red-700 hover:bg-red-800" : "bg-east-bay-900 hover:bg-east-bay-950"}`}
         type="button"
         disabled={!activePhpVersion || isInstalling}
         onclick={() => void onTogglePhpFastCgi()}
@@ -286,32 +283,34 @@
           <Play size={14} strokeWidth={2.4} aria-hidden="true" />
           <span>Iniciar Servidor</span>
         {/if}
-      </Button.Root>
+      </button>
     </div>
   </header>
 
   <!-- Missing Apache Web Engine Notice (Only when required) -->
   {#if isApacheMissing}
-    <div class="missing-engine-banner">
-      <div class="banner-icon-box" aria-hidden="true">
+    <div class="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+      <div class="shrink-0 text-amber-600" aria-hidden="true">
         <AlertCircle size={18} strokeWidth={2.2} />
       </div>
-      <div class="banner-content">
-        <span class="banner-title">Componente Apache Requerido</span>
-        <p class="banner-text">
+      <div class="min-w-0 flex-1">
+        <span class="block text-xs font-bold uppercase tracking-[0.02em] text-amber-900"
+          >Componente Apache Requerido</span
+        >
+        <p class="mt-0.5 text-[12.5px] leading-snug text-amber-700">
           Se necesita el servidor web Apache base para servir tus sitios en el puerto local.
         </p>
       </div>
       {#if compatibility.recommended.length > 0}
-        <Button.Root
-          class="primary-button-sm banner-action"
+        <button
+          class="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md bg-east-bay-900 px-3.5 text-[12.5px] font-semibold text-white hover:bg-east-bay-950 disabled:opacity-50"
           type="button"
           disabled={isInstalling}
           onclick={() => void onInstallVersion("Apache", compatibility.recommended[0])}
         >
           <Download size={14} strokeWidth={2} aria-hidden="true" />
           <span>Instalar Servidor Web</span>
-        </Button.Root>
+        </button>
       {/if}
     </div>
   {/if}
@@ -361,219 +360,3 @@
   }}
   onConfirm={confirmDelete}
 />
-
-<style>
-  .editor-panel {
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 24px;
-    width: 100%;
-  }
-
-  .editor-header {
-    align-items: flex-start;
-    border-bottom: 1px solid var(--color-boulder-100);
-    display: flex;
-    justify-content: space-between;
-    padding-bottom: 18px;
-    gap: 20px;
-  }
-
-  .header-main {
-    min-width: 0;
-  }
-
-  .eyebrow {
-    color: var(--color-east-bay-700);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    margin: 0 0 6px;
-    text-transform: uppercase;
-  }
-
-  h2 {
-    color: var(--color-boulder-950);
-    font-size: 22px;
-    font-weight: 650;
-    line-height: 1.2;
-    margin: 0;
-  }
-
-  .header-sub {
-    color: var(--color-boulder-600);
-    font-size: 13.5px;
-    line-height: 1.5;
-    margin: 6px 0 0;
-  }
-
-  .header-controls {
-    align-items: center;
-    display: flex;
-    flex-shrink: 0;
-    gap: 12px;
-  }
-
-  .status-pill {
-    align-items: center;
-    background: var(--color-boulder-100);
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 999px;
-    color: var(--color-boulder-700);
-    display: inline-flex;
-    font-size: 12px;
-    font-weight: 600;
-    gap: 7px;
-    padding: 6px 12px;
-  }
-
-  .status-pill.running {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-    color: #065f46;
-  }
-
-  .status-indicator {
-    background: #9ca3af;
-    border-radius: 50%;
-    height: 7px;
-    width: 7px;
-  }
-
-  .status-pill.running .status-indicator {
-    background: #10b981;
-    box-shadow: 0 0 0 3px rgb(16 185 129 / 20%);
-  }
-
-  :global(.toggle-service-btn) {
-    align-items: center;
-    background: var(--color-east-bay-900);
-    border: 0;
-    border-radius: 6px;
-    color: #ffffff;
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    gap: 7px;
-    height: 36px;
-    padding: 0 14px;
-    transition: background-color 150ms ease;
-  }
-
-  :global(.toggle-service-btn:hover:not(:disabled)) {
-    background: var(--color-east-bay-950);
-  }
-
-  :global(.toggle-service-btn.is-stop) {
-    background: #b91c1c;
-  }
-
-  :global(.toggle-service-btn.is-stop:hover:not(:disabled)) {
-    background: #991b1b;
-  }
-
-  :global(.toggle-service-btn:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Missing Engine Banner */
-  .missing-engine-banner {
-    align-items: center;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    display: flex;
-    gap: 12px;
-    padding: 12px 16px;
-  }
-
-  .banner-icon-box {
-    color: #d97706;
-    flex-shrink: 0;
-  }
-
-  .banner-content {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .banner-title {
-    color: #92400e;
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-
-  .banner-text {
-    color: #b45309;
-    font-size: 12.5px;
-    line-height: 1.4;
-    margin: 2px 0 0;
-  }
-
-  :global(.banner-action) {
-    flex-shrink: 0;
-  }
-
-  /* Environment Overview Card */
-  /* Profiles Card */
-  :global(.secondary-button) {
-    align-items: center;
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    color: var(--color-boulder-800);
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: 12.5px;
-    font-weight: 600;
-    gap: 6px;
-    height: 32px;
-    padding: 0 12px;
-    transition:
-      background-color 150ms ease,
-      border-color 150ms ease;
-  }
-
-  :global(.secondary-button:hover) {
-    background: var(--color-boulder-100);
-    color: var(--color-boulder-950);
-  }
-
-  :global(.primary-button-sm) {
-    align-items: center;
-    background: var(--color-east-bay-900);
-    border: 0;
-    border-radius: 6px;
-    color: #ffffff;
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: 12.5px;
-    font-weight: 600;
-    gap: 6px;
-    height: 32px;
-    padding: 0 14px;
-  }
-
-  :global(.primary-button-sm:hover:not(:disabled)) {
-    background: var(--color-east-bay-950);
-  }
-
-  @media (max-width: 720px) {
-    .editor-header {
-      flex-direction: column;
-    }
-  }
-</style>

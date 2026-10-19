@@ -1,6 +1,5 @@
 <script lang="ts">
   import { RefreshCw } from "@lucide/svelte";
-  import { Button } from "bits-ui";
   import { onMount } from "svelte";
   import { createRuntimesStore } from "#lib/features/services/application/runtimesStore.svelte";
   import NodeRuntimeEditor from "#lib/features/services/components/NodeRuntimeEditor.svelte";
@@ -50,17 +49,24 @@
   <meta name="description" content={t("services.description")} />
 </svelte:head>
 
-<main class="services-page" aria-labelledby="services-title">
-  <header class="page-header">
+<main
+  class="mx-auto flex w-full max-w-310 flex-1 flex-col p-8 max-sm:px-4 max-sm:py-6"
+  aria-labelledby="services-title"
+>
+  <header class="flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
     <div>
-      <p class="eyebrow">{t("services.eyebrow")}</p>
-      <h1 id="services-title">{t("services.title")}</h1>
-      <p class="page-description">
+      <p class="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-east-bay-700">
+        {t("services.eyebrow")}
+      </p>
+      <h1 id="services-title" class="text-3xl leading-tight font-semibold text-boulder-950">
+        {t("services.title")}
+      </h1>
+      <p class="mt-2 text-[15px] leading-relaxed text-boulder-600">
         {t("services.description")}
       </p>
     </div>
-    <Button.Root
-      class="secondary-button"
+    <button
+      class="inline-flex min-h-9.5 cursor-pointer items-center justify-center gap-2 rounded-md border border-boulder-200 bg-white px-3.5 text-[13px] font-semibold text-boulder-800 hover:border-boulder-300 hover:bg-boulder-50 disabled:cursor-wait disabled:opacity-60"
       type="button"
       onclick={() => void loadAllCatalogs()}
       disabled={isCatalogLoading}
@@ -68,21 +74,33 @@
       <RefreshCw
         size={15}
         strokeWidth={2}
-        class={isCatalogLoading ? "spin" : ""}
+        class={isCatalogLoading ? "animate-spin" : ""}
         aria-hidden="true"
       />
       <span>{isCatalogLoading ? t("services.refreshing") : t("services.refreshCatalog")}</span>
-    </Button.Root>
+    </button>
   </header>
 
   {#if catalogError}
-    <p class="catalog-error" role="alert">{catalogError}</p>
+    <p
+      class="mt-5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-800"
+      role="alert"
+    >
+      {catalogError}
+    </p>
   {/if}
 
   {#if isCatalogLoading && installedPhpVersions.length === 0 && installedNodeVersions.length === 0}
-    <div class="loading-state" role="status">{t("services.loading")}</div>
+    <div
+      class="flex min-h-70 flex-1 items-center justify-center text-sm text-boulder-600"
+      role="status"
+    >
+      {t("services.loading")}
+    </div>
   {:else}
-    <div class="services-workspace">
+    <div
+      class="mt-7.5 grid grid-cols-[minmax(230px,280px)_minmax(0,1fr)] items-start gap-5 max-lg:grid-cols-1"
+    >
       <ServicesPanel
         {selectedServiceId}
         {activePhpVersion}
@@ -130,140 +148,3 @@
     </div>
   {/if}
 </main>
-
-<style>
-  .services-page {
-    box-sizing: border-box;
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    margin: 0 auto;
-    max-width: 1240px;
-    padding: 32px;
-    width: 100%;
-  }
-
-  .page-header {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .eyebrow {
-    color: var(--color-east-bay-700);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    margin: 0 0 8px;
-    text-transform: uppercase;
-  }
-
-  h1,
-  p {
-    margin: 0;
-  }
-
-  h1 {
-    color: var(--color-boulder-950);
-    font-size: 30px;
-    font-weight: 650;
-    line-height: 1.2;
-  }
-
-  .page-description {
-    color: var(--color-boulder-600);
-    font-size: 15px;
-    line-height: 1.5;
-    margin-top: 8px;
-  }
-
-  :global(.secondary-button) {
-    align-items: center;
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    color: var(--color-boulder-800);
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    gap: 8px;
-    justify-content: center;
-    min-height: 38px;
-    padding: 0 14px;
-    transition:
-      background-color 150ms ease,
-      border-color 150ms ease;
-  }
-
-  :global(.secondary-button:hover:not(:disabled)) {
-    background: var(--color-boulder-50);
-    border-color: var(--color-boulder-300);
-    color: var(--color-boulder-950);
-  }
-
-  :global(.secondary-button:disabled) {
-    cursor: wait;
-    opacity: 0.6;
-  }
-
-  :global(.spin) {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .catalog-error {
-    background: #fff3f1;
-    border: 1px solid #efb5ad;
-    border-radius: 6px;
-    color: #913526;
-    font-size: 13px;
-    margin: 20px 0 0;
-    padding: 10px 12px;
-  }
-
-  .loading-state {
-    align-items: center;
-    color: var(--color-boulder-600);
-    display: flex;
-    flex: 1;
-    font-size: 14px;
-    justify-content: center;
-    min-height: 280px;
-  }
-
-  .services-workspace {
-    align-items: start;
-    display: grid;
-    gap: 20px;
-    grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
-    margin-top: 30px;
-  }
-
-  @media (max-width: 840px) {
-    .services-workspace {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .services-page {
-      padding: 24px 16px;
-    }
-
-    .page-header {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 14px;
-    }
-  }
-</style>

@@ -5,26 +5,10 @@
   let { children } = $props();
 </script>
 
-<div class="application-shell">
+<div class="flex min-h-screen flex-col bg-boulder-50 text-boulder-950">
   <NavigationBar />
-  <div class="application-content">
+  <div class="flex flex-1 flex-col">
     {@render children()}
   </div>
   <StatusBar />
 </div>
-
-<style>
-  .application-shell {
-    background: var(--color-boulder-50);
-    color: var(--color-boulder-950);
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
-  .application-content {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-  }
-</style>

@@ -66,7 +66,10 @@
   }
 </script>
 
-<section class="editor-panel" aria-labelledby="environment-title">
+<section
+  class="flex h-full min-h-140 min-w-0 flex-col rounded-lg border border-boulder-200 bg-white px-5 py-4 shadow-sm"
+  aria-labelledby="environment-title"
+>
   <ProfileHeader
     {disabled}
     {busy}
@@ -125,19 +128,3 @@
   onApply={(key, value) => onAddCustomVariable(key || "SECRET_KEY", value)}
 />
 <RenameProjectDialog bind:open={renameOpen} initialName={project.name} onSave={onRenameProject} />
-
-<style>
-  .editor-panel {
-    background: #fff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 560px;
-    min-width: 0;
-    padding: 16px 20px;
-  }
-</style>

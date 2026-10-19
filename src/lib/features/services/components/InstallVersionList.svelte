@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Check, Download, Search } from "@lucide/svelte";
-  import { ScrollArea } from "bits-ui";
   import {
     formatRuntimeChannel,
     getRuntimeChannelClass,
@@ -14,12 +13,10 @@
     isInstalling: boolean;
     onInstall: (version: string) => void;
   };
-
   let { serviceLabel, availableVersions, installedVersions, isInstalling, onInstall }: Props =
     $props();
   let searchQuery = $state("");
   let filterChannel = $state<"all" | "stable">("all");
-
   let parsedVersions = $derived(
     availableVersions.map((raw) => {
       const metadata = parseRuntimeVersion(raw);
@@ -30,7 +27,6 @@
       };
     }),
   );
-
   let filteredVersions = $derived(
     parsedVersions.filter((item) => {
       const query = searchQuery.trim().toLowerCase();
@@ -44,238 +40,75 @@
       return matchesQuery && (filterChannel === "all" || isStable);
     }),
   );
-
   let displayedVersions = $derived(filteredVersions.slice(0, 60));
+
+  function channelClass(channel: string) {
+    const kind = getRuntimeChannelClass(channel);
+    if (kind === "active" || kind === "current") return "bg-emerald-50 text-emerald-800";
+    if (kind === "lts") return "bg-east-bay-100 text-east-bay-800";
+    if (kind === "security") return "bg-amber-50 text-amber-800";
+    if (kind === "eol") return "bg-red-50 text-red-800";
+    return "bg-boulder-100 text-boulder-700";
+  }
 </script>
 
-<div class="filter-toolbar">
-  <div class="search-field">
-    <Search size={15} strokeWidth={2} class="search-icon" aria-hidden="true" />
-    <input
+<div class="mb-3.5 flex flex-col gap-2.5">
+  <div class="flex items-center gap-2 rounded-lg border border-boulder-200 bg-boulder-50 px-2.5">
+    <Search size={15} class="shrink-0 text-boulder-400" /><input
       type="text"
-      class="search-input"
+      class="h-9 w-full border-0 bg-transparent text-[13px] text-boulder-950 outline-none"
       bind:value={searchQuery}
       placeholder={`Search ${serviceLabel} versions (e.g. 8.4, 22, LTS)...`}
     />
   </div>
-  <div class="filter-pills">
+  <div class="flex gap-1.5">
     <button
       type="button"
-      class={`filter-pill${filterChannel === "all" ? " active" : ""}`}
-      onclick={() => (filterChannel = "all")}
-    >
-      All versions ({parsedVersions.length})
-    </button>
-    <button
+      class={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-semibold ${filterChannel === "all" ? "border-east-bay-200 bg-east-bay-100 text-east-bay-800" : "border-transparent bg-boulder-100 text-boulder-700"}`}
+      onclick={() => (filterChannel = "all")}>All versions ({parsedVersions.length})</button
+    ><button
       type="button"
-      class={`filter-pill${filterChannel === "stable" ? " active" : ""}`}
-      onclick={() => (filterChannel = "stable")}
+      class={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-semibold ${filterChannel === "stable" ? "border-east-bay-200 bg-east-bay-100 text-east-bay-800" : "border-transparent bg-boulder-100 text-boulder-700"}`}
+      onclick={() => (filterChannel = "stable")}>Active / LTS only</button
     >
-      Active / LTS only
-    </button>
   </div>
 </div>
 
-<ScrollArea.Root class="version-list-scroll" type="auto">
-  <ScrollArea.Viewport class="version-list-viewport">
-    {#if filteredVersions.length === 0}
-      <div class="empty-list">No versions match your search criteria.</div>
-    {:else}
-      <div class="version-list">
-        {#each displayedVersions as item (item.number)}
-          <div class={`version-row${item.isInstalled ? " is-installed" : ""}`}>
-            <div class="version-info">
-              <span class="version-number">{item.number}</span>
-              {#if item.channel}
-                <span class={`channel-badge channel-${getRuntimeChannelClass(item.channel)}`}>
-                  {formatRuntimeChannel(item.channel)}
-                </span>
-              {/if}
-            </div>
-            <div class="version-actions">
-              {#if item.isInstalled}
-                <span class="installed-tag"
-                  ><Check size={14} strokeWidth={2.4} aria-hidden="true" /><span>Installed</span
-                  ></span
-                >
-              {:else}
-                <button
-                  type="button"
-                  class="btn-install"
-                  disabled={isInstalling}
-                  onclick={() => onInstall(item.raw)}
-                >
-                  <Download size={14} strokeWidth={2} aria-hidden="true" /><span>Install</span>
-                </button>
-              {/if}
-            </div>
+<div class="min-h-0 flex-1 overflow-y-auto rounded-lg border border-boulder-200 p-1">
+  {#if filteredVersions.length === 0}<div
+      class="px-4 py-8 text-center text-[13px] text-boulder-500"
+    >
+      No versions match your search criteria.
+    </div>{:else}
+    <div class="flex flex-col">
+      {#each displayedVersions as item (item.number)}
+        <div
+          class={`flex items-center justify-between rounded-md border-b border-boulder-100 px-3 py-2.5 ${item.isInstalled ? "bg-boulder-50/60" : ""}`}
+        >
+          <div class="flex items-center gap-2.5">
+            <span class="font-mono text-[13.5px] font-semibold text-boulder-950">{item.number}</span
+            >{#if item.channel}<span
+                class={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] ${channelClass(item.channel)}`}
+                >{formatRuntimeChannel(item.channel)}</span
+              >{/if}
           </div>
-        {/each}
-        {#if filteredVersions.length > displayedVersions.length}
-          <div class="truncated-notice">
-            Showing first {displayedVersions.length} of {filteredVersions.length} versions. Use the search
-            field to filter.
-          </div>
-        {/if}
-      </div>
-    {/if}
-  </ScrollArea.Viewport>
-  <ScrollArea.Scrollbar class="dialog-scrollbar" orientation="vertical">
-    <ScrollArea.Thumb class="dialog-scrollbar-thumb" />
-  </ScrollArea.Scrollbar>
-</ScrollArea.Root>
-
-<style>
-  .filter-toolbar {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .search-field {
-    align-items: center;
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 7px;
-    box-sizing: border-box;
-    display: flex;
-    gap: 8px;
-    padding: 0 10px;
-  }
-  :global(.search-icon) {
-    color: var(--color-boulder-400);
-    flex-shrink: 0;
-  }
-  .search-input {
-    background: transparent;
-    border: 0;
-    box-sizing: border-box;
-    color: var(--color-boulder-950);
-    font: inherit;
-    font-size: 13px;
-    height: 36px;
-    outline: none;
-    width: 100%;
-  }
-  .filter-pills {
-    display: flex;
-    gap: 6px;
-  }
-  .filter-pill {
-    background: var(--color-boulder-100);
-    border: 1px solid transparent;
-    border-radius: 999px;
-    color: var(--color-boulder-700);
-    cursor: pointer;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 4px 10px;
-  }
-  .filter-pill.active {
-    background: var(--color-east-bay-100);
-    border-color: var(--color-east-bay-200);
-    color: var(--color-east-bay-800);
-  }
-  :global(.version-list-scroll) {
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 8px;
-    display: flex;
-    flex: 1;
-    min-height: 0;
-  }
-  :global(.version-list-viewport) {
-    height: 100%;
-    width: 100%;
-  }
-  .version-list {
-    display: flex;
-    flex-direction: column;
-    padding: 4px;
-  }
-  .empty-list {
-    color: var(--color-boulder-500);
-    font-size: 13px;
-    padding: 32px 16px;
-    text-align: center;
-  }
-  .truncated-notice {
-    background: var(--color-boulder-50);
-    border-radius: 4px;
-    color: var(--color-boulder-500);
-    font-size: 11.5px;
-    margin: 4px;
-    padding: 10px 12px;
-    text-align: center;
-  }
-  .version-row {
-    align-items: center;
-    border-bottom: 1px solid var(--color-boulder-100);
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 12px;
-  }
-  .version-info {
-    align-items: center;
-    display: flex;
-    gap: 10px;
-  }
-  .version-number {
-    color: var(--color-boulder-950);
-    font-family: var(--font-mono);
-    font-size: 13.5px;
-    font-weight: 600;
-  }
-  .channel-badge {
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 2px 7px;
-    text-transform: uppercase;
-  }
-  .channel-active {
-    background: #ecfdf5;
-    color: #065f46;
-  }
-  .channel-lts {
-    background: var(--color-east-bay-100);
-    color: var(--color-east-bay-800);
-  }
-  .channel-current {
-    background: #f0fdf4;
-    color: #166534;
-  }
-  .channel-security {
-    background: #fffbeb;
-    color: #92400e;
-  }
-  .channel-eol {
-    background: #fef2f2;
-    color: #991b1b;
-  }
-  .installed-tag {
-    align-items: center;
-    color: #059669;
-    display: inline-flex;
-    font-size: 12.5px;
-    font-weight: 600;
-    gap: 4px;
-  }
-  .btn-install {
-    align-items: center;
-    background: var(--color-east-bay-900);
-    border: 0;
-    border-radius: 5px;
-    color: #ffffff;
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    gap: 5px;
-    height: 30px;
-    padding: 0 12px;
-  }
-</style>
+          {#if item.isInstalled}<span
+              class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600"
+              ><Check size={14} strokeWidth={2.4} /><span>Installed</span></span
+            >{:else}<button
+              type="button"
+              class="inline-flex h-7.5 cursor-pointer items-center gap-1.5 rounded-md bg-east-bay-900 px-2.5 text-xs font-semibold text-white hover:bg-east-bay-950 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isInstalling}
+              onclick={() => onInstall(item.raw)}><Download size={14} /><span>Install</span></button
+            >{/if}
+        </div>
+      {/each}
+      {#if filteredVersions.length > displayedVersions.length}<div
+          class="m-1 rounded bg-boulder-50 px-3 py-2.5 text-center text-[11.5px] text-boulder-500"
+        >
+          Showing first {displayedVersions.length} of {filteredVersions.length} versions. Use the search
+          field to filter.
+        </div>{/if}
+    </div>
+  {/if}
+</div>

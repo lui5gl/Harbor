@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Check, Copy, Dices, KeyRound, RefreshCw, ShieldCheck } from "@lucide/svelte";
-  import { Button, Dialog } from "bits-ui";
+  import { Dialog } from "@ark-ui/svelte/dialog";
+  import { Check, Copy, KeyRound, RefreshCw, ShieldCheck } from "@lucide/svelte";
   import { generateSecret, type GeneratorType } from "../application/secretGenerator";
 
   type SecretGeneratorDialogProps = {
@@ -10,12 +10,20 @@
   };
 
   let { open = $bindable(), initialKey = "", onApply }: SecretGeneratorDialogProps = $props();
-
   let targetKey = $state("");
   let generatorType = $state<GeneratorType>("hex256");
   let passwordLength = $state(32);
   let generatedValue = $state("");
   let isCopied = $state(false);
+
+  const generatorTypes: { value: GeneratorType; label: string }[] = [
+    { value: "hex256", label: "Hex 256-bit" },
+    { value: "hex128", label: "Hex 128-bit" },
+    { value: "base64", label: "Base64 (32B)" },
+    { value: "token", label: "Alphanumeric" },
+    { value: "password", label: "Password" },
+    { value: "uuid", label: "UUID v4" },
+  ];
 
   $effect(() => {
     if (open) {
@@ -34,12 +42,15 @@
     try {
       await navigator.clipboard.writeText(generatedValue);
       isCopied = true;
-      window.setTimeout(() => {
-        isCopied = false;
-      }, 1500);
+      window.setTimeout(() => (isCopied = false), 1500);
     } catch {
       isCopied = false;
     }
+  }
+
+  function selectGeneratorType(type: GeneratorType) {
+    generatorType = type;
+    regenerate();
   }
 
   function handleApply() {
@@ -49,386 +60,112 @@
 </script>
 
 <Dialog.Root bind:open>
-  <Dialog.Portal>
-    <Dialog.Overlay class="modal-backdrop" />
-    <Dialog.Content class="generator-dialog" aria-describedby="generator-description">
-      <div class="dialog-header">
-        <div class="dialog-header-icon">
+  <Dialog.Backdrop class="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs" />
+  <Dialog.Positioner class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Dialog.Content
+      class="flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-xl border border-boulder-200 bg-white p-6 shadow-2xl outline-none"
+      aria-describedby="generator-description"
+    >
+      <div class="flex items-start gap-3">
+        <div
+          class="flex size-9.5 shrink-0 items-center justify-center rounded-lg border border-east-bay-200 bg-east-bay-50 text-east-bay-700"
+        >
           <KeyRound size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <Dialog.Title class="dialog-title">Generate secure secret</Dialog.Title>
-          <Dialog.Description id="generator-description" class="dialog-description">
-            Create cryptographically strong secrets, tokens, or encryption keys.
-          </Dialog.Description>
+          <Dialog.Title class="text-base font-bold text-boulder-950"
+            >Generate secure secret</Dialog.Title
+          ><Dialog.Description
+            id="generator-description"
+            class="mt-1 text-[13px] leading-snug text-boulder-600"
+            >Create cryptographically strong secrets, tokens, or encryption keys.</Dialog.Description
+          >
         </div>
       </div>
 
-      <div class="field-group">
-        <label class="field-label" for="generator-target-key">Variable key (optional)</label>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-semibold text-boulder-700" for="generator-target-key"
+          >Variable key (optional)</label
+        >
         <input
           id="generator-target-key"
-          class="text-input"
+          class="h-9 w-full rounded-md border border-boulder-300 bg-white px-2.5 text-[13px] text-boulder-900 outline-none focus:border-east-bay-500 focus:ring-3 focus:ring-east-bay-500/15"
           placeholder="e.g. JWT_SECRET, ENCRYPTION_KEY"
           bind:value={targetKey}
         />
       </div>
 
-      <div class="field-group">
-        <span class="field-label">Secret format</span>
-        <div class="type-selector">
-          <button
-            type="button"
-            class={`type-chip${generatorType === "hex256" ? " active" : ""}`}
-            onclick={() => {
-              generatorType = "hex256";
-              regenerate();
-            }}
-          >
-            Hex 256-bit
-          </button>
-          <button
-            type="button"
-            class={`type-chip${generatorType === "hex128" ? " active" : ""}`}
-            onclick={() => {
-              generatorType = "hex128";
-              regenerate();
-            }}
-          >
-            Hex 128-bit
-          </button>
-          <button
-            type="button"
-            class={`type-chip${generatorType === "base64" ? " active" : ""}`}
-            onclick={() => {
-              generatorType = "base64";
-              regenerate();
-            }}
-          >
-            Base64 (32B)
-          </button>
-          <button
-            type="button"
-            class={`type-chip${generatorType === "token" ? " active" : ""}`}
-            onclick={() => {
-              generatorType = "token";
-              regenerate();
-            }}
-          >
-            Alphanumeric
-          </button>
-          <button
-            type="button"
-            class={`type-chip${generatorType === "password" ? " active" : ""}`}
-            onclick={() => {
-              generatorType = "password";
-              regenerate();
-            }}
-          >
-            Password
-          </button>
-          <button
-            type="button"
-            class={`type-chip${generatorType === "uuid" ? " active" : ""}`}
-            onclick={() => {
-              generatorType = "uuid";
-              regenerate();
-            }}
-          >
-            UUID v4
-          </button>
+      <div class="flex flex-col gap-1.5">
+        <span class="text-xs font-semibold text-boulder-700">Secret format</span>
+        <div class="grid grid-cols-3 gap-1.5">
+          {#each generatorTypes as type (type.value)}
+            <button
+              type="button"
+              class={`flex min-h-8 cursor-pointer items-center justify-center rounded-md border px-2 text-[11.5px] font-semibold transition-colors ${generatorType === type.value ? "border-east-bay-500 bg-east-bay-50 text-east-bay-900" : "border-boulder-200 bg-boulder-50 text-boulder-700 hover:border-boulder-300 hover:bg-boulder-100"}`}
+              onclick={() => selectGeneratorType(type.value)}>{type.label}</button
+            >
+          {/each}
         </div>
       </div>
 
       {#if generatorType === "password"}
-        <div class="length-slider-row">
-          <label for="password-length-slider" class="length-label">
-            Length: <strong>{passwordLength} characters</strong>
-          </label>
+        <div class="flex flex-col gap-2 rounded-md border border-boulder-200 bg-boulder-50 p-3">
+          <label for="password-length-slider" class="text-xs text-boulder-700"
+            >Length: <strong>{passwordLength} characters</strong></label
+          >
           <input
             id="password-length-slider"
             type="range"
             min="16"
             max="64"
             step="1"
-            class="slider"
+            class="w-full accent-east-bay-700"
             bind:value={passwordLength}
             oninput={regenerate}
           />
         </div>
       {/if}
 
-      <div class="preview-box">
-        <div class="preview-header">
-          <span class="preview-label">Generated value</span>
+      <div class="rounded-lg border border-boulder-200 bg-boulder-50 p-3">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="text-[11px] font-semibold uppercase text-boulder-500">Generated value</span>
           <button
             type="button"
-            class="regenerate-button"
+            class="inline-flex cursor-pointer items-center gap-1 text-[11.5px] font-semibold text-east-bay-700 hover:text-east-bay-950"
             onclick={regenerate}
             aria-label="Regenerate"
+            ><RefreshCw size={14} strokeWidth={2.2} /><span>Regenerate</span></button
           >
-            <RefreshCw size={14} strokeWidth={2.2} />
-            <span>Regenerate</span>
-          </button>
         </div>
-        <div class="preview-content">
-          <code class="preview-code">{generatedValue}</code>
-          <button type="button" class="copy-btn" onclick={copyValue} aria-label="Copy to clipboard">
-            {#if isCopied}
-              <Check size={15} strokeWidth={2.4} class="copied-icon" />
-            {:else}
-              <Copy size={15} strokeWidth={2} />
-            {/if}
-          </button>
+        <div class="flex items-center gap-2 rounded-md border border-boulder-200 bg-white p-2.5">
+          <code class="min-w-0 flex-1 break-all font-mono text-xs text-boulder-800"
+            >{generatedValue}</code
+          >
+          <button
+            type="button"
+            class={`inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors ${isCopied ? "bg-emerald-50 text-emerald-600" : "text-boulder-500 hover:bg-boulder-100 hover:text-boulder-900"}`}
+            onclick={copyValue}
+            aria-label="Copy to clipboard"
+            >{#if isCopied}<Check size={15} strokeWidth={2.4} />{:else}<Copy
+                size={15}
+                strokeWidth={2}
+              />{/if}</button
+          >
         </div>
       </div>
 
-      <div class="dialog-actions">
-        <Dialog.Close class="secondary-button">Cancel</Dialog.Close>
-        <Button.Root class="primary-button" type="button" onclick={handleApply}>
-          <ShieldCheck size={16} strokeWidth={2.2} />
-          <span>Insert into profile</span>
-        </Button.Root>
+      <div class="flex items-center justify-end gap-2">
+        <Dialog.CloseTrigger
+          class="h-9 cursor-pointer rounded-md bg-boulder-100 px-3 text-sm font-semibold text-boulder-800 hover:bg-boulder-200"
+          >Cancel</Dialog.CloseTrigger
+        >
+        <button
+          class="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-east-bay-900 px-3.5 text-sm font-semibold text-white hover:bg-east-bay-950"
+          type="button"
+          onclick={handleApply}
+          ><ShieldCheck size={16} strokeWidth={2.2} /><span>Insert into profile</span></button
+        >
       </div>
     </Dialog.Content>
-  </Dialog.Portal>
+  </Dialog.Positioner>
 </Dialog.Root>
-
-<style>
-  :global(.modal-backdrop) {
-    background: rgb(11 11 11 / 45%);
-    inset: 0;
-    position: fixed;
-    z-index: 100;
-  }
-
-  :global(.generator-dialog) {
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 10px;
-    box-shadow: 0 20px 60px rgb(11 11 11 / 22%);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    left: 50%;
-    max-width: 500px;
-    padding: 24px;
-    position: fixed;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(100vw - 32px);
-    z-index: 101;
-  }
-
-  .dialog-header {
-    align-items: flex-start;
-    display: flex;
-    gap: 12px;
-  }
-
-  .dialog-header-icon {
-    align-items: center;
-    background: var(--color-east-bay-50);
-    border: 1px solid var(--color-east-bay-200);
-    border-radius: 8px;
-    color: var(--color-east-bay-700);
-    display: flex;
-    height: 38px;
-    justify-content: center;
-    width: 38px;
-    flex-shrink: 0;
-  }
-
-  :global(.dialog-title) {
-    color: var(--color-boulder-950);
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0;
-  }
-
-  :global(.dialog-description) {
-    color: var(--color-boulder-600);
-    font-size: 13px;
-    line-height: 1.4;
-    margin: 4px 0 0;
-  }
-
-  .field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .field-label {
-    color: var(--color-boulder-700);
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .text-input {
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-300);
-    border-radius: 6px;
-    box-sizing: border-box;
-    color: var(--color-boulder-900);
-    font: inherit;
-    font-size: 13px;
-    min-height: 36px;
-    outline: none;
-    padding: 0 10px;
-    width: 100%;
-  }
-
-  .text-input:focus {
-    border-color: var(--color-east-bay-500);
-    box-shadow: 0 0 0 3px rgb(113 132 192 / 16%);
-  }
-
-  .type-selector {
-    display: grid;
-    gap: 6px;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .type-chip {
-    align-items: center;
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    color: var(--color-boulder-700);
-    cursor: pointer;
-    display: flex;
-    font-size: 11.5px;
-    font-weight: 600;
-    justify-content: center;
-    min-height: 32px;
-    padding: 0 8px;
-    transition:
-      background 0.12s ease,
-      border-color 0.12s ease,
-      color 0.12s ease;
-  }
-
-  .type-chip:hover {
-    background: var(--color-boulder-100);
-    border-color: var(--color-boulder-300);
-  }
-
-  .type-chip.active {
-    background: var(--color-east-bay-50);
-    border-color: var(--color-east-bay-500);
-    color: var(--color-east-bay-900);
-  }
-
-  .length-slider-row {
-    align-items: center;
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
-    gap: 12px;
-  }
-
-  .length-label {
-    color: var(--color-boulder-700);
-    font-size: 12px;
-    white-space: nowrap;
-  }
-
-  .slider {
-    accent-color: var(--color-east-bay-700);
-    cursor: pointer;
-    flex: 1;
-  }
-
-  .preview-box {
-    background: var(--color-boulder-900);
-    border: 1px solid var(--color-boulder-800);
-    border-radius: 8px;
-    padding: 12px;
-  }
-
-  .preview-header {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-
-  .preview-label {
-    color: var(--color-boulder-400);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .regenerate-button {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    color: var(--color-boulder-300);
-    cursor: pointer;
-    display: inline-flex;
-    font-size: 11.5px;
-    font-weight: 600;
-    gap: 4px;
-    padding: 0;
-    transition: color 0.12s ease;
-  }
-
-  .regenerate-button:hover {
-    color: #ffffff;
-  }
-
-  .preview-content {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-    justify-content: space-between;
-  }
-
-  .preview-code {
-    color: #4ade80;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 12.5px;
-    word-break: break-all;
-    user-select: all;
-  }
-
-  .copy-btn {
-    align-items: center;
-    background: rgb(255 255 255 / 10%);
-    border: 0;
-    border-radius: 4px;
-    color: var(--color-boulder-200);
-    cursor: pointer;
-    display: inline-flex;
-    height: 30px;
-    justify-content: center;
-    width: 30px;
-    flex-shrink: 0;
-    transition:
-      background 0.12s ease,
-      color 0.12s ease;
-  }
-
-  .copy-btn:hover {
-    background: rgb(255 255 255 / 20%);
-    color: #ffffff;
-  }
-
-  :global(.copied-icon) {
-    color: #4ade80;
-  }
-
-  .dialog-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 4px;
-  }
-</style>

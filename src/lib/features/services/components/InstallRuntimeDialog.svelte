@@ -1,7 +1,6 @@
 <script lang="ts">
+  import { Dialog } from "@ark-ui/svelte/dialog";
   import { Download } from "@lucide/svelte";
-  import { AlertDialog } from "bits-ui";
-
   type Props = {
     open: boolean;
     serviceName: string;
@@ -9,87 +8,31 @@
     onOpenChange: (open: boolean) => void;
     onConfirm: () => void;
   };
-
   let { open = $bindable(), serviceName, version, onOpenChange, onConfirm }: Props = $props();
 </script>
 
-<AlertDialog.Root bind:open {onOpenChange}>
-  <AlertDialog.Portal>
-    <AlertDialog.Overlay class="modal-backdrop" />
-    <AlertDialog.Content class="dialog-content">
-      <AlertDialog.Title class="dialog-title">
-        Descargar {serviceName}
-        {version}?
-      </AlertDialog.Title>
-      <AlertDialog.Description class="dialog-description">
-        El runtime se instalará en la carpeta de runtimes de Harbor.
-      </AlertDialog.Description>
-      <div class="dialog-actions">
-        <AlertDialog.Cancel class="btn-cancel">Cancelar</AlertDialog.Cancel>
-        <AlertDialog.Action class="btn-confirm" onclick={onConfirm}>
-          <Download size={14} strokeWidth={2} aria-hidden="true" />
-          <span>Confirmar</span>
-        </AlertDialog.Action>
+<Dialog.Root bind:open role="alertdialog" onOpenChange={(details) => onOpenChange(details.open)}>
+  <Dialog.Backdrop class="fixed inset-0 z-50 bg-black/35 backdrop-blur-xs" />
+  <Dialog.Positioner class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <Dialog.Content
+      class="w-full max-w-sm rounded-xl border border-boulder-200 bg-white p-6 shadow-2xl outline-none"
+    >
+      <Dialog.Title class="text-base font-bold text-boulder-950"
+        >Descargar {serviceName} {version}?</Dialog.Title
+      >
+      <Dialog.Description class="my-3 text-[13px] leading-relaxed text-boulder-600"
+        >El runtime se instalará en la carpeta de runtimes de Harbor.</Dialog.Description
+      >
+      <div class="flex justify-end gap-2">
+        <Dialog.CloseTrigger
+          class="h-9 cursor-pointer rounded-md border border-boulder-200 bg-white px-3.5 text-[13px] font-semibold text-boulder-700 hover:bg-boulder-100"
+          >Cancelar</Dialog.CloseTrigger
+        ><button
+          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-east-bay-700 px-3.5 text-[13px] font-semibold text-white hover:bg-east-bay-800"
+          type="button"
+          onclick={onConfirm}><Download size={14} /><span>Confirmar</span></button
+        >
       </div>
-    </AlertDialog.Content>
-  </AlertDialog.Portal>
-</AlertDialog.Root>
-
-<style>
-  :global(.modal-backdrop) {
-    align-items: center;
-    background: rgb(11 11 11 / 35%);
-    display: flex;
-    inset: 0;
-    justify-content: center;
-    position: fixed;
-    z-index: 20;
-  }
-
-  :global(.dialog-content) {
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 10px;
-    box-shadow: 0 18px 40px rgb(11 11 11 / 20%);
-    max-width: 360px;
-    padding: 24px;
-    width: calc(100% - 32px);
-  }
-
-  :global(.dialog-title) {
-    color: var(--color-boulder-950);
-    font-size: 16px;
-    margin: 0;
-  }
-
-  :global(.dialog-description) {
-    color: var(--color-boulder-600);
-    font-size: 13px;
-    line-height: 1.45;
-    margin: 10px 0 20px;
-  }
-
-  .dialog-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-  }
-
-  :global(.btn-cancel),
-  :global(.btn-confirm) {
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 6px;
-    font: inherit;
-    font-size: 13px;
-    min-height: 36px;
-    padding: 0 14px;
-  }
-
-  :global(.btn-confirm) {
-    align-items: center;
-    background: var(--color-east-bay-500);
-    color: #ffffff;
-    display: inline-flex;
-    gap: 6px;
-  }
-</style>
+    </Dialog.Content>
+  </Dialog.Positioner>
+</Dialog.Root>

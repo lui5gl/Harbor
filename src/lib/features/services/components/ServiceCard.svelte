@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Play, Square } from "@lucide/svelte";
   import { listen } from "@tauri-apps/api/event";
-  import { Button } from "bits-ui";
   import { onMount } from "svelte";
   import DeleteRuntimeDialog from "./DeleteRuntimeDialog.svelte";
   import InstallRuntimeDialog from "./InstallRuntimeDialog.svelte";
@@ -20,7 +19,6 @@
     getStatus: () => Promise<boolean>;
     onVersionSelect: (version: string) => Promise<void>;
   };
-
   let {
     serviceName,
     serviceDescription,
@@ -35,7 +33,6 @@
     onVersionSelect,
   }: ServiceCardProps = $props();
   let serviceTitleId = $derived(`${serviceName.toLowerCase().replaceAll(" ", "-")}-service-title`);
-
   let selectedVersion = $state("");
   let installingVersion = $state("");
   let downloadProgress = $state(0);
@@ -46,35 +43,32 @@
   let isRunning = $state(false);
   let canStartStop = $derived(serviceName === "PHP" || serviceName === "Apache");
   let serviceRole = $derived(
-    serviceName === "PHP" ? "FastCGI / CLI" : serviceName === "Apache" ? "Web server" : "Runtime",
+    serviceName === "PHP"
+      ? "FastCGI / CLI"
+      : serviceName === "Apache"
+        ? "Web server"
+        : serviceDescription || "Runtime",
   );
   let servicePort = $derived(
     serviceName === "PHP" ? "FastCGI :9070" : serviceName === "Apache" ? "HTTP :8080" : "CLI",
   );
-  $effect(() => {
-    if (!installedCatalog.includes(selectedVersion)) {
-      selectedVersion = installedCatalog[0] ?? "";
-    }
-  });
   let installedCatalog = $derived(
     versions.filter((version) => installedVersions.includes(getVersionNumber(version))),
   );
   let downloadableCatalog = $derived(
     versions.filter((version) => !installedVersions.includes(getVersionNumber(version))),
   );
-
+  $effect(() => {
+    if (!installedCatalog.includes(selectedVersion)) selectedVersion = installedCatalog[0] ?? "";
+  });
   function getVersionNumber(version: string) {
     return cleanRuntimeVersion(version);
   }
-
   function isInstalled(version: string) {
     return installedVersions.includes(getVersionNumber(version));
   }
-
   onMount(() => {
-    if (canStartStop) {
-      void getStatus().then((status) => (isRunning = status));
-    }
+    if (canStartStop) void getStatus().then((status) => (isRunning = status));
     let unlisten: (() => void) | undefined;
     void listen<{ service: string; version: string; progress: number }>(
       "runtime-download-progress",
@@ -82,14 +76,12 @@
         if (
           event.payload.service === serviceName &&
           event.payload.version === getVersionNumber(installingVersion)
-        ) {
+        )
           downloadProgress = event.payload.progress;
-        }
       },
     ).then((cleanup) => (unlisten = cleanup));
     return () => unlisten?.();
   });
-
   async function installVersion(version: string) {
     installingVersion = getVersionNumber(version);
     downloadProgress = 0;
@@ -103,17 +95,14 @@
       downloadProgress = 0;
     }
   }
-
   function requestInstall(version: string) {
     downloadError = "";
     pendingVersion = version;
   }
-
   function requestRemoval(version: string) {
     downloadError = "";
     pendingRemovalVersion = version;
   }
-
   async function removeVersion() {
     isRemoving = true;
     try {
@@ -126,11 +115,8 @@
       isRemoving = false;
     }
   }
-
   async function toggleService() {
-    if (!canStartStop || !isInstalled(selectedVersion)) {
-      return;
-    }
+    if (!canStartStop || !isInstalled(selectedVersion)) return;
     downloadError = "";
     try {
       if (isRunning) {
@@ -144,51 +130,60 @@
       downloadError = error instanceof Error ? error.message : String(error);
     }
   }
-
   async function handleVersionSelect(version: string) {
     selectedVersion = version;
     try {
       await onVersionSelect(version);
-      if (isRunning && serviceName === "PHP") {
-        await onStart(version);
-      }
+      if (isRunning && serviceName === "PHP") await onStart(version);
     } catch (error) {
       downloadError = error instanceof Error ? error.message : String(error);
     }
   }
 </script>
 
-<article class="service-card" aria-labelledby={serviceTitleId}>
-  <div class="service-identity">
-    <div class="service-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" role="img">
-        <path d={serviceIconPath} />
-      </svg>
+<article
+  class="grid min-h-23 grid-cols-[minmax(220px,1fr)_minmax(260px,320px)_minmax(320px,435px)] items-center gap-7 rounded-xl border border-boulder-200 bg-white px-7 py-4.5 max-xl:grid-cols-[minmax(200px,1fr)_minmax(300px,435px)] max-md:grid-cols-1 max-md:gap-4 max-md:p-4"
+  aria-labelledby={serviceTitleId}
+>
+  <div class="flex min-w-0 items-center gap-5">
+    <div
+      class="flex size-12 shrink-0 items-center justify-center rounded-[10px] border border-east-bay-100 bg-east-bay-50 text-east-bay-500"
+    >
+      <svg class="size-6 fill-current" viewBox="0 0 24 24" role="img"
+        ><path d={serviceIconPath} /></svg
+      >
     </div>
-    <div class="service-copy">
-      <h2 id={serviceTitleId}>{serviceName}</h2>
-      <p>{serviceRole}</p>
+    <div class="min-w-0">
+      <h2 id={serviceTitleId} class="text-[17px] leading-tight font-semibold text-boulder-950">
+        {serviceName}
+      </h2>
+      <p class="mt-1 text-sm leading-snug text-east-bay-800">{serviceRole}</p>
     </div>
   </div>
-
-  <div class="service-meta" aria-label={`${serviceName} details`}>
-    <div class="meta-item">
-      <span class="meta-label">Version</span>
-      <span class="meta-value">{selectedVersion || "-"}</span>
+  <div
+    class="grid min-w-0 grid-cols-3 items-center gap-4 max-xl:col-start-1 max-xl:ml-17 max-md:col-auto max-md:ml-0"
+  >
+    <div class="flex min-w-0 flex-col gap-1">
+      <span class="text-[11px] uppercase text-boulder-600">Version</span><span
+        class="truncate text-[13px] font-semibold text-boulder-950">{selectedVersion || "-"}</span
+      >
     </div>
-    <div class="meta-item">
-      <span class="meta-label">Port</span>
-      <span class="meta-value">{servicePort}</span>
+    <div class="flex min-w-0 flex-col gap-1">
+      <span class="text-[11px] uppercase text-boulder-600">Port</span><span
+        class="truncate text-[13px] font-semibold text-boulder-950">{servicePort}</span
+      >
     </div>
-    {#if serviceName === "PHP"}
-      <div class={`runtime-state${isInstalled(selectedVersion) ? " ready" : ""}`}>
-        <span class="status-indicator" aria-hidden="true"></span>
-        <span>{isInstalled(selectedVersion) ? "Ready" : "Not installed"}</span>
-      </div>
-    {/if}
+    {#if serviceName === "PHP"}<div
+        class={`flex items-center gap-1.5 whitespace-nowrap text-xs ${isInstalled(selectedVersion) ? "text-east-bay-700" : "text-boulder-600"}`}
+      >
+        <span class="size-1.5 rounded-full bg-current"></span><span
+          >{isInstalled(selectedVersion) ? "Ready" : "Not installed"}</span
+        >
+      </div>{/if}
   </div>
-
-  <div class={`service-controls${canStartStop ? "" : " runtime-controls"}`}>
+  <div
+    class="flex w-full max-w-108.75 items-center justify-self-end max-xl:col-start-2 max-xl:row-start-1 max-md:col-auto max-md:row-auto max-md:max-w-none"
+  >
     <RuntimeVersionSelector
       {serviceName}
       installedVersions={installedCatalog}
@@ -199,23 +194,14 @@
       onSelect={(version) => void handleVersionSelect(version)}
       onRequestInstall={requestInstall}
       onRequestRemoval={requestRemoval}
-    />
-
-    {#if canStartStop}
-      <Button.Root
-        class={`start-button${isRunning ? " running" : ""}`}
+    />{#if canStartStop}<button
+        class={`ml-1 inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border transition disabled:cursor-not-allowed disabled:opacity-40 ${isRunning ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100" : "border-boulder-200 bg-boulder-50 text-east-bay-800 hover:border-east-bay-200 hover:bg-east-bay-50"}`}
         type="button"
         aria-label={`${isRunning ? "Stop" : "Start"} ${serviceName}`}
         disabled={!isInstalled(selectedVersion)}
         onclick={() => void toggleService()}
-      >
-        {#if isRunning}
-          <Square size={16} strokeWidth={1.8} aria-hidden="true" />
-        {:else}
-          <Play size={18} strokeWidth={1.8} aria-hidden="true" />
-        {/if}
-      </Button.Root>
-    {/if}
+        >{#if isRunning}<Square size={16} />{:else}<Play size={18} />{/if}</button
+      >{/if}
   </div>
 </article>
 
@@ -232,508 +218,18 @@
     void installVersion(version);
   }}
 />
-
 <DeleteRuntimeDialog
   open={Boolean(pendingRemovalVersion)}
   serviceLabel={serviceName}
   version={getVersionNumber(pendingRemovalVersion)}
   onOpenChange={(open) => {
-    if (!open) pendingRemovalVersion = "";
+    if (!open && !isRemoving) pendingRemovalVersion = "";
   }}
   onConfirm={() => void removeVersion()}
 />
-
-{#if downloadError}
-  <div class="download-error" role="alert">{downloadError}</div>
-{/if}
-
-<style>
-  .service-card {
-    align-items: center;
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 12px;
-    box-sizing: border-box;
-    display: grid;
-    gap: 28px;
-    grid-template-columns: minmax(260px, 1fr) minmax(280px, 320px) minmax(340px, 420px);
-    min-height: 92px;
-    padding: 18px 28px;
-  }
-
-  .service-meta {
-    align-items: center;
-    display: grid;
-    flex-shrink: 0;
-    gap: 24px;
-    grid-template-columns: 1fr 1fr 1fr;
-    min-width: 0;
-  }
-
-  .meta-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 76px;
-  }
-
-  .meta-label {
-    color: var(--color-boulder-600);
-    font-size: 11px;
-    text-transform: uppercase;
-  }
-
-  .meta-value {
-    color: var(--color-boulder-950);
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .runtime-state {
-    align-items: center;
-    color: var(--color-boulder-600);
-    display: flex;
-    font-size: 12px;
-    gap: 6px;
-    white-space: nowrap;
-  }
-
-  .runtime-state.ready {
-    color: var(--color-east-bay-700);
-  }
-
-  .status-indicator {
-    background: currentColor;
-    border-radius: 50%;
-    height: 7px;
-    width: 7px;
-  }
-
-  .download-progress {
-    align-items: center;
-    background: conic-gradient(
-      var(--color-east-bay-500) var(--download-progress),
-      var(--color-boulder-200) 0deg
-    );
-    border-radius: 50%;
-    display: inline-flex;
-    height: 24px;
-    justify-content: center;
-    position: relative;
-    width: 24px;
-  }
-
-  .download-progress::after {
-    background: #ffffff;
-    border-radius: 50%;
-    content: "";
-    inset: 3px;
-    position: absolute;
-  }
-
-  .download-progress span {
-    font-size: 7px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .service-identity {
-    align-items: center;
-    display: flex;
-    flex: 1;
-    gap: 20px;
-    min-width: 0;
-  }
-
-  .service-icon {
-    align-items: center;
-    background: var(--color-east-bay-50);
-    border: 1px solid var(--color-east-bay-100);
-    border-radius: 10px;
-    color: var(--color-east-bay-500);
-    display: flex;
-    flex-shrink: 0;
-    height: 48px;
-    justify-content: center;
-    width: 48px;
-  }
-
-  .service-icon svg {
-    fill: currentColor;
-    height: 25px;
-    width: 25px;
-  }
-
-  .service-copy {
-    min-width: 0;
-  }
-
-  h2 {
-    color: var(--color-boulder-950);
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.25;
-    margin: 0;
-  }
-
-  p {
-    color: var(--color-east-bay-800);
-    font-size: 14px;
-    line-height: 1.4;
-    margin: 4px 0 0;
-  }
-
-  .service-controls {
-    align-items: center;
-    display: flex;
-    flex-shrink: 0;
-    gap: 0;
-    justify-content: stretch;
-    justify-self: end;
-    width: 435px;
-  }
-
-  .version-control-group {
-    align-items: center;
-    display: flex;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .runtime-controls :global(.version-button) {
-    flex: 1;
-  }
-
-  .service-controls > :global([data-combobox-root]) {
-    display: flex;
-  }
-
-  .service-controls :global(.version-button) {
-    border-bottom-right-radius: 0;
-    border-top-right-radius: 0;
-  }
-
-  .download-anchor {
-    display: flex;
-    width: 40px;
-  }
-
-  @media (max-width: 840px) {
-    .service-card {
-      align-items: flex-start;
-      flex-wrap: wrap;
-      grid-template-columns: minmax(220px, 1fr) auto;
-    }
-
-    .service-meta {
-      margin-left: 68px;
-      order: 3;
-      width: calc(100% - 68px);
-    }
-
-    .service-controls {
-      grid-column: 2;
-      grid-row: 1;
-      width: min(435px, 100%);
-    }
-
-    .runtime-controls {
-      grid-column: 1 / -1;
-      grid-row: 2;
-    }
-  }
-
-  @media (max-width: 560px) {
-    .service-card {
-      gap: 16px;
-      grid-template-columns: 1fr auto;
-      padding: 16px;
-    }
-
-    .service-meta {
-      gap: 12px;
-      grid-column: 1 / -1;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      margin-left: 0;
-      width: 100%;
-    }
-
-    .service-controls {
-      width: 100%;
-    }
-
-    .meta-value {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-
-  :global(.version-button),
-  :global(.start-button) {
-    align-items: center;
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-200);
-    box-sizing: border-box;
-    color: var(--color-east-bay-800);
-    display: inline-flex;
-    font: inherit;
-    justify-content: center;
-    min-height: 40px;
-    transition:
-      background-color 150ms ease,
-      border-color 150ms ease,
-      color 150ms ease;
-  }
-
-  :global(.version-button:hover),
-  :global(.start-button:hover) {
-    background: var(--color-east-bay-50);
-    border-color: var(--color-east-bay-200);
-    color: var(--color-east-bay-700);
-  }
-
-  :global(.version-button) {
-    appearance: none;
-    border-radius: 7px;
-    justify-content: space-between;
-    width: 100%;
-    padding: 0 14px;
-  }
-
-  .selected-version-label {
-    align-items: center;
-    display: inline-flex;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  .selected-version-channel {
-    background: var(--color-east-bay-100);
-    border-radius: 999px;
-    color: var(--color-east-bay-800);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    line-height: 20px;
-    padding: 0 7px;
-    text-transform: uppercase;
-  }
-
-  :global(.version-button-open) {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    border-bottom-color: var(--color-boulder-200);
-  }
-
-  .version-anchor {
-    align-items: center;
-    display: flex;
-    flex: 1;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  :global(.download-selected-button) {
-    align-items: center;
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 0 7px 7px 0;
-    color: var(--color-east-bay-700);
-    display: inline-flex;
-    flex-shrink: 0;
-    height: 40px;
-    justify-content: center;
-    width: 40px;
-  }
-
-  :global(.download-selected-button:hover) {
-    background: var(--color-east-bay-50);
-    border-color: var(--color-east-bay-200);
-  }
-
-  :global(.version-content) {
-    background: #ffffff;
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 0 0 8px 8px;
-    box-shadow: 0 10px 24px rgb(11 11 11 / 14%);
-    box-sizing: border-box;
-    max-height: 320px;
-    min-width: var(--bits-combobox-anchor-width);
-    overflow-y: auto;
-    padding: 6px 4px 8px;
-    width: var(--bits-combobox-anchor-width);
-    z-index: 10;
-  }
-
-  :global(.download-content) {
-    min-width: var(--bits-combobox-anchor-width);
-    width: var(--bits-combobox-anchor-width);
-  }
-
-  .version-content-heading {
-    color: var(--color-boulder-950);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    padding: 7px 12px 6px;
-  }
-
-  :global(.version-item) {
-    align-items: center;
-    border-radius: 4px;
-    color: var(--color-boulder-950);
-    cursor: pointer;
-    display: flex;
-    font: inherit;
-    justify-content: space-between;
-    gap: 12px;
-    height: 40px;
-    min-height: 40px;
-    padding: 0 12px;
-    user-select: none;
-  }
-
-  :global(.version-item[data-highlighted]) {
-    background: var(--color-east-bay-50);
-    color: var(--color-east-bay-800);
-  }
-
-  .remove-version-button {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: 4px;
-    color: var(--color-boulder-500);
-    cursor: pointer;
-    display: inline-flex;
-    flex-shrink: 0;
-    justify-content: center;
-    padding: 4px;
-  }
-
-  .remove-version-button:hover {
-    background: #fff0ed;
-    color: #a33c2c;
-  }
-
-  .version-item-label {
-    align-items: center;
-    display: inline-flex;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  .version-channel {
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    line-height: 20px;
-    padding: 0 7px;
-    text-transform: uppercase;
-  }
-
-  .version-channel-current {
-    background: #edf4ff;
-    color: #3568a8;
-  }
-
-  .version-channel-lts {
-    background: #eaf7f0;
-    color: #28734a;
-  }
-
-  .version-channel-security {
-    background: #fff7e6;
-    color: #9a6700;
-  }
-
-  .version-channel-active {
-    background: #e8f7f8;
-    color: #18727a;
-  }
-
-  .version-channel-eol {
-    background: #fff0ed;
-    color: #a33c2c;
-  }
-
-  .download-status-dot {
-    border: 1.5px solid var(--color-east-bay-400);
-    border-radius: 50%;
-    display: inline-block;
-    flex: 0 0 8px;
-    height: 8px;
-    width: 8px;
-  }
-
-  :global(.download-version-icon) {
-    color: var(--color-east-bay-700);
-    flex-shrink: 0;
-  }
-
-  .version-search-row {
-    align-items: center;
-    display: flex;
-    position: relative;
-  }
-
-  :global(.version-search-icon) {
-    color: var(--color-east-bay-800);
-    left: 12px;
-    pointer-events: none;
-    position: absolute;
-    z-index: 1;
-  }
-
-  :global(.version-search) {
-    background: var(--color-boulder-50);
-    border: 1px solid var(--color-boulder-200);
-    border-radius: 5px;
-    box-sizing: border-box;
-    color: var(--color-boulder-950);
-    font: inherit;
-    height: 36px;
-    outline: none;
-    padding: 0 12px 0 36px;
-    width: 100%;
-  }
-
-  :global(.version-search:focus) {
-    border-color: var(--color-east-bay-500);
-  }
-
-  .version-empty {
-    color: var(--color-east-bay-800);
-    display: block;
-    padding: 9px;
-  }
-
-  :global(.start-button) {
-    border-radius: 7px;
-    width: 40px;
-  }
-
-  :global(.start-button) {
-    margin-left: 0;
-  }
-
-  @media (max-width: 720px) {
-    .service-card {
-      align-items: stretch;
-      flex-direction: column;
-      padding: 18px;
-    }
-
-    .service-controls {
-      width: 100%;
-      min-width: 0;
-    }
-
-    :global(.version-button) {
-      flex: 1;
-      min-width: 0;
-    }
-  }
-</style>
+{#if downloadError}<div
+    class="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-800"
+    role="alert"
+  >
+    {downloadError}
+  </div>{/if}
