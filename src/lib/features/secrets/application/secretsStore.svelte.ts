@@ -70,7 +70,7 @@ type SecretsStore = {
   dispose: () => void;
   selectEnvironment: (projectId: number, environmentId: number) => void;
   prepareEnvironmentCreation: (projectId: number | null) => boolean;
-  createProject: (name: string, environmentName: string) => void;
+  createProject: (name: string) => void;
   createEnvironment: (name: string) => void;
   cloneEnvironment: (name: string) => void;
   renameProject: (name: string) => void;
@@ -284,13 +284,17 @@ export function createSecretsStore(): SecretsStore {
     return true;
   }
 
-  function createProject(name: string, environmentName: string) {
+  function createProject(name: string) {
     if (!writable()) return;
     const projectId = nextProjectId++;
-    const environmentId = nextEnvironmentId++;
-    projects = appendProject(projects, projectId, environmentId, name, environmentName);
+    const environments: Environment[] = [
+      { id: nextEnvironmentId++, name: "Development", isProduction: false, secrets: [] },
+      { id: nextEnvironmentId++, name: "Staging", isProduction: false, secrets: [] },
+      { id: nextEnvironmentId++, name: "Production", isProduction: true, secrets: [] },
+    ];
+    projects = appendProject(projects, projectId, environments, name);
     selectedProjectId = projectId;
-    selectedEnvironmentId = environmentId;
+    selectedEnvironmentId = environments[0].id;
     scheduleSave();
   }
 

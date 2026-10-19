@@ -1,6 +1,16 @@
 <script lang="ts">
   import { t } from "#lib/i18n";
-  import { ChevronDown, ChevronRight, FolderGit2, Plus, Search, X } from "@lucide/svelte";
+  import {
+    ChevronDown,
+    ChevronRight,
+    Code2,
+    FlaskConical,
+    FolderGit2,
+    Plus,
+    Search,
+    ShieldAlert,
+    X,
+  } from "@lucide/svelte";
   import type { Project } from "../types";
 
   type ProfilesPanelProps = {
@@ -116,9 +126,21 @@
                     type="button"
                     onclick={() => onSelectEnvironment(project.id, environment.id)}
                   >
-                    <span
-                      class={`size-1.5 shrink-0 rounded-full ${isActive ? "bg-emerald-500 ring-2 ring-emerald-500/20" : "bg-boulder-300"}`}
-                    ></span>
+                    {#if environment.isProduction}<ShieldAlert
+                        size={13}
+                        class="shrink-0 text-amber-700"
+                        aria-label="Production"
+                      />{:else if environment.name.toLowerCase() === "development"}<Code2
+                        size={13}
+                        class="shrink-0 text-east-bay-700"
+                        aria-label="Development"
+                      />{:else if environment.name.toLowerCase() === "staging"}<FlaskConical
+                        size={13}
+                        class="shrink-0 text-violet-700"
+                        aria-label="Staging"
+                      />{:else}<span
+                        class={`size-1.5 shrink-0 rounded-full ${isActive ? "bg-emerald-500 ring-2 ring-emerald-500/20" : "bg-boulder-300"}`}
+                      ></span>{/if}
                     <span class="min-w-0 flex-1 truncate font-medium">{environment.name}</span>
                     {#if environment.isProduction}<span
                         class="rounded border border-amber-200 bg-amber-50 px-1 text-[8px] font-bold text-amber-800"

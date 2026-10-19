@@ -147,7 +147,7 @@
   class="mx-auto flex w-full max-w-310 flex-1 flex-col px-4 py-6 sm:px-8 sm:pb-8"
   aria-labelledby="secrets-title"
 >
-  <header class="flex flex-wrap items-center justify-between gap-5">
+  <header class="flex flex-wrap items-end justify-between gap-5">
     <div class="flex flex-col">
       <div class="mb-1.5 flex items-center gap-3">
         <p class="text-[11px] font-bold uppercase tracking-[0.06em] text-east-bay-700">
@@ -305,9 +305,6 @@
           disabled={!secrets.canWrite ||
             secrets.selectedEnvironment.id === secrets.activeEnvironmentId}
           busy={secrets.isBusy || secrets.isSaving || !secrets.canWrite}
-          onSelectEnvironment={(id) => selectEnvironment(secrets.selectedProject!.id, id)}
-          onRenameProject={secrets.renameProject}
-          onRequestDeleteProject={() => requestDelete("project")}
           onSaveEnvironment={secrets.saveEnvironment}
           onRequestDeleteEnvironment={() => requestDelete("environment")}
           onCloneEnvironment={secrets.cloneEnvironment}

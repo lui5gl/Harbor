@@ -4,7 +4,6 @@
   import ImportVariablesDialog from "./ImportVariablesDialog.svelte";
   import ProfileHeader from "./ProfileHeader.svelte";
   import ProfileSettingsDialog from "./ProfileSettingsDialog.svelte";
-  import RenameProjectDialog from "./RenameProjectDialog.svelte";
   import SecretGeneratorDialog from "./SecretGeneratorDialog.svelte";
   import VariablesTable from "./VariablesTable.svelte";
   import { copyEnvironment, downloadEnvironment } from "../application/environmentExport";
@@ -16,9 +15,6 @@
     project: Project;
     environment: Environment;
     activeEnvironmentId: number | null;
-    onSelectEnvironment: (id: number) => void;
-    onRenameProject: (name: string) => void;
-    onRequestDeleteProject: () => void;
     onSaveEnvironment: (name: string, isProduction: boolean) => void;
     onRequestDeleteEnvironment: () => void;
     onCloneEnvironment: (name: string) => void;
@@ -35,9 +31,6 @@
     project,
     environment,
     activeEnvironmentId,
-    onSelectEnvironment,
-    onRenameProject,
-    onRequestDeleteProject,
     onSaveEnvironment,
     onRequestDeleteEnvironment,
     onCloneEnvironment,
@@ -53,7 +46,6 @@
   let cloneOpen = $state(false);
   let compareOpen = $state(false);
   let generatorOpen = $state(false);
-  let renameOpen = $state(false);
 
   function copyEnv() {
     return copyEnvironment(environment);
@@ -74,9 +66,6 @@
     {project}
     {environment}
     {activeEnvironmentId}
-    {onSelectEnvironment}
-    onRenameProject={() => (renameOpen = true)}
-    {onRequestDeleteProject}
     onOpenSettings={() => (settingsOpen = true)}
     onOpenGenerator={() => (generatorOpen = true)}
     onOpenImport={() => (importOpen = true)}
@@ -124,4 +113,3 @@
   initialKey=""
   onApply={(key, value) => onAddCustomVariable(key || "SECRET_KEY", value)}
 />
-<RenameProjectDialog bind:open={renameOpen} initialName={project.name} onSave={onRenameProject} />

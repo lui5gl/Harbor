@@ -51,18 +51,15 @@ export function updateEnvironment(
 export function appendProject(
   projects: readonly Project[],
   projectId: number,
-  environmentId: number,
+  environments: Environment[],
   name: string,
-  environmentName: string,
 ): Project[] {
   return [
     ...projects,
     {
       id: projectId,
       name,
-      environments: [
-        { id: environmentId, name: environmentName, isProduction: false, secrets: [] },
-      ],
+      environments,
     },
   ];
 }
