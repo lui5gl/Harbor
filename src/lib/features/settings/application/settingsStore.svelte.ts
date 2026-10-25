@@ -17,7 +17,7 @@ export type UserSettings = {
   proxyUsername: string;
   proxyPassword: string;
   autoActivateSecrets: boolean;
-  terminalType: "powershell" | "git-bash" | "custom";
+  terminalType: string;
   customTerminalPath: string;
 };
 
@@ -89,10 +89,12 @@ export function createSettingsStore() {
     persistLocale(locale);
   }
 
-  async function save(nextProxy: ProxySettings) {
+  async function save(nextProxy: ProxySettings | null) {
     error = "";
-    proxy = nextProxy;
-    if (nativeApp) await invoke("save_proxy_settings", { settings: nextProxy });
+    if (nextProxy) {
+      proxy = nextProxy;
+      if (nativeApp) await invoke("save_proxy_settings", { settings: nextProxy });
+    }
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     saved = true;
     window.setTimeout(() => (saved = false), SETTINGS_FEEDBACK_DURATION_MS);

@@ -2,7 +2,7 @@ use keyring::Entry;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::os::windows::process::CommandExt;
 use std::process::Command;
 use std::sync::Mutex;
@@ -340,6 +340,50 @@ pub fn deactivate() -> Result<(), String> {
     }
 }
 
+#[derive(Serialize)]
+pub struct DetectedTerminal {
+    pub id: &'static str,
+    pub label: &'static str,
+}
+
+fn find_on_path(name: &str) -> Option<PathBuf> {
+    std::env::var_os("PATH").into_iter()
+        .flat_map(|paths| std::env::split_paths(&paths).collect::<Vec<_>>())
+        .map(|directory| directory.join(name))
+        .find(|path| path.is_file())
+}
+
+fn resolve_terminal(id: &str) -> Option<PathBuf> {
+    let system32 = || std::env::var_os("SystemRoot").map(|root| Path::new(&root).join("System32"));
+    let found = match id {
+        "powershell" => system32().map(|dir| dir.join("WindowsPowerShell/v1.0/powershell.exe")),
+        "cmd" => system32().map(|dir| dir.join("cmd.exe")),
+        "pwsh" => std::env::var_os("ProgramFiles").map(|root| Path::new(&root).join("PowerShell/7/pwsh.exe"))
+            .filter(|path| path.is_file())
+            .or_else(|| find_on_path("pwsh.exe")),
+        "git-bash" => [
+            std::env::var_os("ProgramFiles").map(|root| Path::new(&root).join("Git/bin/bash.exe")),
+            std::env::var_os("ProgramFiles(x86)").map(|root| Path::new(&root).join("Git/bin/bash.exe")),
+            std::env::var_os("LOCALAPPDATA").map(|root| Path::new(&root).join("Programs/Git/bin/bash.exe")),
+        ].into_iter().flatten().find(|path| path.is_file()).or_else(|| find_on_path("bash.exe")),
+        _ => None,
+    };
+    found.filter(|path| path.is_file())
+}
+
+pub fn detect_terminals() -> Vec<DetectedTerminal> {
+    [
+        ("powershell", "Windows PowerShell"),
+        ("pwsh", "PowerShell"),
+        ("cmd", "Command Prompt"),
+        ("git-bash", "Git Bash"),
+    ]
+    .into_iter()
+    .filter(|(id, _)| resolve_terminal(id).is_some())
+    .map(|(id, label)| DetectedTerminal { id, label })
+    .collect()
+}
+
 pub fn open_terminal(profile_id: u64, terminal_executable: &str) -> Result<(), String> {
     let _guard = SECRETS_LOCK.lock().map_err(|_| "Secrets storage is unavailable")?;
     let configuration = recover_configuration()?;
@@ -348,24 +392,10 @@ pub fn open_terminal(profile_id: u64, terminal_executable: &str) -> Result<(), S
         .find(|environment| environment.id == profile_id)
         .ok_or("The selected environment does not exist")?;
     let (executable, terminal_kind) = match terminal_executable {
-        "powershell" => {
-            let system_root = std::env::var_os("SystemRoot").ok_or("Unable to locate Windows PowerShell")?;
-            (Path::new(&system_root).join("System32/WindowsPowerShell/v1.0/powershell.exe"), "powershell")
-        }
-        "git-bash" => {
-            let candidates = [
-                std::env::var_os("ProgramFiles").map(|root| Path::new(&root).join("Git/bin/bash.exe")),
-                std::env::var_os("ProgramFiles(x86)").map(|root| Path::new(&root).join("Git/bin/bash.exe")),
-                std::env::var_os("LOCALAPPDATA").map(|root| Path::new(&root).join("Programs/Git/bin/bash.exe")),
-            ];
-            let path_candidate = std::env::var_os("PATH").into_iter()
-                .flat_map(|paths| std::env::split_paths(&paths).collect::<Vec<_>>())
-                .map(|directory| directory.join("bash.exe"))
-                .find(|path| path.is_file());
-            let executable = candidates.into_iter().flatten().find(|path| path.is_file())
-                .or(path_candidate)
-                .ok_or("Git Bash was not found. Select its bash.exe using the custom terminal option.")?;
-            (executable, "bash")
+        "powershell" | "pwsh" | "cmd" | "git-bash" => {
+            let executable = resolve_terminal(terminal_executable)
+                .ok_or("The selected terminal was not found. Choose another one in Harbor settings.")?;
+            (executable, terminal_executable)
         }
         custom_path if !custom_path.trim().is_empty() => (Path::new(custom_path).to_path_buf(), "custom"),
         _ => return Err("Choose a terminal executable in Harbor settings.".to_owned()),
@@ -374,9 +404,9 @@ pub fn open_terminal(profile_id: u64, terminal_executable: &str) -> Result<(), S
         return Err("The configured terminal executable was not found.".to_owned());
     }
     let mut command = Command::new(executable);
-    if terminal_kind == "powershell" {
+    if terminal_kind == "powershell" || terminal_kind == "pwsh" {
         command.args(["-NoLogo", "-NoProfile", "-NoExit"]);
-    } else if terminal_kind == "bash" {
+    } else if terminal_kind == "git-bash" {
         command.args(["--login", "-i"]);
     }
     command.creation_flags(0x00000010);

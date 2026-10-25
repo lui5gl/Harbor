@@ -285,7 +285,7 @@
     </div>
   {:else}
     <div
-      class="mt-4.5 grid min-h-[calc(100vh-210px)] grid-cols-1 gap-4 lg:grid-cols-[minmax(230px,0.26fr)_minmax(0,0.74fr)]"
+      class="mt-4.5 grid min-h-[min(640px,calc(100dvh-280px))] grid-cols-1 gap-4 lg:h-[min(640px,calc(100dvh-280px))] lg:min-h-0 lg:grid-cols-[minmax(230px,0.26fr)_minmax(0,0.74fr)]"
     >
       <div class="max-h-70 lg:max-h-none">
         <ProfilesPanel

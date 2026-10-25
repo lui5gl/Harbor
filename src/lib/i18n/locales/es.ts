@@ -50,7 +50,10 @@ export const es = {
       "Usa un proxy HTTP o HTTPS. Las credenciales se guardan junto a las preferencias locales.",
     directConnection: "El tráfico de Harbor se conecta directamente a Internet.",
     reset: "Restablecer",
-    save: "Guardar cambios",
+    resetTitle: "Restablecer ajustes",
+    resetDescription:
+      "Vuelve a los valores predeterminados de Harbor. Tus secretos no se modifican.",
+    importConfiguration: "Importar configuración",
     saved: "Guardado",
     errors: {
       proxyHostRequired: "Introduce el host del proxy.",
@@ -123,6 +126,11 @@ export const es = {
     key: "Clave",
     value: "Valor",
     variableActions: "Acciones",
+    copyValue: "Copiar valor",
+    deleteVariable: "Eliminar variable",
+    duplicateVariable: "Duplicar variable",
+    clearValue: "Vaciar valor",
+    sortBy: "Ordenar por",
     hideAll: "Ocultar todas",
     showAll: "Mostrar todas",
     noVariables: "Aún no hay variables. Añade una o importa un archivo .env.",

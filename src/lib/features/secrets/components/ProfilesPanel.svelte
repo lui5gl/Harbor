@@ -56,7 +56,7 @@
 </script>
 
 <aside
-  class="flex h-full min-h-140 flex-col rounded-lg border border-boulder-200 bg-white p-3.5 shadow-sm"
+  class="flex h-full min-h-[min(560px,calc(100dvh-280px))] flex-col rounded-lg border border-boulder-200 bg-white p-3.5 shadow-sm"
   aria-label={`${t("secrets.projects")} & ${t("secrets.environments")}`}
 >
   <div class="mb-2.5 border-b border-boulder-200 px-1 pt-0.5 pb-2.5">

@@ -832,6 +832,11 @@ async fn open_secret_terminal(profile_id: u64, terminal_executable: String) -> R
         .map_err(|error| format!("Unable to open secret terminal: {error}"))?
 }
 
+#[tauri::command]
+fn list_terminals() -> Vec<secrets_config::DetectedTerminal> {
+    secrets_config::detect_terminals()
+}
+
 static IS_EXITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 fn perform_app_exit(app: &tauri::AppHandle) {
@@ -1038,6 +1043,7 @@ pub fn run() {
             activate_secret_profile_for_powershell,
             deactivate_secret_environment,
             open_secret_terminal,
+            list_terminals,
             show_main_window,
             hide_quick_tray,
             toggle_quick_tray,

@@ -1,23 +1,28 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
+    DatabaseBackup,
     Download,
     FolderOpen,
+    HardDrive,
+    Languages,
     MonitorCog,
     RotateCcw,
-    Save,
-    Settings2,
     Upload,
     Terminal,
+    Check,
   } from "@lucide/svelte";
   import { Switch } from "@ark-ui/svelte/switch";
   import { Select, createListCollection } from "@ark-ui/svelte/select";
   import { Field } from "@ark-ui/svelte/field";
   import { Fieldset } from "@ark-ui/svelte/fieldset";
-  import { Menu } from "@ark-ui/svelte/menu";
   import { i18n, t } from "#lib/i18n";
   import { createSettingsStore, type ProxySettings } from "../application/settingsStore.svelte";
-  import { openWorkspaceDirectory } from "../infrastructure/settingsRepository";
+  import {
+    listTerminals,
+    openWorkspaceDirectory,
+    type DetectedTerminal,
+  } from "../infrastructure/settingsRepository";
   import { createSecretsStore } from "#lib/features/secrets/application/secretsStore.svelte";
   import SecretsBackupDialog from "#lib/features/secrets/components/SecretsBackupDialog.svelte";
   import ProxySettingsSection from "./ProxySettingsSection.svelte";
@@ -32,19 +37,26 @@
       { label: t("settings.english"), value: "en" },
     ],
   });
-  const terminals = createListCollection({
-    items: [
-      { label: "PowerShell", value: "powershell" },
-      { label: "Git Bash", value: "git-bash" },
-      { label: t("settings.customTerminal"), value: "custom" },
-    ],
-  });
+  let detectedTerminals = $state<DetectedTerminal[]>([]);
+  const terminals = $derived(
+    createListCollection({
+      items: [
+        ...detectedTerminals.map((terminal) => ({ label: terminal.label, value: terminal.id })),
+        { label: t("settings.customTerminal"), value: "custom" },
+      ],
+    }),
+  );
   let settings = $derived(settingsStore.settings);
   let workspacePath = $derived(settingsStore.workspacePath);
   let saved = $derived(settingsStore.saved);
   let error = $derived(settingsStore.error);
+  let ready = $state(false);
+  let lastSaved = "";
   onMount(() => {
     void settingsStore.load();
+    void listTerminals().then((found) => (detectedTerminals = found));
+    lastSaved = JSON.stringify(settingsStore.settings);
+    ready = true;
     secretsStore.start();
     void secretsStore.load();
     return () => secretsStore.dispose();
@@ -57,32 +69,37 @@
   function saveSettings() {
     const current = settingsStore.settings;
     const port = Number(current.proxyPort);
-    if (current.proxyEnabled) {
-      if (!current.proxyHost.trim()) {
-        settingsStore.setError(t("settings.errors.proxyHostRequired"));
-        return;
-      }
-      if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        settingsStore.setError(t("settings.errors.proxyPortInvalid"));
-        return;
-      }
+    let proxy: ProxySettings | null = null;
+    if (current.proxyEnabled && !current.proxyHost.trim()) {
+      settingsStore.setError(t("settings.errors.proxyHostRequired"));
+    } else if (current.proxyEnabled && (!Number.isInteger(port) || port < 1 || port > 65535)) {
+      settingsStore.setError(t("settings.errors.proxyPortInvalid"));
+    } else {
+      proxy = {
+        enabled: current.proxyEnabled,
+        host: current.proxyHost.trim(),
+        port,
+        username: current.proxyUsername.trim() || null,
+        password: current.proxyPassword || null,
+      };
     }
-    const proxy: ProxySettings = {
-      enabled: current.proxyEnabled,
-      host: current.proxyHost.trim(),
-      port,
-      username: current.proxyUsername.trim() || null,
-      password: current.proxyPassword || null,
-    };
     void settingsStore
       .save(proxy)
       .catch((caught) =>
         settingsStore.setError(caught instanceof Error ? caught.message : String(caught)),
       );
   }
+  $effect(() => {
+    const snapshot = JSON.stringify($state.snapshot(settingsStore.settings));
+    if (!ready || snapshot === lastSaved) return;
+    const timer = window.setTimeout(() => {
+      lastSaved = snapshot;
+      saveSettings();
+    }, 500);
+    return () => window.clearTimeout(timer);
+  });
   function resetSettings() {
     settingsStore.reset();
-    saveSettings();
   }
   function changeLocale(details: { value: string[] }) {
     const nextLocale = details.value[0];
@@ -90,9 +107,7 @@
   }
   function changeTerminal(details: { value: string[] }) {
     const terminal = details.value[0];
-    if (terminal === "powershell" || terminal === "git-bash" || terminal === "custom") {
-      settings.terminalType = terminal;
-    }
+    if (terminal) settings.terminalType = terminal;
   }
   async function openWorkspace() {
     await openWorkspaceDirectory(settingsStore.workspacePath);
@@ -120,18 +135,14 @@
       </h1>
       <p class="mt-2.5 text-[13px] leading-relaxed text-boulder-600">{t("settings.description")}</p>
     </div>
-    <div class="flex gap-2 max-md:w-full">
-      <button
-        class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-boulder-100 px-3 text-xs font-bold text-boulder-800 hover:bg-boulder-200 max-md:flex-1 max-md:justify-center"
-        type="button"
-        onclick={resetSettings}><RotateCcw size={15} /><span>{t("settings.reset")}</span></button
-      ><button
-        class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-east-bay-900 px-3 text-xs font-bold text-white hover:bg-east-bay-950 max-md:flex-1 max-md:justify-center"
-        type="button"
-        onclick={saveSettings}
-        ><Save size={15} /><span>{saved ? t("settings.saved") : t("settings.save")}</span></button
-      >
-    </div>
+    <p
+      class="inline-flex h-9 items-center gap-1.5 text-xs font-semibold text-east-bay-700 transition-opacity {saved
+        ? 'opacity-100'
+        : 'opacity-0'}"
+      role="status"
+    >
+      <Check size={15} /><span>{t("settings.saved")}</span>
+    </p>
   </header>
   {#if error}<p
       class="mt-5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
@@ -148,7 +159,7 @@
     >
       <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
         <span
-          class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
           ><MonitorCog size={18} /></span
         >
         <div>
@@ -226,8 +237,8 @@
     >
       <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
         <span
-          class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><Settings2 size={18} /></span
+          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+          ><Languages size={18} /></span
         >
         <div>
           <h2 id="language-title" class="text-sm font-semibold text-boulder-900">
@@ -281,8 +292,8 @@
     >
       <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
         <span
-          class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><Settings2 size={18} /></span
+          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+          ><HardDrive size={18} /></span
         >
         <div>
           <h2 id="workspace-title" class="text-sm font-semibold text-boulder-900">
@@ -325,12 +336,12 @@
       bind:password={settings.proxyPassword}
     />
     <section
-      class="col-span-full min-w-0 rounded-lg border border-boulder-200 bg-white"
+      class="min-w-0 rounded-lg border border-boulder-200 bg-white"
       aria-labelledby="shell-title"
     >
       <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
         <span
-          class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
           ><Terminal size={18} /></span
         >
         <div>
@@ -342,9 +353,9 @@
           </p>
         </div>
       </div>
-      <div class="grid gap-4 p-4.5 md:grid-cols-2">
+      <div class="grid gap-4 p-4.5">
         <Switch.Root
-          class="flex cursor-pointer items-center justify-between gap-4 rounded-md border border-boulder-200 px-3 py-2.5"
+          class="flex cursor-pointer items-center justify-between gap-4 py-1"
           bind:checked={settings.autoActivateSecrets}
         >
           <span class="flex flex-col gap-1">
@@ -406,13 +417,13 @@
       </div>
     </section>
     <section
-      class="col-span-full min-w-0 rounded-lg border border-boulder-200 bg-white"
+      class="min-w-0 rounded-lg border border-boulder-200 bg-white"
       aria-labelledby="secrets-data-title"
     >
       <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
         <span
-          class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><Settings2 size={18} /></span
+          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+          ><DatabaseBackup size={18} /></span
         >
         <div>
           <h2 id="secrets-data-title" class="text-sm font-semibold text-boulder-900">
@@ -422,33 +433,51 @@
             {t("settings.secretsDataDescription")}
           </p>
         </div>
-        <Menu.Root positioning={{ placement: "bottom-end", gutter: 6 }}>
-          <Menu.Trigger
-            class="ml-auto inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-2.5 text-xs font-semibold text-boulder-800 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={!secretsStore.canWrite || secretsStore.isSaving}
-          >
-            <Download size={14} /><span>{t("secrets.encryptedBackup")}</span>
-          </Menu.Trigger>
-          <Menu.Positioner>
-            <Menu.Content
-              class="z-100 min-w-52 rounded-md border border-boulder-200 bg-white p-1 shadow-xl outline-none"
-            >
-              <Menu.Item
-                value="export"
-                class="flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs text-boulder-800 outline-none data-highlighted:bg-boulder-100"
-                onSelect={() => void openBackup("export")}
-                ><Download size={14} /><span>{t("secrets.exportBackupItem")}</span></Menu.Item
-              >
-              <Menu.Item
-                value="restore"
-                class="flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs text-boulder-800 outline-none data-highlighted:bg-boulder-100 data-disabled:cursor-not-allowed data-disabled:opacity-40"
-                disabled={secretsStore.activeEnvironmentId !== null}
-                onSelect={() => void openBackup("restore")}
-                ><Upload size={14} /><span>{t("secrets.restoreBackup")}</span></Menu.Item
-              >
-            </Menu.Content>
-          </Menu.Positioner>
-        </Menu.Root>
+      </div>
+      <div class="flex flex-wrap gap-2 p-4.5">
+        <button
+          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-800 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
+          type="button"
+          disabled={!secretsStore.canWrite || secretsStore.isSaving}
+          onclick={() => void openBackup("export")}
+          ><Download size={14} /><span>{t("secrets.exportBackupItem")}</span></button
+        >
+        <button
+          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-800 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
+          type="button"
+          disabled={!secretsStore.canWrite ||
+            secretsStore.isSaving ||
+            secretsStore.activeEnvironmentId !== null}
+          onclick={() => void openBackup("restore")}
+          ><Upload size={14} /><span>{t("settings.importConfiguration")}</span></button
+        >
+      </div>
+    </section>
+    <section
+      class="min-w-0 rounded-lg border border-boulder-200 bg-white"
+      aria-labelledby="reset-title"
+    >
+      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
+        <span
+          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+          ><RotateCcw size={18} /></span
+        >
+        <div>
+          <h2 id="reset-title" class="text-sm font-semibold text-boulder-900">
+            {t("settings.resetTitle")}
+          </h2>
+          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
+            {t("settings.resetDescription")}
+          </p>
+        </div>
+      </div>
+      <div class="p-4.5">
+        <button
+          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-800 hover:bg-boulder-100"
+          type="button"
+          onclick={resetSettings}
+          ><RotateCcw size={14} /><span>{t("settings.reset")}</span></button
+        >
       </div>
     </section>
   </div>

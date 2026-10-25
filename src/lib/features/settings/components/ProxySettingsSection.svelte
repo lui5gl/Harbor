@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Network } from "@lucide/svelte";
+  import { Globe, Network } from "@lucide/svelte";
   import { Switch } from "@ark-ui/svelte/switch";
   import { Field } from "@ark-ui/svelte/field";
   import { t } from "#lib/i18n";
@@ -14,12 +14,12 @@
 </script>
 
 <section
-  class="col-span-full min-w-0 rounded-lg border border-boulder-200 bg-white"
+  class="flex min-w-0 flex-col rounded-lg border border-boulder-200 bg-white"
   aria-labelledby="proxy-title"
 >
   <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
     <span
-      class="flex size-8.5 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+      class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
       ><Network size={18} aria-hidden="true" /></span
     >
     <div>
@@ -91,5 +91,10 @@
         {t("settings.proxyHint")}
       </p>
     </div>
-  {:else}<p class="p-4.5 text-xs text-boulder-500">{t("settings.directConnection")}</p>{/if}
+  {:else}<div
+      class="flex flex-1 flex-col items-center justify-center gap-2 p-4.5 text-center text-xs text-boulder-500"
+    >
+      <Globe size={24} aria-hidden="true" class="text-boulder-400" />
+      <p>{t("settings.directConnection")}</p>
+    </div>{/if}
 </section>
