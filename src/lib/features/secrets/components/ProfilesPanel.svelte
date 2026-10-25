@@ -8,9 +8,8 @@
     ChevronRight,
     ChevronsDownUp,
     ChevronsUpDown,
-    Code2,
-    FlaskConical,
     FolderGit2,
+    Layers,
     Plus,
     Search,
     X,
@@ -232,16 +231,7 @@
                       type="button"
                       onclick={() => onSelectEnvironment(project.id, environment.id)}
                     >
-                      {#if environment.name.toLowerCase() === "development"}<Code2
-                          size={13}
-                          class="shrink-0 text-east-bay-700"
-                          aria-label="Development"
-                        />{:else if environment.name.toLowerCase() === "staging"}<FlaskConical
-                          size={13}
-                          class="shrink-0 text-violet-700"
-                          aria-label="Staging"
-                        />{:else}<span class="size-1.5 shrink-0 rounded-full bg-boulder-300"
-                        ></span>{/if}
+                      <Layers size={13} class="shrink-0 text-east-bay-700" aria-hidden="true" />
                       <span class="min-w-0 flex-1 truncate font-medium">{environment.name}</span>
                       {#if isActive}<span
                           class="size-1.5 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"
