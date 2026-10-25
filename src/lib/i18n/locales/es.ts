@@ -75,6 +75,17 @@ export const es = {
     loading: "Cargando...",
     clear: "Limpiar",
   },
+  errorPage: {
+    eyebrow: "Error",
+    genericTitle: "Algo salió mal",
+    genericDescription:
+      "Harbor encontró un problema inesperado. Inténtalo de nuevo o vuelve al inicio.",
+    notFoundTitle: "Página no encontrada",
+    notFoundDescription: "La sección que buscas no existe o fue movida.",
+    retry: "Reintentar",
+    goHome: "Ir al inicio",
+    technicalDetails: "Detalles técnicos",
+  },
   services: {
     eyebrow: "Entorno local",
     title: "Servicios y runtimes",

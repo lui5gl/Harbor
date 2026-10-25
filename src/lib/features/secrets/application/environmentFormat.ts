@@ -1,4 +1,4 @@
-import { parse } from "dotenv";
+import { parse } from "./dotenvParser";
 import { validateSecretKey } from "../domain/validation";
 
 export type ParsedVariable = { key: string; value: string };

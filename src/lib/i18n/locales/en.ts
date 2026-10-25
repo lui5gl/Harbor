@@ -73,6 +73,16 @@ export const en = {
     loading: "Loading...",
     clear: "Clear",
   },
+  errorPage: {
+    eyebrow: "Error",
+    genericTitle: "Something went wrong",
+    genericDescription: "Harbor hit an unexpected problem. Try again, or return to the start.",
+    notFoundTitle: "Page not found",
+    notFoundDescription: "The section you are looking for does not exist or was moved.",
+    retry: "Try again",
+    goHome: "Go to start",
+    technicalDetails: "Technical details",
+  },
   services: {
     eyebrow: "Local environment",
     title: "Services & Runtimes",
