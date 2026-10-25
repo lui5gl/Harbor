@@ -16,7 +16,7 @@
     aria-label={t("nav.home")}
   >
     <span
-      class="brand-shine-icon flex size-8 items-center justify-center rounded-lg border border-east-bay-200 bg-east-bay-50 text-east-bay-700 shadow-sm"
+      class="brand-shine-icon flex size-8 items-center justify-center rounded-lg border border-east-bay-200 bg-east-bay-50 text-east-bay-700"
       aria-hidden="true"
     >
       <Anchor size={16} strokeWidth={2.25} />
