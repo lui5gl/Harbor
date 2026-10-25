@@ -14,6 +14,7 @@ import {
   appendSecret,
   cloneEnvironment as cloneEnvironmentData,
   getSecretCounters,
+  moveItem,
   removeSecret,
   updateEnvironment as updateEnvironmentData,
   updateProject as updateProjectData,
@@ -72,6 +73,8 @@ type SecretsStore = {
   createEnvironment: (name: string) => void;
   cloneEnvironment: (name: string) => void;
   renameProject: (name: string) => void;
+  moveProject: (sourceId: number, targetId: number) => void;
+  moveEnvironment: (projectId: number, sourceId: number, targetId: number) => void;
   saveEnvironment: (name: string) => void;
   addVariable: () => number | null;
   addCustomVariable: (key: string, value: string) => void;
@@ -325,6 +328,19 @@ export function createSecretsStore(): SecretsStore {
   function renameProject(name: string) {
     if (selectedProjectId === null) return;
     updateProject(selectedProjectId, (project) => ({ ...project, name }));
+  }
+
+  function moveProject(sourceId: number, targetId: number) {
+    if (!writable()) return;
+    projects = moveItem(projects, sourceId, targetId);
+    scheduleSave();
+  }
+
+  function moveEnvironment(projectId: number, sourceId: number, targetId: number) {
+    updateProject(projectId, (project) => ({
+      ...project,
+      environments: moveItem(project.environments, sourceId, targetId),
+    }));
   }
 
   function saveEnvironment(name: string) {
@@ -606,6 +622,8 @@ export function createSecretsStore(): SecretsStore {
     createEnvironment,
     cloneEnvironment,
     renameProject,
+    moveProject,
+    moveEnvironment,
     saveEnvironment,
     addVariable,
     addCustomVariable,

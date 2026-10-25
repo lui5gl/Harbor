@@ -24,6 +24,8 @@
     activeEnvironmentId: number | null;
     onSelectEnvironment: (projectId: number, environmentId: number) => void;
     onAddEnvironment: (projectId: number) => void;
+    onMoveProject: (sourceId: number, targetId: number) => void;
+    onMoveEnvironment: (projectId: number, sourceId: number, targetId: number) => void;
     onEnvironmentAction: (
       projectId: number,
       environmentId: number,
@@ -42,6 +44,8 @@
     activeEnvironmentId,
     onSelectEnvironment,
     onAddEnvironment,
+    onMoveProject,
+    onMoveEnvironment,
     onEnvironmentAction,
     busy = false,
     activationBusy = false,
@@ -86,6 +90,42 @@
 
   function toggleAllProjects() {
     collapsedProjectIds = allCollapsed ? [] : projects.map((project) => project.id);
+  }
+
+  type DragKind = "project" | "environment";
+  let drag = $state<{ kind: DragKind; projectId: number; id: number } | null>(null);
+  let dropKey = $state<string | null>(null);
+
+  function startDrag(event: DragEvent, kind: DragKind, projectId: number, id: number) {
+    drag = { kind, projectId, id };
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", String(id));
+    }
+  }
+
+  function canDropOn(kind: DragKind, projectId: number, id: number) {
+    return !!drag && drag.kind === kind && drag.projectId === projectId && drag.id !== id;
+  }
+
+  function dragOver(event: DragEvent, kind: DragKind, projectId: number, id: number) {
+    if (!canDropOn(kind, projectId, id)) return;
+    event.preventDefault();
+    dropKey = `${kind}:${id}`;
+  }
+
+  function drop(event: DragEvent, kind: DragKind, projectId: number, id: number) {
+    event.preventDefault();
+    if (drag && canDropOn(kind, projectId, id)) {
+      if (kind === "project") onMoveProject(drag.id, id);
+      else onMoveEnvironment(projectId, drag.id, id);
+    }
+    endDrag();
+  }
+
+  function endDrag() {
+    drag = null;
+    dropKey = null;
   }
 
   function toggleProject(projectId: number) {
@@ -167,10 +207,20 @@
       <div class="flex flex-col gap-2 pr-1">
         {#each filteredProjects as project (project.id)}
           {@const isCollapsed = collapsedProjectIds.includes(project.id)}
+          {@const canDragProject = projectSort === "none" && !busy}
           <section
             class={`rounded-md ${project.id === selectedProjectId ? "bg-east-bay-50/40" : ""}`}
           >
-            <div class="flex items-center justify-between">
+            <div
+              role="group"
+              class={`flex items-center justify-between rounded-md ${dropKey === `project:${project.id}` ? "ring-2 ring-east-bay-400" : ""} ${drag?.kind === "project" && drag.id === project.id ? "opacity-40" : ""}`}
+              draggable={canDragProject}
+              ondragstart={(event) => startDrag(event, "project", project.id, project.id)}
+              ondragover={(event) => dragOver(event, "project", project.id, project.id)}
+              ondragleave={() => (dropKey = null)}
+              ondrop={(event) => drop(event, "project", project.id, project.id)}
+              ondragend={endDrag}
+            >
               <button
                 class="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left text-xs font-bold text-boulder-800 hover:bg-boulder-50"
                 type="button"
@@ -212,7 +262,20 @@
                   {@const isSelected = environment.id === selectedEnvironmentId}
                   {@const isActive = environment.id === activeEnvironmentId}
                   {@const isLast = index === environments.length - 1}
-                  <div class="group relative">
+                  {@const canDragEnvironment =
+                    (environmentSorts[project.id] ?? "none") === "none" && !busy}
+                  <div
+                    role="listitem"
+                    class={`group relative rounded-md ${dropKey === `environment:${environment.id}` ? "ring-2 ring-east-bay-400" : ""} ${drag?.kind === "environment" && drag.id === environment.id ? "opacity-40" : ""}`}
+                    draggable={canDragEnvironment}
+                    ondragstart={(event) =>
+                      startDrag(event, "environment", project.id, environment.id)}
+                    ondragover={(event) =>
+                      dragOver(event, "environment", project.id, environment.id)}
+                    ondragleave={() => (dropKey = null)}
+                    ondrop={(event) => drop(event, "environment", project.id, environment.id)}
+                    ondragend={endDrag}
+                  >
                     {#if isLast}
                       <span
                         class="pointer-events-none absolute top-0 -left-4 h-1/2 w-3 rounded-bl-md border-b border-l border-boulder-300"

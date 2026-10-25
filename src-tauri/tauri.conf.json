@@ -17,7 +17,8 @@
         "width": 1280,
         "height": 800,
         "resizable": false,
-        "maximizable": false
+        "maximizable": false,
+        "dragDropEnabled": false
       },
       {
         "label": "quick-tray",

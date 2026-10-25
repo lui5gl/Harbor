@@ -130,7 +130,11 @@
       </p>
     </div>
     {#if !secrets.isLoading}
-      <HoverCard.Root openDelay={150} closeDelay={100} positioning={{ placement: "top-end", gutter: 8 }}>
+      <HoverCard.Root
+        openDelay={150}
+        closeDelay={100}
+        positioning={{ placement: "top-end", gutter: 8 }}
+      >
         <HoverCard.Trigger
           class="inline-flex cursor-default items-center gap-1.5 rounded-full border border-boulder-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-boulder-700 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-east-bay-400/40"
           tabindex={0}
@@ -238,6 +242,8 @@
           activeEnvironmentId={secrets.activeEnvironmentId}
           onSelectEnvironment={secrets.selectEnvironment}
           onAddEnvironment={openEnvironmentDialog}
+          onMoveProject={secrets.moveProject}
+          onMoveEnvironment={secrets.moveEnvironment}
           onEnvironmentAction={runEnvironmentAction}
           busy={secrets.isBusy || secrets.isSaving || !secrets.canWrite}
           activationBusy={secrets.isBusy || secrets.isSaving}

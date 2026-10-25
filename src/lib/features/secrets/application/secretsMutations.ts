@@ -25,6 +25,20 @@ export function getSecretCounters(projects: readonly Project[]): SecretCounters 
   };
 }
 
+export function moveItem<T extends { id: number }>(
+  items: readonly T[],
+  sourceId: number,
+  targetId: number,
+): T[] {
+  const from = items.findIndex((item) => item.id === sourceId);
+  const to = items.findIndex((item) => item.id === targetId);
+  if (from < 0 || to < 0 || from === to) return [...items];
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
 export function updateProject(
   projects: readonly Project[],
   projectId: number,
