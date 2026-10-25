@@ -4,6 +4,7 @@
   import ImportVariablesDialog from "./ImportVariablesDialog.svelte";
   import ProfileHeader from "./ProfileHeader.svelte";
   import ProfileSettingsDialog from "./ProfileSettingsDialog.svelte";
+  import type { EnvironmentAction } from "./EnvironmentActionsMenu.svelte";
   import SecretGeneratorDialog from "./SecretGeneratorDialog.svelte";
   import VariablesTable from "./VariablesTable.svelte";
   import { copyEnvironment, downloadEnvironment } from "../application/environmentExport";
@@ -11,13 +12,9 @@
 
   type Props = {
     disabled?: boolean;
-    busy?: boolean;
-    activationBusy?: boolean;
     project: Project;
     environment: Environment;
     activeEnvironmentId: number | null;
-    onActivate: () => void;
-    onDeactivate: () => void;
     onSaveEnvironment: (name: string) => void;
     onRequestDeleteEnvironment: () => void;
     onCloneEnvironment: (name: string) => void;
@@ -30,13 +27,9 @@
   };
   let {
     disabled = false,
-    busy = false,
-    activationBusy = false,
     project,
     environment,
     activeEnvironmentId,
-    onActivate,
-    onDeactivate,
     onSaveEnvironment,
     onRequestDeleteEnvironment,
     onCloneEnvironment,
@@ -60,31 +53,25 @@
   function downloadEnv() {
     downloadEnvironment(project, environment);
   }
+
+  export function run(action: Exclude<EnvironmentAction, "activate" | "deactivate">) {
+    if (action === "settings") settingsOpen = true;
+    else if (action === "generate") generatorOpen = true;
+    else if (action === "import") importOpen = true;
+    else if (action === "clone") cloneOpen = true;
+    else if (action === "compare") compareOpen = true;
+    else if (action === "terminal") onOpenTerminal();
+    else if (action === "copy") void copyEnv();
+    else if (action === "download") downloadEnv();
+    else onRequestDeleteEnvironment();
+  }
 </script>
 
 <section
   class="flex h-full min-h-[min(560px,calc(100dvh-280px))] min-w-0 flex-col rounded-lg border border-boulder-200 bg-white px-5 py-4 shadow-sm"
   aria-labelledby="environment-title"
 >
-  <ProfileHeader
-    {disabled}
-    {busy}
-    {activationBusy}
-    {project}
-    {environment}
-    {activeEnvironmentId}
-    {onActivate}
-    {onDeactivate}
-    onOpenSettings={() => (settingsOpen = true)}
-    onOpenGenerator={() => (generatorOpen = true)}
-    onOpenImport={() => (importOpen = true)}
-    onOpenClone={() => (cloneOpen = true)}
-    onOpenCompare={() => (compareOpen = true)}
-    onCopyEnvironment={() => void copyEnv()}
-    onDownloadEnvironment={downloadEnv}
-    {onRequestDeleteEnvironment}
-    {onOpenTerminal}
-  />
+  <ProfileHeader {project} {environment} {activeEnvironmentId} />
   <VariablesTable
     {disabled}
     {environment}

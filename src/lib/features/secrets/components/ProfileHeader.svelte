@@ -1,68 +1,16 @@
-<script lang="ts">
+﻿<script lang="ts">
   import { t } from "#lib/i18n";
-  import { Menu } from "@ark-ui/svelte/menu";
-  import {
-    Copy,
-    Code2,
-    Download,
-    FileUp,
-    FlaskConical,
-    FolderGit2,
-    GitCompare,
-    KeyRound,
-    MoreHorizontal,
-    Pencil,
-    Power,
-    Terminal,
-    Trash2,
-  } from "@lucide/svelte";
+  import { Code2, FlaskConical, FolderGit2 } from "@lucide/svelte";
   import type { Environment, Project } from "../types";
 
   type Props = {
-    disabled?: boolean;
-    busy?: boolean;
-    activationBusy?: boolean;
     project: Project;
     environment: Environment;
     activeEnvironmentId: number | null;
-    onActivate: () => void;
-    onDeactivate: () => void;
-    onOpenSettings: () => void;
-    onOpenGenerator: () => void;
-    onOpenImport: () => void;
-    onOpenClone: () => void;
-    onOpenCompare: () => void;
-    onCopyEnvironment: () => void;
-    onDownloadEnvironment: () => void;
-    onRequestDeleteEnvironment: () => void;
-    onOpenTerminal: () => void;
   };
 
-  let {
-    disabled = false,
-    busy = false,
-    activationBusy = false,
-    project,
-    environment,
-    activeEnvironmentId,
-    onActivate,
-    onDeactivate,
-    onOpenSettings,
-    onOpenGenerator,
-    onOpenImport,
-    onOpenClone,
-    onOpenCompare,
-    onCopyEnvironment,
-    onDownloadEnvironment,
-    onRequestDeleteEnvironment,
-    onOpenTerminal,
-  }: Props = $props();
+  let { project, environment, activeEnvironmentId }: Props = $props();
   let isActive = $derived(environment.id === activeEnvironmentId);
-
-  const menuContentClass =
-    "z-100 min-w-52 rounded-md border border-boulder-200 bg-white p-1.5 shadow-lg outline-none";
-  const menuItemClass =
-    "flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs font-medium text-boulder-700 outline-none transition-colors data-[highlighted]:bg-boulder-100 data-[highlighted]:text-boulder-950 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40";
 </script>
 
 <header class="mb-3 flex flex-col gap-3 border-b border-boulder-200 pb-3.5">
@@ -92,80 +40,6 @@
             ></span><span>{t("secrets.inWindows")}</span></span
           >{/if}
       </div>
-    </div>
-
-    <div class="flex items-center gap-1.5">
-      {#if isActive}
-        <button
-          type="button"
-          class="group inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border border-boulder-200 px-3 text-xs font-medium text-boulder-600 transition-colors hover:border-boulder-300 hover:text-boulder-950 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={activationBusy}
-          title={t("secrets.deactivate")}
-          onclick={onDeactivate}
-          ><span class="size-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"></span
-          ><span class="group-hover:hidden">{t("secrets.profileActive")}</span><span
-            class="hidden group-hover:inline">{t("secrets.deactivate")}</span
-          ></button
-        >
-      {:else}
-        <button
-          type="button"
-          class="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-emerald-600/25 bg-emerald-600/10 px-3 text-xs font-semibold text-emerald-700 transition-colors hover:border-emerald-600/40 hover:bg-emerald-600/15 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={busy}
-          onclick={onActivate}
-          ><Power size={14} strokeWidth={2.4} /><span>{t("secrets.activateProfile")}</span></button
-        >
-      {/if}
-      <Menu.Root positioning={{ placement: "bottom-end", gutter: 6 }}>
-        <Menu.Trigger
-          class="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-boulder-500 transition-colors hover:bg-boulder-100 hover:text-boulder-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-east-bay-500 data-[state=open]:bg-boulder-100 data-[state=open]:text-boulder-950"
-          aria-label={t("secrets.actions")}><MoreHorizontal size={15} /></Menu.Trigger
-        >
-        <Menu.Positioner
-          ><Menu.Content class={menuContentClass}>
-            <Menu.Item value="settings" class={menuItemClass} {disabled} onSelect={onOpenSettings}
-              ><Pencil size={14} /><span>{t("secrets.environmentSettings")}</span></Menu.Item
-            >
-            <Menu.Item value="generate" class={menuItemClass} {disabled} onSelect={onOpenGenerator}
-              ><KeyRound size={14} /><span>{t("secrets.generateSecret")}</span></Menu.Item
-            >
-            <Menu.Item value="import" class={menuItemClass} {disabled} onSelect={onOpenImport}
-              ><FileUp size={14} /><span>{t("secrets.importEnv")}</span></Menu.Item
-            >
-            <Menu.Item value="clone" class={menuItemClass} disabled={busy} onSelect={onOpenClone}
-              ><Copy size={14} /><span>{t("secrets.cloneEnv")}</span></Menu.Item
-            >
-            {#if project.environments.length > 1}<Menu.Item
-                value="compare"
-                class={menuItemClass}
-                onSelect={onOpenCompare}
-                ><GitCompare size={14} /><span>{t("secrets.compareEnvs")}</span></Menu.Item
-              >{/if}
-            <Menu.Item
-              value="terminal"
-              class={menuItemClass}
-              disabled={busy}
-              onSelect={onOpenTerminal}
-              ><Terminal size={14} /><span>{t("secrets.openTerminal")}</span></Menu.Item
-            >
-            <Menu.Separator class="mx-2 my-0.5 h-px border-0 bg-boulder-100" />
-            <Menu.Item value="copy" class={menuItemClass} onSelect={onCopyEnvironment}
-              ><Copy size={14} /><span>{t("secrets.copyEnv")}</span></Menu.Item
-            >
-            <Menu.Item value="download" class={menuItemClass} onSelect={onDownloadEnvironment}
-              ><Download size={14} /><span>{t("secrets.downloadEnv")}</span></Menu.Item
-            >
-            <Menu.Separator class="mx-2 my-0.5 h-px border-0 bg-boulder-100" />
-            <Menu.Item
-              value="delete"
-              class={`${menuItemClass} text-red-700 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-700`}
-              {disabled}
-              onSelect={onRequestDeleteEnvironment}
-              ><Trash2 size={14} /><span>{t("secrets.deleteEnvironment")}</span></Menu.Item
-            >
-          </Menu.Content></Menu.Positioner
-        >
-      </Menu.Root>
     </div>
   </div>
 </header>

@@ -2,8 +2,9 @@
   import { t } from "#lib/i18n";
   import { Menu } from "@ark-ui/svelte/menu";
   import { Loader2, Lock, Plus, RefreshCw, Save, ShieldCheck, Unlock } from "@lucide/svelte";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import DeleteConfirmationDialog from "./DeleteConfirmationDialog.svelte";
+  import type { EnvironmentAction } from "./EnvironmentActionsMenu.svelte";
   import EnvironmentDialog from "./EnvironmentDialog.svelte";
   import ProfileEditor from "./ProfileEditor.svelte";
   import ProfilesPanel from "./ProfilesPanel.svelte";
@@ -13,6 +14,19 @@
 
   const secrets = createSecretsStore();
   const preferences = createSettingsStore();
+  let profileEditor = $state<ReturnType<typeof ProfileEditor> | undefined>();
+
+  async function runEnvironmentAction(
+    projectId: number,
+    environmentId: number,
+    action: EnvironmentAction,
+  ) {
+    if (action === "activate") return void secrets.activateEnvironment(environmentId);
+    if (action === "deactivate") return void secrets.deactivateEnvironment();
+    secrets.selectEnvironment(projectId, environmentId);
+    await tick();
+    profileEditor?.run(action);
+  }
   let projectDialogOpen = $state(false);
   let environmentDialogOpen = $state(false);
   let deleteDialogOpen = $state(false);
@@ -203,24 +217,21 @@
           activeEnvironmentId={secrets.activeEnvironmentId}
           onSelectEnvironment={secrets.selectEnvironment}
           onAddEnvironment={openEnvironmentDialog}
+          onEnvironmentAction={runEnvironmentAction}
+          busy={secrets.isBusy || secrets.isSaving || !secrets.canWrite}
+          activationBusy={secrets.isBusy || secrets.isSaving}
           canAddProject={secrets.canWrite}
           onAddProject={() => (projectDialogOpen = true)}
         />
       </div>
       {#if secrets.selectedProject && secrets.selectedEnvironment}
         <ProfileEditor
+          bind:this={profileEditor}
           project={secrets.selectedProject}
           environment={secrets.selectedEnvironment}
           activeEnvironmentId={secrets.activeEnvironmentId}
           disabled={!secrets.canWrite ||
             secrets.selectedEnvironment.id === secrets.activeEnvironmentId}
-          busy={secrets.isBusy || secrets.isSaving || !secrets.canWrite}
-          activationBusy={secrets.isBusy || secrets.isSaving}
-          onActivate={() => {
-            if (secrets.selectedEnvironment)
-              void secrets.activateEnvironment(secrets.selectedEnvironment.id);
-          }}
-          onDeactivate={() => void secrets.deactivateEnvironment()}
           onSaveEnvironment={secrets.saveEnvironment}
           onRequestDeleteEnvironment={() => requestDelete("environment")}
           onCloneEnvironment={secrets.cloneEnvironment}

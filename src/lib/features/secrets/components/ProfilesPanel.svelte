@@ -10,6 +10,7 @@
     Search,
     X,
   } from "@lucide/svelte";
+  import EnvironmentActionsMenu, { type EnvironmentAction } from "./EnvironmentActionsMenu.svelte";
   import type { Project } from "../types";
 
   type ProfilesPanelProps = {
@@ -19,6 +20,13 @@
     activeEnvironmentId: number | null;
     onSelectEnvironment: (projectId: number, environmentId: number) => void;
     onAddEnvironment: (projectId: number) => void;
+    onEnvironmentAction: (
+      projectId: number,
+      environmentId: number,
+      action: EnvironmentAction,
+    ) => void;
+    busy?: boolean;
+    activationBusy?: boolean;
     canAddProject: boolean;
     onAddProject: () => void;
   };
@@ -30,6 +38,9 @@
     activeEnvironmentId,
     onSelectEnvironment,
     onAddEnvironment,
+    onEnvironmentAction,
+    busy = false,
+    activationBusy = false,
     canAddProject,
     onAddProject,
   }: ProfilesPanelProps = $props();
@@ -132,35 +143,61 @@
             </div>
 
             {#if !isCollapsed}
-              <div class="mt-0.5 flex flex-col gap-0.5 pl-5">
-                {#each project.environments as environment (environment.id)}
+              <div class="mt-0.5 ml-3 flex flex-col gap-0.5 pl-4">
+                {#each project.environments as environment, index (environment.id)}
                   {@const isSelected = environment.id === selectedEnvironmentId}
                   {@const isActive = environment.id === activeEnvironmentId}
-                  <button
-                    class={`flex h-7.5 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-xs transition-colors ${isSelected ? "bg-east-bay-100 text-east-bay-950" : "text-boulder-700 hover:bg-boulder-50 hover:text-boulder-950"}`}
-                    type="button"
-                    onclick={() => onSelectEnvironment(project.id, environment.id)}
-                  >
-                    {#if environment.name.toLowerCase() === "development"}<Code2
-                        size={13}
-                        class="shrink-0 text-east-bay-700"
-                        aria-label="Development"
-                      />{:else if environment.name.toLowerCase() === "staging"}<FlaskConical
-                        size={13}
-                        class="shrink-0 text-violet-700"
-                        aria-label="Staging"
-                      />{:else}<span class="size-1.5 shrink-0 rounded-full bg-boulder-300"
-                      ></span>{/if}
-                    <span class="min-w-0 flex-1 truncate font-medium">{environment.name}</span>
-                    {#if isActive}<span
-                        class="size-1.5 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"
-                        title={t("secrets.inWindows")}
-                      ></span>{/if}
-                    <span
-                      class="min-w-5 rounded-full bg-boulder-100 px-1.5 text-center text-[10px] font-semibold text-boulder-500"
-                      >{environment.secrets.length}</span
+                  {@const isLast = index === project.environments.length - 1}
+                  <div class="group relative">
+                    {#if isLast}
+                      <span
+                        class="pointer-events-none absolute top-0 -left-4 h-1/2 w-3 rounded-bl-md border-b border-l border-boulder-300"
+                        aria-hidden="true"
+                      ></span>
+                    {:else}
+                      <span
+                        class="pointer-events-none absolute top-0 -bottom-0.5 -left-4 w-px bg-boulder-300"
+                        aria-hidden="true"
+                      ></span>
+                      <span
+                        class="pointer-events-none absolute top-1/2 -left-4 h-px w-3 bg-boulder-300"
+                        aria-hidden="true"
+                      ></span>
+                    {/if}
+                    <button
+                      class={`flex h-7.5 w-full cursor-pointer items-center gap-2 rounded-md pr-8 pl-2 text-left text-xs transition-colors ${isSelected ? "bg-east-bay-100 text-east-bay-950" : "text-boulder-700 hover:bg-boulder-50 hover:text-boulder-950"}`}
+                      type="button"
+                      onclick={() => onSelectEnvironment(project.id, environment.id)}
                     >
-                  </button>
+                      {#if environment.name.toLowerCase() === "development"}<Code2
+                          size={13}
+                          class="shrink-0 text-east-bay-700"
+                          aria-label="Development"
+                        />{:else if environment.name.toLowerCase() === "staging"}<FlaskConical
+                          size={13}
+                          class="shrink-0 text-violet-700"
+                          aria-label="Staging"
+                        />{:else}<span class="size-1.5 shrink-0 rounded-full bg-boulder-300"
+                        ></span>{/if}
+                      <span class="min-w-0 flex-1 truncate font-medium">{environment.name}</span>
+                      {#if isActive}<span
+                          class="size-1.5 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"
+                          title={t("secrets.inWindows")}
+                        ></span>{/if}
+                    </button>
+                    <div class="absolute top-1/2 right-1 -translate-y-1/2">
+                      <EnvironmentActionsMenu
+                        disabled={!canAddProject || isActive}
+                        {busy}
+                        {activationBusy}
+                        {isActive}
+                        canCompare={project.environments.length > 1}
+                        visible={isSelected}
+                        onAction={(action) =>
+                          onEnvironmentAction(project.id, environment.id, action)}
+                      />
+                    </div>
+                  </div>
                 {/each}
               </div>
             {/if}
