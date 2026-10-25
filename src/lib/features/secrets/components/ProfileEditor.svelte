@@ -68,7 +68,7 @@
 </script>
 
 <section
-  class="flex h-full min-h-[min(560px,calc(100dvh-280px))] min-w-0 flex-col rounded-lg border border-boulder-200 bg-white px-5 py-4 shadow-sm"
+  class="flex h-full min-h-[min(560px,calc(100dvh-280px))] min-w-0 flex-col rounded-lg border border-boulder-200 bg-white p-3.5 shadow-sm"
   aria-labelledby="environment-title"
 >
   <ProfileHeader {project} {environment} {activeEnvironmentId} />

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { t } from "#lib/i18n";
+  import { HoverCard } from "@ark-ui/svelte/hover-card";
   import { Menu } from "@ark-ui/svelte/menu";
+  import { Portal } from "@ark-ui/svelte/portal";
   import { Loader2, Lock, Plus, RefreshCw, Save, ShieldCheck, Unlock } from "@lucide/svelte";
   import { onMount, tick } from "svelte";
   import DeleteConfirmationDialog from "./DeleteConfirmationDialog.svelte";
@@ -119,20 +121,6 @@
         <p class="text-shine text-[11px] font-bold uppercase tracking-[0.06em]">
           {t("secrets.eyebrow")}
         </p>
-        {#if !secrets.isLoading}
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full border border-boulder-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-boulder-700 shadow-sm"
-          >
-            {#if secrets.isSaving}<Loader2 size={12} class="animate-spin text-east-bay-700" /><span
-                >{t("secrets.saving")}</span
-              >{:else if secrets.hasUnsavedChanges}<Save size={12} class="text-amber-600" /><span
-                >{t("secrets.unsavedChanges")}</span
-              >{:else if !secrets.error && secrets.canWrite}<ShieldCheck
-                size={13}
-                class="text-emerald-600"
-              /><span>{t("secrets.vaultStatus")}</span>{/if}
-          </span>
-        {/if}
       </div>
       <h1 id="secrets-title" class="text-[26px] leading-tight font-bold text-boulder-950">
         {t("secrets.title")}
@@ -141,6 +129,39 @@
         {t("secrets.description")}
       </p>
     </div>
+    {#if !secrets.isLoading}
+      <HoverCard.Root openDelay={150} closeDelay={100} positioning={{ placement: "top-end", gutter: 8 }}>
+        <HoverCard.Trigger
+          class="inline-flex cursor-default items-center gap-1.5 rounded-full border border-boulder-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-boulder-700 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-east-bay-400/40"
+          tabindex={0}
+        >
+          {#if secrets.isSaving}<Loader2 size={12} class="animate-spin text-east-bay-700" /><span
+              >{t("secrets.saving")}</span
+            >{:else if secrets.hasUnsavedChanges}<Save size={12} class="text-amber-600" /><span
+              >{t("secrets.unsavedChanges")}</span
+            >{:else if !secrets.error && secrets.canWrite}<ShieldCheck
+              size={13}
+              class="text-emerald-600"
+            /><span>{t("secrets.vaultStatus")}</span>{/if}
+        </HoverCard.Trigger>
+        <Portal>
+          <HoverCard.Positioner>
+            <HoverCard.Content
+              class="z-100 w-80 rounded-lg border border-boulder-200 bg-white p-3.5 shadow-lg outline-none"
+            >
+              <p class="flex items-center gap-1.5 text-[12.5px] font-bold text-boulder-950">
+                <ShieldCheck size={14} class="text-emerald-600" />{t("secrets.vaultInfoTitle")}
+              </p>
+              <ul class="mt-2 flex flex-col gap-2 text-[11.5px] leading-snug text-boulder-600">
+                <li>{t("secrets.vaultInfoCipher")}</li>
+                <li>{t("secrets.vaultInfoKey")}</li>
+                <li>{t("secrets.vaultInfoPublish")}</li>
+              </ul>
+            </HoverCard.Content>
+          </HoverCard.Positioner>
+        </Portal>
+      </HoverCard.Root>
+    {/if}
   </header>
 
   {#if secrets.error}

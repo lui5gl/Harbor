@@ -111,6 +111,8 @@ export const es = {
     projectPlural: "proyectos",
     searchProjects: "Buscar proyectos...",
     noProjectsFound: "No se encontraron proyectos.",
+    collapseAll: "Comprimir todo",
+    expandAll: "Expandir todo",
     environments: "Entornos",
     activate: "Activar en la shell",
     activeInShell: "Activo en la shell",
@@ -154,6 +156,13 @@ export const es = {
     publishedToWindows:
       "Activo en el sistema. Los procesos y sesiones nuevas de PowerShell recibirán estas credenciales.",
     vaultStatus: "Secretos cifrados y protegidos",
+    vaultInfoTitle: "Cómo se protegen tus secretos",
+    vaultInfoCipher:
+      "Se cifran con AES-256-GCM antes de guardarse en disco, con un valor aleatorio distinto en cada guardado.",
+    vaultInfoKey:
+      "La clave de cifrado no está en el archivo: se guarda en el almacén de credenciales de tu sistema.",
+    vaultInfoPublish:
+      "Los valores solo salen del cifrado cuando activas un entorno, y entonces se publican en PowerShell.",
     unsavedChanges: "Cambios sin guardar",
     activeInPowerShell: "Activo en PowerShell",
     vaultLockedTitle: "La bóveda de secretos está bloqueada",

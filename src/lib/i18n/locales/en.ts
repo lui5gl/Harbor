@@ -109,6 +109,8 @@ export const en = {
     projectPlural: "projects",
     searchProjects: "Search projects...",
     noProjectsFound: "No projects found.",
+    collapseAll: "Collapse all",
+    expandAll: "Expand all",
     environments: "Environments",
     activate: "Activate in shell",
     activeInShell: "Active in shell",
@@ -152,6 +154,13 @@ export const en = {
     publishedToWindows:
       "Active in system. New PowerShell sessions and system processes will receive these credentials.",
     vaultStatus: "Secrets encrypted and protected",
+    vaultInfoTitle: "How your secrets are protected",
+    vaultInfoCipher:
+      "They are encrypted with AES-256-GCM before being written to disk, using a fresh random value on every save.",
+    vaultInfoKey:
+      "The encryption key is not in the file: it is kept in your system's credential store.",
+    vaultInfoPublish:
+      "Values only leave encryption when you activate an environment, and are then published to PowerShell.",
     unsavedChanges: "Unsaved changes",
     activeInPowerShell: "Active in PowerShell",
     vaultLockedTitle: "Secrets vault is locked",

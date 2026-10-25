@@ -1,8 +1,13 @@
 <script lang="ts">
   import { t } from "#lib/i18n";
   import {
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
     ChevronDown,
     ChevronRight,
+    ChevronsDownUp,
+    ChevronsUpDown,
     Code2,
     FlaskConical,
     FolderGit2,
@@ -44,23 +49,45 @@
     canAddProject,
     onAddProject,
   }: ProfilesPanelProps = $props();
+  type SortDirection = "none" | "asc" | "desc";
+
   let searchQuery = $state("");
   let collapsedProjectIds = $state<number[]>([]);
+  let projectSort = $state<SortDirection>("none");
+  let environmentSorts = $state<Record<number, SortDirection>>({});
+
+  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
+  function sortByName<T extends { name: string }>(items: T[], direction: SortDirection): T[] {
+    if (direction === "none") return items;
+    const sign = direction === "asc" ? 1 : -1;
+    return [...items].sort((a, b) => sign * collator.compare(a.name, b.name));
+  }
+
+  function nextSort(direction: SortDirection): SortDirection {
+    return direction === "none" ? "asc" : direction === "asc" ? "desc" : "none";
+  }
 
   let filteredProjects = $derived.by(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return projects;
-    return projects
-      .map((project) => ({
-        ...project,
-        environments: project.environments.filter(
-          (environment) =>
-            project.name.toLowerCase().includes(query) ||
-            environment.name.toLowerCase().includes(query),
-        ),
-      }))
-      .filter((project) => project.environments.length > 0);
+    const visible = query
+      ? projects.filter((project) => project.name.toLowerCase().includes(query))
+      : projects;
+    return sortByName(visible, projectSort);
   });
+
+  function visibleEnvironments(project: Project) {
+    return sortByName(project.environments, environmentSorts[project.id] ?? "none");
+  }
+
+  let allCollapsed = $derived(
+    filteredProjects.length > 0 &&
+      filteredProjects.every((project) => collapsedProjectIds.includes(project.id)),
+  );
+
+  function toggleAllProjects() {
+    collapsedProjectIds = allCollapsed ? [] : projects.map((project) => project.id);
+  }
 
   function toggleProject(projectId: number) {
     collapsedProjectIds = collapsedProjectIds.includes(projectId)
@@ -93,24 +120,46 @@
     >
   </div>
 
-  {#if projects.length > 1}
+  <div class="mb-2.5 flex items-center gap-1.5">
     <div
-      class="mb-2.5 flex items-center gap-1.5 rounded-md border border-boulder-200 bg-boulder-50 px-2 text-boulder-400 transition focus-within:border-east-bay-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-east-bay-400/15"
+      class="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border border-boulder-200 bg-boulder-50 px-2 text-boulder-400 transition focus-within:border-east-bay-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-east-bay-400/15"
     >
       <Search size={13} />
       <input
         class="h-7.5 min-w-0 flex-1 border-0 bg-transparent text-xs text-boulder-800 outline-none"
         placeholder={t("secrets.searchProjects")}
+        aria-label={t("secrets.searchProjects")}
         bind:value={searchQuery}
       />
       {#if searchQuery}<button
           class="inline-flex size-5 cursor-pointer items-center justify-center rounded text-boulder-400 hover:bg-boulder-100 hover:text-east-bay-800"
           type="button"
-          aria-label="Clear search"
+          aria-label={t("secrets.clearFilter")}
           onclick={() => (searchQuery = "")}><X size={12} /></button
         >{/if}
     </div>
-  {/if}
+    <button
+      class="inline-flex size-8.5 shrink-0 cursor-pointer items-center justify-center rounded-md border border-boulder-200 bg-white text-boulder-500 transition-colors hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
+      type="button"
+      title={allCollapsed ? t("secrets.expandAll") : t("secrets.collapseAll")}
+      aria-label={allCollapsed ? t("secrets.expandAll") : t("secrets.collapseAll")}
+      disabled={filteredProjects.length === 0}
+      onclick={toggleAllProjects}
+      >{#if allCollapsed}<ChevronsUpDown size={14} />{:else}<ChevronsDownUp
+          size={14}
+        />{/if}</button
+    >
+    <button
+      class={`inline-flex size-8.5 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors ${projectSort === "none" ? "border-boulder-200 bg-white text-boulder-500 hover:bg-boulder-100" : "border-east-bay-200 bg-east-bay-50 text-east-bay-700"}`}
+      type="button"
+      title={`${t("secrets.sortBy")} ${t("secrets.projects")}`}
+      aria-label={`${t("secrets.sortBy")} ${t("secrets.projects")}`}
+      onclick={() => (projectSort = nextSort(projectSort))}
+      >{#if projectSort === "asc"}<ArrowUp size={14} />{:else if projectSort === "desc"}<ArrowDown
+          size={14}
+        />{:else}<ArrowUpDown size={14} />{/if}</button
+    >
+  </div>
 
   <div class="min-h-0 flex-1 overflow-y-auto">
     {#if filteredProjects.length === 0}
@@ -133,6 +182,19 @@
                 <FolderGit2 size={14} class="shrink-0 text-east-bay-700" />
                 <span class="truncate">{project.name}</span>
               </button>
+              {#if project.environments.length > 1}
+                {@const environmentSort = environmentSorts[project.id] ?? "none"}
+                <button
+                  class={`inline-flex size-5.5 cursor-pointer items-center justify-center rounded transition-colors ${environmentSort === "none" ? "text-boulder-400 hover:bg-boulder-100 hover:text-east-bay-800" : "bg-east-bay-100 text-east-bay-700"}`}
+                  type="button"
+                  title={`${t("secrets.sortBy")} ${t("secrets.environments")}`}
+                  aria-label={`${t("secrets.sortBy")} ${t("secrets.environments")} · ${project.name}`}
+                  onclick={() => (environmentSorts[project.id] = nextSort(environmentSort))}
+                  >{#if environmentSort === "asc"}<ArrowUp size={13} />{:else if environmentSort === "desc"}<ArrowDown
+                      size={13}
+                    />{:else}<ArrowUpDown size={13} />{/if}</button
+                >
+              {/if}
               <button
                 class="inline-flex size-5.5 cursor-pointer items-center justify-center rounded text-boulder-400 hover:bg-boulder-100 hover:text-east-bay-800"
                 type="button"
@@ -143,11 +205,12 @@
             </div>
 
             {#if !isCollapsed}
+              {@const environments = visibleEnvironments(project)}
               <div class="mt-0.5 ml-3 flex flex-col gap-0.5 pl-4">
-                {#each project.environments as environment, index (environment.id)}
+                {#each environments as environment, index (environment.id)}
                   {@const isSelected = environment.id === selectedEnvironmentId}
                   {@const isActive = environment.id === activeEnvironmentId}
-                  {@const isLast = index === project.environments.length - 1}
+                  {@const isLast = index === environments.length - 1}
                   <div class="group relative">
                     {#if isLast}
                       <span
