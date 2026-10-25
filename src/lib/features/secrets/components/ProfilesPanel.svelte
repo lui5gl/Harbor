@@ -189,7 +189,9 @@
                   title={`${t("secrets.sortBy")} ${t("secrets.environments")}`}
                   aria-label={`${t("secrets.sortBy")} ${t("secrets.environments")} · ${project.name}`}
                   onclick={() => (environmentSorts[project.id] = nextSort(environmentSort))}
-                  >{#if environmentSort === "asc"}<ArrowUp size={13} />{:else if environmentSort === "desc"}<ArrowDown
+                  >{#if environmentSort === "asc"}<ArrowUp
+                      size={13}
+                    />{:else if environmentSort === "desc"}<ArrowDown
                       size={13}
                     />{:else}<ArrowUpDown size={13} />{/if}</button
                 >
