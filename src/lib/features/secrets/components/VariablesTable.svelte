@@ -48,7 +48,7 @@
   let sortField = $state<"key" | "value">("key");
   let sortDirection = $state<"asc" | "desc">("asc");
   let clipboardError = $state("");
-  let previousEnvironmentId = environment.id;
+  let previousEnvironmentId: typeof environment.id | undefined;
   let revealTimer: number | undefined;
   let totalCount = $derived(environment.secrets.length);
   let filteredSecrets = $derived(
@@ -103,7 +103,9 @@
     const baseKey = secret.key.trim() || "VARIABLE";
     let key = `${baseKey}_COPY`;
     let suffix = 2;
-    while (environment.secrets.some((item) => item.key.trim().toUpperCase() === key.toUpperCase())) {
+    while (
+      environment.secrets.some((item) => item.key.trim().toUpperCase() === key.toUpperCase())
+    ) {
       key = `${baseKey}_COPY_${suffix++}`;
     }
     const id = onAddVariable();
@@ -253,7 +255,9 @@
     <div
       class="grid grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] gap-0 border-b border-boulder-200 bg-boulder-50 text-[10px] font-bold uppercase text-boulder-500"
     >
-      <span class="flex items-center justify-center border-r border-boulder-200 px-1 py-2"><Hash size={12} /></span>
+      <span class="flex items-center justify-center border-r border-boulder-200 px-1 py-2"
+        ><Hash size={12} /></span
+      >
       <span class="border-r border-boulder-200 px-3 py-1.5">
         <button
           class="flex w-full cursor-pointer items-center gap-1.5 text-left hover:text-boulder-900"
@@ -261,7 +265,14 @@
           onclick={() => toggleSort("key")}
           aria-label={`${t("secrets.sortBy")} ${t("secrets.key")}`}
           title={`${t("secrets.sortBy")} ${t("secrets.key")}`}
-          ><KeyRound size={12} />{t("secrets.key")}{#if sortField === "key"}{#if sortDirection === "asc"}<ArrowUp size={12} />{:else}<ArrowDown size={12} />{/if}{:else}<ArrowUpDown size={12} class="opacity-40" />{/if}</button
+          ><KeyRound size={12} />{t(
+            "secrets.key",
+          )}{#if sortField === "key"}{#if sortDirection === "asc"}<ArrowUp
+                size={12}
+              />{:else}<ArrowDown size={12} />{/if}{:else}<ArrowUpDown
+              size={12}
+              class="opacity-40"
+            />{/if}</button
         >
       </span>
       <span class="border-r border-boulder-200 px-3 py-1.5">
@@ -271,7 +282,14 @@
           onclick={() => toggleSort("value")}
           aria-label={`${t("secrets.sortBy")} ${t("secrets.value")}`}
           title={`${t("secrets.sortBy")} ${t("secrets.value")}`}
-          ><Lock size={12} />{t("secrets.value")}{#if sortField === "value"}{#if sortDirection === "asc"}<ArrowUp size={12} />{:else}<ArrowDown size={12} />{/if}{:else}<ArrowUpDown size={12} class="opacity-40" />{/if}</button
+          ><Lock size={12} />{t(
+            "secrets.value",
+          )}{#if sortField === "value"}{#if sortDirection === "asc"}<ArrowUp
+                size={12}
+              />{:else}<ArrowDown size={12} />{/if}{:else}<ArrowUpDown
+              size={12}
+              class="opacity-40"
+            />{/if}</button
         >
       </span>
       <span class="flex items-center justify-start gap-1 px-2 py-2">
@@ -306,7 +324,9 @@
       <div
         class="grid grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] items-center gap-0 border-b border-boulder-100 transition-colors hover:bg-boulder-50"
       >
-        <div class="flex h-full items-center justify-center border-r border-boulder-100 px-1 text-[11px] tabular-nums text-boulder-400">
+        <div
+          class="flex h-full items-center justify-center border-r border-boulder-100 px-1 text-[11px] tabular-nums text-boulder-400"
+        >
           {index + 1}
         </div>
         <div class="relative flex items-center border-r border-boulder-100 px-1.5 py-1">
