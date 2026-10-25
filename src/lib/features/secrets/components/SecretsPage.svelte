@@ -102,7 +102,7 @@
   <header class="flex flex-wrap items-end justify-between gap-5">
     <div class="flex flex-col">
       <div class="mb-1.5 flex items-center gap-3">
-        <p class="text-[11px] font-bold uppercase tracking-[0.06em] text-east-bay-700">
+        <p class="text-shine text-[11px] font-bold uppercase tracking-[0.06em]">
           {t("secrets.eyebrow")}
         </p>
         {#if !secrets.isLoading}

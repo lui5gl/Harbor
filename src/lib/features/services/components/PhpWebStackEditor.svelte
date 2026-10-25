@@ -246,7 +246,7 @@
   >
     <div class="min-w-0">
       <div>
-        <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-east-bay-700">
+        <p class="text-shine mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em]">
           Entorno Web
         </p>
         <h2 id="web-stack-title" class="text-[22px] leading-tight font-semibold text-boulder-950">

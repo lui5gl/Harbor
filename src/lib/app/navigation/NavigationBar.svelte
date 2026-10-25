@@ -16,15 +16,15 @@
     aria-label={t("nav.home")}
   >
     <span
-      class="flex size-8 items-center justify-center rounded-lg border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
+      class="brand-shine-icon flex size-8 items-center justify-center rounded-lg border border-east-bay-200 bg-east-bay-50 text-east-bay-700 shadow-sm"
       aria-hidden="true"
     >
-      <Anchor size={16} strokeWidth={2} />
+      <Anchor size={16} strokeWidth={2.25} />
     </span>
-    <span class="flex items-baseline gap-2">
-      <span class="text-[15px] font-semibold">{applicationName}</span>
+    <span class="brand-shine-text flex items-baseline gap-2">
+      <span class="text-[17px] font-extrabold tracking-[-0.02em]">{applicationName}</span>
       <span
-        class="text-[11px] font-medium uppercase tracking-[0.04em] text-boulder-500 max-sm:hidden"
+        class="text-[10px] font-bold uppercase tracking-[0.12em] [-webkit-text-fill-color:var(--color-east-bay-700)] max-sm:hidden"
         >Desktop</span
       >
     </span>

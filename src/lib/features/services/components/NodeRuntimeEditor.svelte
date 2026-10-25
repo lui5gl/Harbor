@@ -48,7 +48,7 @@
 >
   <header class="flex items-start justify-between gap-5 border-b border-boulder-100 pb-5">
     <div class="min-w-0">
-      <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-east-bay-700">
+      <p class="text-shine mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em]">
         JavaScript Runtime
       </p>
       <h2 id="node-editor-title" class="text-[22px] leading-tight font-semibold text-boulder-950">

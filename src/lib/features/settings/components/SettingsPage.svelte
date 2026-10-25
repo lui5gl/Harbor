@@ -127,7 +127,7 @@
 >
   <header class="flex items-center justify-between gap-4 max-md:flex-col max-md:items-start">
     <div>
-      <p class="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-east-bay-700">
+      <p class="text-shine mb-2 text-[11px] font-bold uppercase tracking-[0.06em]">
         {t("settings.eyebrow")}
       </p>
       <h1 id="settings-title" class="text-3xl leading-none font-semibold text-boulder-950">
@@ -458,8 +458,7 @@
         <button
           class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-800 hover:bg-boulder-100"
           type="button"
-          onclick={resetSettings}
-          ><RotateCcw size={14} /><span>{t("settings.reset")}</span></button
+          onclick={resetSettings}><RotateCcw size={14} /><span>{t("settings.reset")}</span></button
         >
       </div>
     </section>
