@@ -71,7 +71,6 @@ describe("encrypted backups", () => {
           {
             id: 2,
             name: "Dev",
-            isProduction: false,
             secrets: [{ id: 3, key: "TOKEN", value: "private-backup-value" }],
           },
         ],
@@ -108,7 +107,7 @@ describe("encrypted backups", () => {
 });
 
 describe("environment cloning", () => {
-  it("deep clones variables with unique sequential IDs and safe non-production status", () => {
+  it("deep clones variables with unique sequential IDs", () => {
     const projects = [
       {
         id: 1,
@@ -117,7 +116,6 @@ describe("environment cloning", () => {
           {
             id: 10,
             name: "Production",
-            isProduction: true,
             secrets: [
               { id: 101, key: "DB_URL", value: "postgres://prod" },
               { id: 102, key: "API_KEY", value: "prod-secret-token" },
@@ -133,7 +131,6 @@ describe("environment cloning", () => {
 
     const cloned = project.environments.find((e) => e.id === 20)!;
     expect(cloned.name).toBe("Staging");
-    expect(cloned.isProduction).toBe(false); // Clones are safely set to non-production
     expect(cloned.secrets).toHaveLength(2);
     expect(cloned.secrets[0]).toEqual({ id: 200, key: "DB_URL", value: "postgres://prod" });
     expect(cloned.secrets[1]).toEqual({ id: 201, key: "API_KEY", value: "prod-secret-token" });

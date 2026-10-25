@@ -2,7 +2,7 @@
   import { isTauri } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
-  import { KeyRound, Server, ShieldAlert } from "@lucide/svelte";
+  import { KeyRound, Server } from "@lucide/svelte";
   import type { SecretsConfiguration } from "#lib/features/secrets/types";
   import { loadSecretProfiles } from "#lib/features/secrets/infrastructure/secretsRepository";
   import { getPhpStatus } from "#lib/features/services/infrastructure/runtimesRepository";
@@ -12,33 +12,25 @@
   const pollIntervalMs = 5_000;
 
   let activeProfileName = $state<string | null>(null);
-  let isProduction = $state(false);
   let isPhpRunning = $state(false);
 
   async function updateSecretsStatus() {
     if (!isNativeApp) {
       activeProfileName = "General / Development";
-      isProduction = false;
       return;
     }
 
     try {
       const config = await loadSecretProfiles();
-      let activeEnv: { name: string; isProduction: boolean; projectName: string } | null = null;
+      let activeEnv: { name: string; projectName: string } | null = null;
       for (const project of config.projects) {
         const env = project.environments.find((e) => e.id === config.activeEnvironmentId);
         if (env) {
-          activeEnv = { name: env.name, isProduction: env.isProduction, projectName: project.name };
+          activeEnv = { name: env.name, projectName: project.name };
           break;
         }
       }
-      if (activeEnv) {
-        activeProfileName = `${activeEnv.projectName} / ${activeEnv.name}`;
-        isProduction = activeEnv.isProduction;
-      } else {
-        activeProfileName = null;
-        isProduction = false;
-      }
+      activeProfileName = activeEnv ? `${activeEnv.projectName} / ${activeEnv.name}` : null;
     } catch {
       // Ignored in background refresh
     }
@@ -95,22 +87,10 @@
       class="inline-flex min-h-7 items-center gap-1.5 whitespace-nowrap rounded px-1 text-inherit no-underline hover:bg-white/8"
       title={t("status.activeProfile")}
     >
-      {#if isProduction}
-        <ShieldAlert size={13} strokeWidth={2.4} class="text-amber-500" aria-hidden="true" />
-      {:else}
-        <KeyRound size={13} strokeWidth={2.2} class="text-east-bay-300" aria-hidden="true" />
-      {/if}
+      <KeyRound size={13} strokeWidth={2.2} class="text-east-bay-300" aria-hidden="true" />
       <span class="font-medium text-east-bay-300">{t("status.environment")}</span>
       {#if activeProfileName}
-        <strong class={`font-semibold ${isProduction ? "text-amber-300" : "text-white"}`}
-          >{activeProfileName}</strong
-        >
-        {#if isProduction}
-          <span
-            class="rounded-[3px] bg-amber-600 px-1 py-0.5 text-[9px] leading-none font-bold tracking-[0.04em] text-white"
-            >PROD</span
-          >
-        {/if}
+        <strong class="font-semibold text-white">{activeProfileName}</strong>
       {:else}
         <span class="text-east-bay-400">{t("common.none")}</span>
       {/if}

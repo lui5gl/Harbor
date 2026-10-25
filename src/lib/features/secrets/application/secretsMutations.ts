@@ -69,11 +69,10 @@ export function appendEnvironment(
   projectId: number,
   environmentId: number,
   name: string,
-  isProduction: boolean,
 ): Project[] {
   return updateProject(projects, projectId, (project) => ({
     ...project,
-    environments: [...project.environments, { id: environmentId, name, isProduction, secrets: [] }],
+    environments: [...project.environments, { id: environmentId, name, secrets: [] }],
   }));
 }
 
@@ -103,7 +102,6 @@ export function cloneEnvironment(
       {
         id: newEnvironmentId,
         name,
-        isProduction: false,
         secrets: clonedSecrets,
       },
     ],

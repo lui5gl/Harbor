@@ -29,13 +29,11 @@ const demoProjects: Project[] = [
       {
         id: 1,
         name: "Development",
-        isProduction: false,
         secrets: [{ id: 1, key: "API_URL", value: "https://api-dev.example.test" }],
       },
       {
         id: 2,
         name: "Production",
-        isProduction: true,
         secrets: [
           { id: 2, key: "API_URL", value: "https://api.example.com" },
           { id: 3, key: "API_TOKEN", value: "replace-with-a-secret" },
@@ -74,7 +72,7 @@ type SecretsStore = {
   createEnvironment: (name: string) => void;
   cloneEnvironment: (name: string) => void;
   renameProject: (name: string) => void;
-  saveEnvironment: (name: string, isProduction: boolean) => void;
+  saveEnvironment: (name: string) => void;
   addVariable: () => number | null;
   addCustomVariable: (key: string, value: string) => void;
   updateVariable: (id: number, field: "key" | "value", value: string) => void;
@@ -87,7 +85,6 @@ type SecretsStore = {
   openTerminal: (environmentId: number, terminalExecutable: string) => Promise<boolean>;
   exportConfiguration: () => SecretsConfiguration;
   restoreConfiguration: (configuration: SecretsConfiguration) => Promise<boolean>;
-  isProductionEnvironment: (environmentId: number) => boolean;
 };
 
 export function createSecretsStore(): SecretsStore {
@@ -288,9 +285,9 @@ export function createSecretsStore(): SecretsStore {
     if (!writable()) return;
     const projectId = nextProjectId++;
     const environments: Environment[] = [
-      { id: nextEnvironmentId++, name: "Development", isProduction: false, secrets: [] },
-      { id: nextEnvironmentId++, name: "Staging", isProduction: false, secrets: [] },
-      { id: nextEnvironmentId++, name: "Production", isProduction: true, secrets: [] },
+      { id: nextEnvironmentId++, name: "Development", secrets: [] },
+      { id: nextEnvironmentId++, name: "Staging", secrets: [] },
+      { id: nextEnvironmentId++, name: "Production", secrets: [] },
     ];
     projects = appendProject(projects, projectId, environments, name);
     selectedProjectId = projectId;
@@ -301,7 +298,7 @@ export function createSecretsStore(): SecretsStore {
   function createEnvironment(name: string) {
     if (selectedProjectId === null || !writable()) return;
     const environmentId = nextEnvironmentId++;
-    projects = appendEnvironment(projects, selectedProjectId, environmentId, name, false);
+    projects = appendEnvironment(projects, selectedProjectId, environmentId, name);
     scheduleSave();
     selectedEnvironmentId = environmentId;
   }
@@ -330,8 +327,8 @@ export function createSecretsStore(): SecretsStore {
     updateProject(selectedProjectId, (project) => ({ ...project, name }));
   }
 
-  function saveEnvironment(name: string, isProduction: boolean) {
-    updateEnvironment((environment) => ({ ...environment, name, isProduction }));
+  function saveEnvironment(name: string) {
+    updateEnvironment((environment) => ({ ...environment, name }));
   }
 
   function addVariable(): number | null {
@@ -413,12 +410,6 @@ export function createSecretsStore(): SecretsStore {
       }
       return { ...environment, secrets };
     });
-  }
-
-  function isProductionEnvironment(environmentId: number) {
-    return allEnvironments().some(
-      (environment) => environment.id === environmentId && environment.isProduction,
-    );
   }
 
   async function activateEnvironment(environmentId: number): Promise<boolean> {
@@ -628,6 +619,5 @@ export function createSecretsStore(): SecretsStore {
     openTerminal,
     exportConfiguration,
     restoreConfiguration,
-    isProductionEnvironment,
   };
 }

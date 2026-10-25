@@ -19,7 +19,8 @@ const VAULT_VERSION: u8 = 1;
 const VAULT_AAD: &[u8] = b"Harbor secrets vault v1";
 const HARBOR_MANAGED_ENVIRONMENT_KEYS: &str = "HARBOR_MANAGED_ENVIRONMENT_KEYS";
 const HARBOR_ACTIVE_PROFILE: &str = "HARBOR_ACTIVE_PROFILE";
-const HARBOR_PROFILE_IS_PRODUCTION: &str = "HARBOR_PROFILE_IS_PRODUCTION";
+// Removed feature; still cleared so stale values don't linger in the user environment.
+const LEGACY_PROFILE_IS_PRODUCTION: &str = "HARBOR_PROFILE_IS_PRODUCTION";
 const PROFILE_BLOCK_START: &str = "# >>> Harbor environment profile >>>";
 const PROFILE_BLOCK_END: &str = "# <<< Harbor environment profile <<<";
 
@@ -36,7 +37,6 @@ pub struct EnvironmentVariable {
 pub struct EnvironmentProfile {
     pub id: u64,
     pub name: String,
-    pub is_production: bool,
     pub secrets: Vec<EnvironmentVariable>,
 }
 
@@ -419,7 +419,6 @@ pub fn open_terminal(profile_id: u64, terminal_executable: &str) -> Result<(), S
     for key in metadata_keys() { command.env_remove(key); }
     for variable in &profile.secrets { command.env(variable.key.trim(), &variable.value); }
     command.env(HARBOR_ACTIVE_PROFILE, &profile.name);
-    command.env(HARBOR_PROFILE_IS_PRODUCTION, if profile.is_production { "1" } else { "0" });
     if let Some(home) = std::env::var_os("USERPROFILE") { command.current_dir(home); }
     let mut child = command.spawn().map_err(|error| format!("Unable to open the isolated PowerShell session: {error}"))?;
     std::thread::spawn(move || { let _ = child.wait(); });
@@ -427,7 +426,7 @@ pub fn open_terminal(profile_id: u64, terminal_executable: &str) -> Result<(), S
 }
 
 fn metadata_keys() -> [&'static str; 3] {
-    [HARBOR_MANAGED_ENVIRONMENT_KEYS, HARBOR_ACTIVE_PROFILE, HARBOR_PROFILE_IS_PRODUCTION]
+    [HARBOR_MANAGED_ENVIRONMENT_KEYS, HARBOR_ACTIVE_PROFILE, LEGACY_PROFILE_IS_PRODUCTION]
 }
 
 fn delete_environment_value(environment: &RegKey, key: &str) -> Result<(), String> {
@@ -648,16 +647,6 @@ fn publish_user_environment(
     environment
         .set_value(HARBOR_ACTIVE_PROFILE, &profile.name.trim().to_owned())
         .map_err(|error| format!("Unable to publish the active Harbor profile: {error}"))?;
-    environment
-        .set_value(
-            HARBOR_PROFILE_IS_PRODUCTION,
-            &if profile.is_production {
-                "1".to_owned()
-            } else {
-                "0".to_owned()
-            },
-        )
-        .map_err(|error| format!("Unable to publish Harbor profile metadata: {error}"))?;
     *managed_variables = next_managed_variables;
     Ok(())
 }
@@ -693,7 +682,7 @@ fn install_powershell_profile() -> Result<(), String> {
 }
 
 fn managed_powershell_block() -> String {
-    format!("{PROFILE_BLOCK_START}\r\n$harborProfileName = [Environment]::GetEnvironmentVariable('{HARBOR_ACTIVE_PROFILE}', 'User')\r\n$harborManagedKeys = [Environment]::GetEnvironmentVariable('{HARBOR_MANAGED_ENVIRONMENT_KEYS}', 'User')\r\nif ($harborManagedKeys) {{\r\n  foreach ($harborKey in ($harborManagedKeys -split ',')) {{\r\n    $harborValue = [Environment]::GetEnvironmentVariable($harborKey, 'User')\r\n    if ($null -ne $harborValue) {{ Set-Item -Path \"Env:$harborKey\" -Value $harborValue }}\r\n  }}\r\n}}\r\nif ($harborProfileName) {{\r\n  $harborIsProduction = [Environment]::GetEnvironmentVariable('{HARBOR_PROFILE_IS_PRODUCTION}', 'User') -eq '1'\r\n  if ($harborIsProduction) {{\r\n    Write-Host \"Harbor > [!] $harborProfileName profile loaded\" -ForegroundColor Yellow\r\n  }} else {{\r\n    Write-Host \"Harbor > $harborProfileName profile loaded\" -ForegroundColor Cyan\r\n  }}\r\n}}\r\n{PROFILE_BLOCK_END}\r\n")
+    format!("{PROFILE_BLOCK_START}\r\n$harborProfileName = [Environment]::GetEnvironmentVariable('{HARBOR_ACTIVE_PROFILE}', 'User')\r\n$harborManagedKeys = [Environment]::GetEnvironmentVariable('{HARBOR_MANAGED_ENVIRONMENT_KEYS}', 'User')\r\nif ($harborManagedKeys) {{\r\n  foreach ($harborKey in ($harborManagedKeys -split ',')) {{\r\n    $harborValue = [Environment]::GetEnvironmentVariable($harborKey, 'User')\r\n    if ($null -ne $harborValue) {{ Set-Item -Path \"Env:$harborKey\" -Value $harborValue }}\r\n  }}\r\n}}\r\nif ($harborProfileName) {{\r\n  Write-Host \"Harbor > $harborProfileName profile loaded\" -ForegroundColor Cyan\r\n}}\r\n{PROFILE_BLOCK_END}\r\n")
 }
 
 fn install_managed_profile_block(path: &Path, block: &str) -> Result<(), String> {
@@ -746,7 +735,6 @@ mod tests {
                 environments: vec![EnvironmentProfile {
                     id: 2,
                     name: "Development".to_owned(),
-                    is_production: false,
                     secrets: vec![EnvironmentVariable {
                         id: 3,
                         key: key.to_owned(),

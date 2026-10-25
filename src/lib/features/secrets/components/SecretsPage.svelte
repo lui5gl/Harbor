@@ -5,7 +5,6 @@
   import { onMount } from "svelte";
   import DeleteConfirmationDialog from "./DeleteConfirmationDialog.svelte";
   import EnvironmentDialog from "./EnvironmentDialog.svelte";
-  import ProductionActivationDialog from "./ProductionActivationDialog.svelte";
   import ProfileEditor from "./ProfileEditor.svelte";
   import ProfilesPanel from "./ProfilesPanel.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
@@ -16,12 +15,9 @@
   const preferences = createSettingsStore();
   let projectDialogOpen = $state(false);
   let environmentDialogOpen = $state(false);
-  let productionDialogOpen = $state(false);
   let deleteDialogOpen = $state(false);
   let deleteMode = $state<"project" | "environment" | "variable" | null>(null);
   let pendingVariableId = $state<number | null>(null);
-  let pendingActivationId = $state<number | null>(null);
-  let pendingActivationLabel = $state("");
   let inactivityTimer: number | undefined;
   function resetInactivityTimer() {
     window.clearTimeout(inactivityTimer);
@@ -33,11 +29,6 @@
     await secrets.unlock();
     resetInactivityTimer();
   }
-  let targetActivationLabel = $derived(
-    secrets.selectedProject && secrets.selectedEnvironment
-      ? `${secrets.selectedProject.name} / ${secrets.selectedEnvironment.name}`
-      : "Selected environment",
-  );
   let deleteTitle = $derived(
     deleteMode === "project"
       ? "Delete this project?"
@@ -60,7 +51,6 @@
           return {
             projectName: project.name,
             environmentName: environment.name,
-            isProduction: environment.isProduction,
           };
       }
     }
@@ -105,31 +95,13 @@
     secrets.selectEnvironment(projectId, environmentId);
     if (!preferences.settings.autoActivateSecrets || environmentId === secrets.activeEnvironmentId)
       return;
-    const environment = secrets.projects
-      .find((project) => project.id === projectId)
-      ?.environments.find((item) => item.id === environmentId);
-    if (!environment) return;
-    if (environment.isProduction) {
-      pendingActivationId = environment.id;
-      pendingActivationLabel = `${secrets.projects.find((project) => project.id === projectId)?.name ?? "Project"} / ${environment.name}`;
-      productionDialogOpen = true;
-    } else {
-      void secrets.activateEnvironment(environment.id);
-    }
+    void secrets.activateEnvironment(environmentId);
   }
 
   function terminalExecutable() {
     if (preferences.settings.terminalType === "custom")
       return preferences.settings.customTerminalPath;
     return preferences.settings.terminalType;
-  }
-
-  function confirmProductionActivation() {
-    const id = pendingActivationId;
-    pendingActivationId = null;
-    pendingActivationLabel = "";
-    productionDialogOpen = false;
-    if (id !== null) void secrets.activateEnvironment(id);
   }
 
   const primaryButtonClass =
@@ -225,10 +197,7 @@
             >{t("secrets.activeInPowerShell")}:
             <strong
               >{activeEnvironmentInfo.projectName} / {activeEnvironmentInfo.environmentName}</strong
-            >{#if activeEnvironmentInfo.isProduction}<span
-                class="ml-1 rounded border border-amber-200 bg-amber-100 px-1 text-[9px] font-bold text-amber-800"
-                >PROD</span
-              >{/if}</span
+            ></span
           >
           <span class="text-[11px] text-emerald-800/85">{t("secrets.publishedToWindows")}</span>
         </div>
@@ -315,13 +284,7 @@
           onRequestDeleteVariable={(id) => requestDelete("variable", id)}
           onOpenTerminal={() => {
             if (!secrets.selectedEnvironment) return;
-            if (
-              !secrets.selectedEnvironment.isProduction ||
-              window.confirm(
-                `Open an isolated terminal with production secrets for ${targetActivationLabel}?`,
-              )
-            )
-              void secrets.openTerminal(secrets.selectedEnvironment.id, terminalExecutable());
+            void secrets.openTerminal(secrets.selectedEnvironment.id, terminalExecutable());
           }}
         />
       {/if}
@@ -335,17 +298,6 @@
   projectName={secrets.selectedProject?.name ?? "Project"}
   onCreate={secrets.createEnvironment}
 />
-<ProductionActivationDialog
-  bind:open={productionDialogOpen}
-  environmentLabel={pendingActivationLabel || targetActivationLabel}
-  onOpenChange={(open) => {
-    if (!open) {
-      pendingActivationId = null;
-      pendingActivationLabel = "";
-    }
-  }}
-  onConfirm={confirmProductionActivation}
-/>
 <DeleteConfirmationDialog
   bind:open={deleteDialogOpen}
   title={deleteTitle}
@@ -355,9 +307,7 @@
     : deleteMode === "environment"
       ? "Delete environment"
       : "Delete variable"}
-  confirmKeyword={deleteMode === "project" || secrets.selectedEnvironment?.isProduction
-    ? "DELETE"
-    : undefined}
+  confirmKeyword={deleteMode === "project" ? "DELETE" : undefined}
   onOpenChange={(open) => {
     if (!open) deleteMode = null;
   }}

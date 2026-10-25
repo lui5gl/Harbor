@@ -5,22 +5,17 @@
   type ProfileSettingsDialogProps = {
     open: boolean;
     name: string;
-    isProduction: boolean;
-    onSave: (name: string, isProduction: boolean) => void;
+    onSave: (name: string) => void;
   };
-  let { open = $bindable(), name, isProduction, onSave }: ProfileSettingsDialogProps = $props();
+  let { open = $bindable(), name, onSave }: ProfileSettingsDialogProps = $props();
   let draftName = $state("");
-  let draftIsProduction = $state(false);
 
   $effect(() => {
-    if (open) {
-      draftName = name;
-      draftIsProduction = isProduction;
-    }
+    if (open) draftName = name;
   });
 
   function saveSettings() {
-    onSave(draftName.trim() || "Untitled environment", draftIsProduction);
+    onSave(draftName.trim() || "Untitled environment");
     open = false;
   }
 </script>
@@ -38,7 +33,7 @@
       <Dialog.Description
         id="profile-settings-description"
         class="mb-2.5 text-[13px] leading-relaxed text-boulder-600"
-        >Update the selected environment and its production protection.</Dialog.Description
+        >Rename the selected environment.</Dialog.Description
       >
       <label class="text-xs font-semibold text-boulder-700" for="settings-profile-name"
         >Environment name</label
@@ -49,25 +44,6 @@
         placeholder="e.g. Development, Staging, Production"
         bind:value={draftName}
       />
-      <label
-        class="mt-1.5 flex min-h-12 cursor-pointer items-center justify-between gap-4 rounded-md border border-boulder-200 bg-boulder-50 px-2.5 py-2"
-      >
-        <span class="grid gap-0.5"
-          ><strong class="text-xs text-boulder-800">Production environment</strong><small
-            class="text-[11px] text-boulder-500"
-            >Requires confirmation before activation in the shell.</small
-          ></span
-        >
-        <input
-          class="peer sr-only"
-          type="checkbox"
-          bind:checked={draftIsProduction}
-          aria-label="Production environment"
-        />
-        <span
-          class="relative h-5 w-9 shrink-0 rounded-full border border-boulder-300 bg-white transition-colors after:absolute after:top-0.5 after:left-0.5 after:size-3.5 after:rounded-full after:bg-boulder-400 after:transition-transform peer-checked:border-east-bay-700 peer-checked:bg-east-bay-700 peer-checked:after:translate-x-4 peer-checked:after:bg-white"
-        ></span>
-      </label>
       <div class="mt-3 flex items-center justify-end gap-2.5">
         <Dialog.CloseTrigger
           class="h-9 cursor-pointer rounded-md bg-boulder-100 px-3 text-sm font-semibold text-boulder-800 hover:bg-boulder-200"

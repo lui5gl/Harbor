@@ -7,7 +7,6 @@ export type Secret = {
 export type Environment = {
   id: number;
   name: string;
-  isProduction: boolean;
   secrets: Secret[];
 };
 

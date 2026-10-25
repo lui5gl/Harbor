@@ -12,7 +12,6 @@
     KeyRound,
     MoreHorizontal,
     Pencil,
-    ShieldAlert,
     Terminal,
     Trash2,
   } from "@lucide/svelte";
@@ -68,11 +67,7 @@
       </div>
       <span class="text-sm font-medium text-boulder-300">/</span>
       <div class="flex min-w-0 items-center gap-1.5">
-        {#if environment.isProduction}<ShieldAlert
-            size={14}
-            class="shrink-0 text-amber-700"
-            aria-hidden="true"
-          />{:else if environment.name.toLowerCase() === "development"}<Code2
+        {#if environment.name.toLowerCase() === "development"}<Code2
             size={14}
             class="shrink-0 text-east-bay-700"
             aria-hidden="true"
@@ -84,11 +79,6 @@
         <h2 id="environment-title" class="truncate text-sm font-semibold text-boulder-950">
           {environment.name}
         </h2>
-        {#if environment.isProduction}<span
-            class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800"
-            title="Entorno de producción"
-            ><ShieldAlert size={11} strokeWidth={2.4} /><span>{t("secrets.production")}</span></span
-          >{/if}
         {#if isActive}<span
             class="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-700"
             ><span class="size-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"

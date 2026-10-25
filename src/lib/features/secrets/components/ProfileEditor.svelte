@@ -15,7 +15,7 @@
     project: Project;
     environment: Environment;
     activeEnvironmentId: number | null;
-    onSaveEnvironment: (name: string, isProduction: boolean) => void;
+    onSaveEnvironment: (name: string) => void;
     onRequestDeleteEnvironment: () => void;
     onCloneEnvironment: (name: string) => void;
     onAddVariable: () => number | null;
@@ -105,7 +105,6 @@
 <ProfileSettingsDialog
   bind:open={settingsOpen}
   name={environment.name}
-  isProduction={environment.isProduction}
   onSave={onSaveEnvironment}
 />
 <SecretGeneratorDialog

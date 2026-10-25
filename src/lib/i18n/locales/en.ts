@@ -116,7 +116,6 @@ export const en = {
     environments: "Environments",
     activate: "Activate in shell",
     activeInShell: "Active in shell",
-    production: "Production",
     filterVariables: "Filter variables...",
     addVariable: "Add variable",
     variable: "variable",

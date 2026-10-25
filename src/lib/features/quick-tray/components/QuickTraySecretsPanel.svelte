@@ -116,7 +116,7 @@
         {/if}
         {#each flatEnvironments as environment (environment.id)}
           <option value={String(environment.id)}>
-            {environment.displayName}{environment.isProduction ? " (PROD)" : ""}
+            {environment.displayName}
           </option>
         {/each}
       </select>

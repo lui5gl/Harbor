@@ -71,8 +71,6 @@ export function validateBackupConfiguration(value: unknown): SecretsConfiguratio
           environmentIds.has(environment.id) ||
           !("name" in environment) ||
           typeof environment.name !== "string" ||
-          !("isProduction" in environment) ||
-          typeof environment.isProduction !== "boolean" ||
           !("secrets" in environment) ||
           !Array.isArray(environment.secrets)
         )
@@ -82,7 +80,6 @@ export function validateBackupConfiguration(value: unknown): SecretsConfiguratio
         return {
           id: environment.id,
           name: environment.name,
-          isProduction: environment.isProduction,
           secrets: environment.secrets.map((secret) => {
             if (
               !secret ||

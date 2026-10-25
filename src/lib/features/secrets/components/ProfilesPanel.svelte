@@ -8,7 +8,6 @@
     FolderGit2,
     Plus,
     Search,
-    ShieldAlert,
     X,
   } from "@lucide/svelte";
   import type { Project } from "../types";
@@ -126,11 +125,7 @@
                     type="button"
                     onclick={() => onSelectEnvironment(project.id, environment.id)}
                   >
-                    {#if environment.isProduction}<ShieldAlert
-                        size={13}
-                        class="shrink-0 text-amber-700"
-                        aria-label="Production"
-                      />{:else if environment.name.toLowerCase() === "development"}<Code2
+                    {#if environment.name.toLowerCase() === "development"}<Code2
                         size={13}
                         class="shrink-0 text-east-bay-700"
                         aria-label="Development"
@@ -142,10 +137,6 @@
                         class={`size-1.5 shrink-0 rounded-full ${isActive ? "bg-emerald-500 ring-2 ring-emerald-500/20" : "bg-boulder-300"}`}
                       ></span>{/if}
                     <span class="min-w-0 flex-1 truncate font-medium">{environment.name}</span>
-                    {#if environment.isProduction}<span
-                        class="rounded border border-amber-200 bg-amber-50 px-1 text-[8px] font-bold text-amber-800"
-                        title="Production environment">PROD</span
-                      >{/if}
                     <span
                       class="min-w-5 rounded-full bg-boulder-100 px-1.5 text-center text-[10px] font-semibold text-boulder-500"
                       >{environment.secrets.length}</span

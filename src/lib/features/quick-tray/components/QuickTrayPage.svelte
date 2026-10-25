@@ -29,7 +29,7 @@
   let formError = $state("");
   let isEnvironmentDialogOpen = $state(false);
   let newEnvironmentName = $state("");
-  let isProductionDialogOpen = $state(false);
+  let isActivationDialogOpen = $state(false);
   let isDeleteVariableDialogOpen = $state(false);
   let pendingDeleteSecretId = $state<number | null>(null);
 
@@ -68,7 +68,7 @@
     const environment = secrets.selectedEnvironment;
     if (!environment) return;
     if (environment.id !== secrets.activeEnvironmentId) {
-      isProductionDialogOpen = true;
+      isActivationDialogOpen = true;
       return;
     }
     void executeActivation(environmentId);
@@ -76,7 +76,7 @@
 
   async function executeActivation(environmentId: number) {
     isActivating = true;
-    isProductionDialogOpen = false;
+    isActivationDialogOpen = false;
     const activated = await secrets.activateEnvironment(environmentId);
     if (activated) flashStatus("Entorno activado en el sistema");
     isActivating = false;
@@ -281,7 +281,7 @@
   onCreate={saveNewEnvironment}
 />
 <QuickTrayConfirmationDialog
-  bind:open={isProductionDialogOpen}
+  bind:open={isActivationDialogOpen}
   kind="activation"
   onConfirm={() => {
     if (secrets.selectedEnvironment) void executeActivation(secrets.selectedEnvironment.id);
