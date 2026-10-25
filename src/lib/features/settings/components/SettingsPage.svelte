@@ -354,23 +354,6 @@
         </div>
       </div>
       <div class="grid gap-4 p-4.5">
-        <Switch.Root
-          class="flex cursor-pointer items-center justify-between gap-4 py-1"
-          bind:checked={settings.autoActivateSecrets}
-        >
-          <span class="flex flex-col gap-1">
-            <strong class="text-[13px] font-semibold text-boulder-800">
-              {t("settings.autoActivateSecrets")}
-            </strong>
-            <small class="text-[11px] leading-snug text-boulder-500">
-              {t("settings.autoActivateSecretsDescription")}
-            </small>
-          </span>
-          <Switch.Control
-            class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-boulder-300 transition data-[state=checked]:bg-east-bay-700 after:absolute after:top-0.5 after:left-0.5 after:size-4.5 after:rounded-full after:bg-white after:transition-transform data-[state=checked]:after:translate-x-4"
-            ><Switch.Thumb class="sr-only" /></Switch.Control
-          ><Switch.HiddenInput />
-        </Switch.Root>
         <Field.Root class="flex flex-col gap-1.5">
           <Field.Label class="text-xs font-semibold text-boulder-700">
             {t("settings.terminal")}

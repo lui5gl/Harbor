@@ -16,7 +16,6 @@ export type UserSettings = {
   proxyPort: string;
   proxyUsername: string;
   proxyPassword: string;
-  autoActivateSecrets: boolean;
   terminalType: string;
   customTerminalPath: string;
 };
@@ -40,7 +39,6 @@ export const defaultSettings: UserSettings = {
   proxyPort: "",
   proxyUsername: "",
   proxyPassword: "",
-  autoActivateSecrets: false,
   terminalType: "powershell",
   customTerminalPath: "",
 };

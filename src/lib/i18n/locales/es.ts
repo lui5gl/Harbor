@@ -32,15 +32,11 @@ export const es = {
     openWorkspace: "Abrir carpeta del espacio de trabajo",
     proxy: "Proxy",
     proxyDescription: "Configura la conexión de Harbor a Internet.",
-    shell: "Terminal y activación",
-    shellDescription:
-      "Elige qué terminal abrir y si Harbor activa el entorno seleccionado en Windows.",
+    shell: "Terminal",
+    shellDescription: "Elige qué terminal abre Harbor con un entorno aislado.",
     terminal: "Terminal para abrir",
     customTerminal: "Ejecutable personalizado",
     customTerminalPath: "Ruta al ejecutable de terminal",
-    autoActivateSecrets: "Activar entorno al seleccionarlo",
-    autoActivateSecretsDescription:
-      "Publica sus variables en Windows para las nuevas sesiones de PowerShell. Desactivado por defecto.",
     secretsData: "Datos de secretos",
     secretsDataDescription: "Exporta o restaura una copia cifrada de tus proyectos y entornos.",
     enabled: "Activado",
@@ -152,6 +148,8 @@ export const es = {
     restoreBackup: "Restaurar copia",
     openTerminal: "Terminal aislada",
     deactivate: "Desactivar",
+    activateProfile: "Activar este perfil",
+    profileActive: "Perfil activo",
     deactivateFromWindows: "Desactivar",
     publishedToWindows:
       "Activo en el sistema. Los procesos y sesiones nuevas de PowerShell recibirán estas credenciales.",

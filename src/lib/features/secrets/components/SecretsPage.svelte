@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "#lib/i18n";
   import { Menu } from "@ark-ui/svelte/menu";
-  import { Loader2, Lock, Plus, Power, RefreshCw, Save, ShieldCheck, Unlock } from "@lucide/svelte";
+  import { Loader2, Lock, Plus, RefreshCw, Save, ShieldCheck, Unlock } from "@lucide/svelte";
   import { onMount } from "svelte";
   import DeleteConfirmationDialog from "./DeleteConfirmationDialog.svelte";
   import EnvironmentDialog from "./EnvironmentDialog.svelte";
@@ -43,19 +43,6 @@
         ? `This permanently removes "${secrets.selectedEnvironment?.name ?? "this environment"}" and all its variables.`
         : "This removes the variable from the selected environment.",
   );
-  let activeEnvironmentInfo = $derived.by(() => {
-    if (secrets.activeEnvironmentId === null) return null;
-    for (const project of secrets.projects) {
-      for (const environment of project.environments) {
-        if (environment.id === secrets.activeEnvironmentId)
-          return {
-            projectName: project.name,
-            environmentName: environment.name,
-          };
-      }
-    }
-    return null;
-  });
 
   onMount(() => {
     preferences.load();
@@ -89,13 +76,6 @@
     deleteMode = null;
     pendingVariableId = null;
     deleteDialogOpen = false;
-  }
-
-  function selectEnvironment(projectId: number, environmentId: number) {
-    secrets.selectEnvironment(projectId, environmentId);
-    if (!preferences.settings.autoActivateSecrets || environmentId === secrets.activeEnvironmentId)
-      return;
-    void secrets.activateEnvironment(environmentId);
   }
 
   function terminalExecutable() {
@@ -147,16 +127,6 @@
         {t("secrets.description")}
       </p>
     </div>
-
-    <div class="flex flex-wrap items-center gap-2">
-      <button
-        class={primaryButtonClass}
-        type="button"
-        disabled={!secrets.canWrite}
-        onclick={() => (projectDialogOpen = true)}
-        ><Plus size={15} strokeWidth={2.4} /><span>{t("secrets.newProject")}</span></button
-      >
-    </div>
   </header>
 
   {#if secrets.error}
@@ -179,37 +149,6 @@
             onclick={() => void secrets.flush()}><Save size={13} /><span>Reintentar</span></button
           >{/if}
       </div>
-    </div>
-  {/if}
-
-  {#if activeEnvironmentInfo}
-    <div
-      class="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2"
-      role="region"
-      aria-label="Perfil activo en Windows"
-    >
-      <div class="flex items-center gap-2.5">
-        <span
-          class="size-2 shrink-0 animate-pulse rounded-full bg-emerald-600 ring-2 ring-emerald-600/20"
-        ></span>
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs font-semibold text-emerald-900"
-            >{t("secrets.activeInPowerShell")}:
-            <strong
-              >{activeEnvironmentInfo.projectName} / {activeEnvironmentInfo.environmentName}</strong
-            ></span
-          >
-          <span class="text-[11px] text-emerald-800/85">{t("secrets.publishedToWindows")}</span>
-        </div>
-      </div>
-      <button
-        type="button"
-        class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-emerald-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-700 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
-        disabled={secrets.isBusy || secrets.isSaving}
-        onclick={() => void secrets.deactivateEnvironment()}
-        ><Power size={13} strokeWidth={2.2} /><span>{t("secrets.deactivateFromWindows")}</span
-        ></button
-      >
     </div>
   {/if}
 
@@ -262,8 +201,10 @@
           selectedProjectId={secrets.selectedProjectId}
           selectedEnvironmentId={secrets.selectedEnvironmentId}
           activeEnvironmentId={secrets.activeEnvironmentId}
-          onSelectEnvironment={selectEnvironment}
+          onSelectEnvironment={secrets.selectEnvironment}
           onAddEnvironment={openEnvironmentDialog}
+          canAddProject={secrets.canWrite}
+          onAddProject={() => (projectDialogOpen = true)}
         />
       </div>
       {#if secrets.selectedProject && secrets.selectedEnvironment}
@@ -274,6 +215,12 @@
           disabled={!secrets.canWrite ||
             secrets.selectedEnvironment.id === secrets.activeEnvironmentId}
           busy={secrets.isBusy || secrets.isSaving || !secrets.canWrite}
+          activationBusy={secrets.isBusy || secrets.isSaving}
+          onActivate={() => {
+            if (secrets.selectedEnvironment)
+              void secrets.activateEnvironment(secrets.selectedEnvironment.id);
+          }}
+          onDeactivate={() => void secrets.deactivateEnvironment()}
           onSaveEnvironment={secrets.saveEnvironment}
           onRequestDeleteEnvironment={() => requestDelete("environment")}
           onCloneEnvironment={secrets.cloneEnvironment}

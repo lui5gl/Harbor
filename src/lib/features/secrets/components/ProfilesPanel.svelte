@@ -19,6 +19,8 @@
     activeEnvironmentId: number | null;
     onSelectEnvironment: (projectId: number, environmentId: number) => void;
     onAddEnvironment: (projectId: number) => void;
+    canAddProject: boolean;
+    onAddProject: () => void;
   };
 
   let {
@@ -28,6 +30,8 @@
     activeEnvironmentId,
     onSelectEnvironment,
     onAddEnvironment,
+    canAddProject,
+    onAddProject,
   }: ProfilesPanelProps = $props();
   let searchQuery = $state("");
   let collapsedProjectIds = $state<number[]>([]);
@@ -58,12 +62,24 @@
   class="flex h-full min-h-[min(560px,calc(100dvh-280px))] flex-col rounded-lg border border-boulder-200 bg-white p-3.5 shadow-sm"
   aria-label={`${t("secrets.projects")} & ${t("secrets.environments")}`}
 >
-  <div class="mb-2.5 border-b border-boulder-200 px-1 pt-0.5 pb-2.5">
-    <h2 class="text-[13px] font-bold text-boulder-950">{t("secrets.projects")}</h2>
-    <p class="mt-0.5 text-[11px] text-boulder-500">
-      {projects.length}
-      {projects.length === 1 ? t("secrets.project") : t("secrets.projectPlural")}
-    </p>
+  <div
+    class="mb-2.5 flex items-start justify-between gap-2 border-b border-boulder-200 px-1 pt-0.5 pb-2.5"
+  >
+    <div>
+      <h2 class="text-[13px] font-bold text-boulder-950">{t("secrets.projects")}</h2>
+      <p class="mt-0.5 text-[11px] text-boulder-500">
+        {projects.length}
+        {projects.length === 1 ? t("secrets.project") : t("secrets.projectPlural")}
+      </p>
+    </div>
+    <button
+      class="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md bg-east-bay-900 text-white transition-colors hover:bg-east-bay-950 disabled:cursor-not-allowed disabled:opacity-50"
+      type="button"
+      title={t("secrets.newProject")}
+      aria-label={t("secrets.newProject")}
+      disabled={!canAddProject}
+      onclick={onAddProject}><Plus size={15} strokeWidth={2.4} /></button
+    >
   </div>
 
   {#if projects.length > 1}
@@ -133,10 +149,13 @@
                         size={13}
                         class="shrink-0 text-violet-700"
                         aria-label="Staging"
-                      />{:else}<span
-                        class={`size-1.5 shrink-0 rounded-full ${isActive ? "bg-emerald-500 ring-2 ring-emerald-500/20" : "bg-boulder-300"}`}
+                      />{:else}<span class="size-1.5 shrink-0 rounded-full bg-boulder-300"
                       ></span>{/if}
                     <span class="min-w-0 flex-1 truncate font-medium">{environment.name}</span>
+                    {#if isActive}<span
+                        class="size-1.5 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"
+                        title={t("secrets.inWindows")}
+                      ></span>{/if}
                     <span
                       class="min-w-5 rounded-full bg-boulder-100 px-1.5 text-center text-[10px] font-semibold text-boulder-500"
                       >{environment.secrets.length}</span

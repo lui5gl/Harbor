@@ -12,9 +12,12 @@
   type Props = {
     disabled?: boolean;
     busy?: boolean;
+    activationBusy?: boolean;
     project: Project;
     environment: Environment;
     activeEnvironmentId: number | null;
+    onActivate: () => void;
+    onDeactivate: () => void;
     onSaveEnvironment: (name: string) => void;
     onRequestDeleteEnvironment: () => void;
     onCloneEnvironment: (name: string) => void;
@@ -28,9 +31,12 @@
   let {
     disabled = false,
     busy = false,
+    activationBusy = false,
     project,
     environment,
     activeEnvironmentId,
+    onActivate,
+    onDeactivate,
     onSaveEnvironment,
     onRequestDeleteEnvironment,
     onCloneEnvironment,
@@ -63,9 +69,12 @@
   <ProfileHeader
     {disabled}
     {busy}
+    {activationBusy}
     {project}
     {environment}
     {activeEnvironmentId}
+    {onActivate}
+    {onDeactivate}
     onOpenSettings={() => (settingsOpen = true)}
     onOpenGenerator={() => (generatorOpen = true)}
     onOpenImport={() => (importOpen = true)}
