@@ -251,9 +251,9 @@
       {clipboardError}
     </p>{/if}
 
-  <div class="min-h-0 flex-1 overflow-y-auto rounded-md border border-boulder-200">
+  <div class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-md border border-boulder-200">
     <div
-      class="grid grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] gap-0 border-b border-boulder-200 bg-boulder-50 text-[10px] font-bold uppercase text-boulder-500"
+      class="grid shrink-0 grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] gap-0 border-b border-boulder-200 bg-boulder-50 text-[10px] font-bold uppercase text-boulder-500"
     >
       <span class="flex items-center justify-center border-r border-boulder-200 px-1 py-2"
         ><Hash size={12} /></span
@@ -322,7 +322,7 @@
       {@const shown = revealed.includes(secret.id)}
       {@const keyError = secret.key.trim() ? validateSecretKey(secret.key) : null}
       <div
-        class="grid grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] items-center gap-0 border-b border-boulder-100 transition-colors hover:bg-boulder-50"
+        class="grid shrink-0 grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] items-center gap-0 border-b border-boulder-100 transition-colors hover:bg-boulder-50"
       >
         <div
           class="flex h-full items-center justify-center border-r border-boulder-100 px-1 text-[11px] tabular-nums text-boulder-400"
@@ -424,5 +424,15 @@
         </div>
       </div>
     {/each}
+
+    <div
+      aria-hidden="true"
+      class="grid min-h-12 flex-1 grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] bg-[repeating-linear-gradient(to_bottom,transparent_0,transparent_35px,var(--color-boulder-100)_35px,var(--color-boulder-100)_36px)]"
+    >
+      <div class="border-r border-boulder-100"></div>
+      <div class="border-r border-boulder-100"></div>
+      <div class="border-r border-boulder-100"></div>
+      <div></div>
+    </div>
   </div>
 </div>
