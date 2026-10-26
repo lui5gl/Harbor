@@ -117,15 +117,10 @@
 >
   <header class="flex flex-wrap items-end justify-between gap-5">
     <div class="flex flex-col">
-      <div class="mb-1.5 flex items-center gap-3">
-        <p class="text-shine text-[11px] font-bold uppercase tracking-[0.06em]">
-          {t("secrets.eyebrow")}
-        </p>
-      </div>
-      <h1 id="secrets-title" class="text-[26px] leading-tight font-bold text-boulder-950">
+      <h1 id="secrets-title" class="text-[26px] leading-tight font-bold tracking-[-0.02em] text-boulder-950">
         {t("secrets.title")}
       </h1>
-      <p class="mt-1 max-w-2xl text-[12.5px] leading-relaxed text-boulder-600">
+      <p class="mt-1.5 max-w-prose text-[13px] leading-relaxed text-boulder-600">
         {t("secrets.description")}
       </p>
     </div>

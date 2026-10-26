@@ -11,11 +11,9 @@
     ChevronUp,
     FileCode2,
     Folder,
-    Hexagon,
     KeyRound,
     Play,
     PowerOff,
-    Server,
     Settings2,
     Square,
     Terminal,
@@ -42,18 +40,18 @@
   const pollIntervalMs = 5_000;
 
   const triggerClass =
-    "inline-flex min-h-7 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded border-0 bg-transparent px-1.5 text-[11.5px] text-inherit hover:bg-white/10 data-[state=open]:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex min-h-7 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded border-0 bg-transparent px-2 text-xs text-inherit transition-colors hover:bg-white/10 data-[state=open]:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60";
   const contentClass =
     "z-100 max-h-96 w-72 overflow-y-auto rounded-lg border border-boulder-200 bg-white p-1.5 shadow-xl outline-none";
   const itemClass =
     "flex min-h-9 cursor-pointer items-center gap-2.5 rounded-md px-2 py-1 text-xs font-medium text-boulder-700 outline-none transition-colors data-[highlighted]:bg-boulder-100 data-[highlighted]:text-boulder-950 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40";
   const labelClass =
-    "flex items-center gap-1.5 px-2 pb-1 pt-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-boulder-500";
+    "flex items-center gap-1.5 px-2 pb-1 pt-2 text-[11px] font-medium text-boulder-500";
   const separatorClass = "mx-1 my-1.5 h-px border-0 bg-boulder-100";
   const tileClass =
     "flex size-6 shrink-0 items-center justify-center rounded-md bg-boulder-100 text-boulder-600";
   const activeBadgeClass =
-    "ml-auto inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700";
+    "ml-auto inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[11px] font-semibold text-green-800";
   const emptyClass = "px-2 py-2 text-xs text-boulder-500";
 
   let projects = $state<Project[]>([]);
@@ -252,7 +250,7 @@
 {/snippet}
 
 <footer
-  class="flex min-h-7 shrink-0 select-none items-center justify-between bg-east-bay-950 px-3 text-[11.5px] text-east-bay-100 max-sm:gap-2 max-sm:px-2"
+  class="flex min-h-7 shrink-0 select-none items-center justify-between bg-east-bay-950 px-3 text-xs text-east-bay-100 max-sm:gap-2 max-sm:px-2"
   aria-label={t("status.application")}
 >
   <div class="flex min-w-0 items-center">
@@ -293,7 +291,6 @@
                     class={itemClass}
                     onSelect={() => selectEnvironment(environment.id)}
                   >
-                    <span class={tileClass}><KeyRound size={13} /></span>
                     <span class="truncate">{environment.name}</span>
                     {#if environment.id === activeEnvironmentId}
                       <span class={activeBadgeClass}
@@ -311,7 +308,7 @@
             {#if activeEnvironmentId !== null}
               <Menu.Item
                 value="deactivate"
-                class={`${itemClass} text-red-600 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-700`}
+                class={`${itemClass} text-red-700 data-highlighted:bg-red-50 data-highlighted:text-red-700`}
                 onSelect={deactivateEnvironment}
               >
                 <span class="flex size-6 shrink-0 items-center justify-center rounded-md bg-red-50"
@@ -347,8 +344,7 @@
         title={t("status.nodeVersion")}
         disabled={isBusy}
       >
-        <Terminal size={13} strokeWidth={2} class="shrink-0 text-east-bay-300" aria-hidden="true" />
-        <span class="font-medium text-east-bay-300">Node</span>
+        <span class="font-medium text-east-bay-200">Node</span>
         {#if nodeVersion}
           <strong class="font-semibold text-white">v{nodeVersion}</strong>
         {:else}
@@ -372,7 +368,6 @@
                   class={itemClass}
                   onSelect={() => selectNodeVersion(version)}
                 >
-                  <span class={tileClass}><Hexagon size={13} /></span>
                   <span>v{cleanVersion(version)}</span>
                   {#if cleanVersion(version) === nodeVersion}
                     <span class={activeBadgeClass}
@@ -403,13 +398,12 @@
     >
       <Menu.Trigger class={triggerClass} title={t("status.phpService")} disabled={isBusy}>
         <span
-          class={`size-1.75 rounded-full ${isPhpRunning ? "bg-green-500 shadow-[0_0_6px_rgb(34_197_94/60%)]" : "bg-east-bay-400"}`}
+          class={`size-1.75 rounded-full ${isPhpRunning ? "bg-green-400" : "bg-east-bay-400"}`}
           aria-hidden="true"
         ></span>
-        <Server size={13} strokeWidth={2} class="shrink-0 text-east-bay-300" aria-hidden="true" />
-        <span class="font-medium text-east-bay-300">PHP</span>
+        <span class="font-medium text-east-bay-200">PHP</span>
         {#if phpVersion}<strong class="font-semibold text-white">v{phpVersion}</strong>{/if}
-        <span class="text-east-bay-300" aria-live="polite"
+        <span class="text-east-bay-200" aria-live="polite"
           >{isPhpRunning ? "127.0.0.1:9070" : t("common.stopped")}</span
         >
         <ChevronUp size={12} class="shrink-0 text-east-bay-400" aria-hidden="true" />
@@ -425,7 +419,7 @@
             )}
             <Menu.Item
               value="toggle"
-              class={`${itemClass} ${isPhpRunning ? "text-red-600 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-700" : "text-green-700 data-[highlighted]:bg-green-50 data-[highlighted]:text-green-800"}`}
+              class={`${itemClass} ${isPhpRunning ? "text-red-700 data-highlighted:bg-red-50 data-highlighted:text-red-700" : "text-green-700 data-highlighted:bg-green-50 data-highlighted:text-green-800"}`}
               disabled={!isPhpRunning && !phpVersion}
               onSelect={togglePhp}
             >
@@ -449,7 +443,6 @@
                   class={itemClass}
                   onSelect={() => selectPhpVersion(version)}
                 >
-                  <span class={tileClass}><FileCode2 size={13} /></span>
                   <span>v{cleanVersion(version)}</span>
                   {#if cleanVersion(version) === phpVersion}
                     <span class={activeBadgeClass}

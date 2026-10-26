@@ -88,7 +88,7 @@
           <div class="flex items-center gap-2.5">
             <span class="font-mono text-[13.5px] font-semibold text-boulder-950">{item.number}</span
             >{#if item.channel}<span
-                class={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] ${channelClass(item.channel)}`}
+                class={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${channelClass(item.channel)}`}
                 >{formatRuntimeChannel(item.channel)}</span
               >{/if}
           </div>

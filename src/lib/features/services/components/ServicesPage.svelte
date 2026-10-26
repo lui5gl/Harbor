@@ -55,10 +55,10 @@
 >
   <header class="flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
     <div>
-      <p class="text-shine mb-2 text-[11px] font-bold uppercase tracking-[0.08em]">
-        {t("services.eyebrow")}
-      </p>
-      <h1 id="services-title" class="text-3xl leading-tight font-semibold text-boulder-950">
+      <h1
+        id="services-title"
+        class="text-3xl leading-tight font-semibold tracking-[-0.02em] text-boulder-950"
+      >
         {t("services.title")}
       </h1>
       <p class="mt-2 text-[15px] leading-relaxed text-boulder-600">

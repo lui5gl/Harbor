@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Check, Layers, Pencil, Plus, Server, Terminal, Trash2 } from "@lucide/svelte";
+  import { Check, Pencil, Plus, Trash2 } from "@lucide/svelte";
   import { cleanVersion, type PhpStackProfile } from "../types";
   type Props = {
     profiles: readonly PhpStackProfile[];
@@ -14,24 +14,17 @@
 </script>
 
 <section
-  class="flex flex-col gap-4 rounded-lg border border-boulder-200 bg-boulder-50 px-5 py-4.5"
+  class="flex flex-col gap-4 border-t border-boulder-100 pt-5"
   aria-labelledby="profiles-title"
 >
   <div class="flex items-start justify-between gap-3">
-    <div class="flex items-start gap-3">
-      <div
-        class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-east-bay-100 text-east-bay-800"
-      >
-        <Layers size={18} />
-      </div>
-      <div>
-        <h3 id="profiles-title" class="text-[15px] font-semibold text-boulder-950">
-          Perfiles de Entorno Web
-        </h3>
-        <p class="mt-1 text-[12.5px] leading-snug text-boulder-600">
-          Configura pares de PHP y Apache para alternar de stack según el proyecto.
-        </p>
-      </div>
+    <div>
+      <h3 id="profiles-title" class="text-[15px] font-semibold text-boulder-950">
+        Perfiles de Entorno Web
+      </h3>
+      <p class="mt-1 text-[13px] leading-snug text-boulder-600">
+        Configura pares de PHP y Apache para alternar de stack según el proyecto.
+      </p>
     </div>
     <button
       class="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-east-bay-900 px-3 text-[12.5px] font-semibold text-white"
@@ -40,7 +33,7 @@
     >
   </div>
   {#if profiles.length === 0}<div
-      class="flex flex-col items-center gap-2.5 rounded-md border border-dashed border-boulder-300 bg-white p-5 text-center"
+      class="flex flex-col items-center gap-2.5 rounded-lg border border-dashed border-boulder-300 p-6 text-center"
     >
       <p class="text-[13px] text-boulder-500">No tienes perfiles configurados.</p>
       <button
@@ -49,19 +42,21 @@
         onclick={onCreate}><Plus size={14} /><span>Crear Primer Perfil</span></button
       >
     </div>{:else}
-    <div class="flex flex-col gap-2">
+    <div
+      class="flex flex-col divide-y divide-boulder-100 overflow-hidden rounded-lg border border-boulder-200"
+    >
       {#each profiles as profile (profile.id)}{@const isActive =
           profile.phpVersion === cleanActivePhp}
         <div
-          class={`flex items-center rounded-lg border bg-white transition ${isActive ? "border-east-bay-500 shadow-sm" : "border-boulder-200 hover:border-boulder-300 hover:bg-boulder-50"}`}
+          class={`flex items-center transition-colors ${isActive ? "bg-east-bay-50" : "hover:bg-boulder-50"}`}
         >
           <button
             type="button"
-            class="flex min-w-0 flex-1 cursor-pointer items-center gap-3.5 rounded-l-lg px-4 py-3 text-left"
+            class="flex min-w-0 flex-1 cursor-pointer items-center gap-3.5 px-4 py-3 text-left"
             onclick={() => onSelect(profile)}
           >
             <span
-              class={`size-4 shrink-0 rounded-full border-2 ${isActive ? "border-east-bay-900 bg-east-bay-900 ring-4 ring-white inset-ring-3 inset-ring-east-bay-900" : "border-boulder-300"}`}
+              class={`size-4 shrink-0 rounded-full border-2 ${isActive ? "border-east-bay-900 bg-east-bay-900 inset-ring-2 inset-ring-white" : "border-boulder-300"}`}
             ></span>
             <span class="flex min-w-0 flex-1 flex-col gap-1.5">
               <div class="flex items-center gap-2.5">
@@ -71,26 +66,20 @@
                     ><Check size={11} /><span>Activo · CLI & Web</span></span
                   >{/if}
               </div>
-              <div class="flex gap-2">
-                <span
-                  class="inline-flex items-center gap-1 rounded bg-violet-50 px-1.5 py-0.5 font-mono text-[11px] text-violet-800"
-                  ><Terminal size={12} /><span>PHP {profile.phpVersion}</span></span
-                ><span
-                  class="inline-flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[11px] text-amber-800"
-                  ><Server size={12} /><span>Apache {profile.apacheVersion}</span></span
-                >
-              </div>
+              <span class="font-mono text-xs text-boulder-600"
+                >PHP {profile.phpVersion} · Apache {profile.apacheVersion}</span
+              >
             </span>
           </button>
           <div class="flex gap-1 pr-3">
             <button
-              class="inline-flex size-7 cursor-pointer items-center justify-center rounded text-boulder-400 hover:bg-boulder-100 hover:text-boulder-800"
+              class="inline-flex size-7 cursor-pointer items-center justify-center rounded text-boulder-500 hover:bg-boulder-100 hover:text-boulder-800"
               type="button"
               title="Editar perfil"
               aria-label={`Editar perfil ${profile.name}`}
               onclick={(event) => onEdit(profile, event)}><Pencil size={14} /></button
             >{#if profiles.length > 1}<button
-                class="inline-flex size-7 cursor-pointer items-center justify-center rounded text-boulder-400 hover:bg-red-50 hover:text-red-600"
+                class="inline-flex size-7 cursor-pointer items-center justify-center rounded text-boulder-500 hover:bg-red-50 hover:text-red-700"
                 type="button"
                 title="Eliminar perfil"
                 aria-label={`Eliminar perfil ${profile.name}`}

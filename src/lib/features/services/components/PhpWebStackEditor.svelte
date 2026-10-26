@@ -246,9 +246,6 @@
   >
     <div class="min-w-0">
       <div>
-        <p class="text-shine mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em]">
-          Entorno Web
-        </p>
         <h2 id="web-stack-title" class="text-[22px] leading-tight font-semibold text-boulder-950">
           PHP & Servidor Web
         </h2>
@@ -294,8 +291,8 @@
         <AlertCircle size={18} strokeWidth={2.2} />
       </div>
       <div class="min-w-0 flex-1">
-        <span class="block text-xs font-bold uppercase tracking-[0.02em] text-amber-900"
-          >Componente Apache Requerido</span
+        <span class="block text-[13px] font-semibold text-amber-900"
+          >Componente Apache requerido</span
         >
         <p class="mt-0.5 text-[12.5px] leading-snug text-amber-700">
           Se necesita el servidor web Apache base para servir tus sitios en el puerto local.

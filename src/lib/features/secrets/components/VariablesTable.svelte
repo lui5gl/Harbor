@@ -10,10 +10,8 @@
     Copy,
     Eye,
     EyeOff,
-    Hash,
     KeyRound,
     Lock,
-    MousePointerClick,
     MoreHorizontal,
     Plus,
     Search,
@@ -253,10 +251,11 @@
 
   <div class="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-md border border-boulder-200">
     <div
-      class="grid shrink-0 grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] gap-0 border-b border-boulder-200 bg-boulder-50 text-[10px] font-bold uppercase text-boulder-500"
+      class="grid shrink-0 grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] gap-0 border-b border-boulder-200 bg-boulder-50 text-[11px] font-semibold text-boulder-600"
     >
-      <span class="flex items-center justify-center border-r border-boulder-200 px-1 py-2"
-        ><Hash size={12} /></span
+      <span
+        class="flex items-center justify-center border-r border-boulder-200 px-1 py-2"
+        aria-label="#">#</span
       >
       <span class="border-r border-boulder-200 px-3 py-1.5">
         <button
@@ -265,7 +264,7 @@
           onclick={() => toggleSort("key")}
           aria-label={`${t("secrets.sortBy")} ${t("secrets.key")}`}
           title={`${t("secrets.sortBy")} ${t("secrets.key")}`}
-          ><KeyRound size={12} />{t(
+          >{t(
             "secrets.key",
           )}{#if sortField === "key"}{#if sortDirection === "asc"}<ArrowUp
                 size={12}
@@ -282,7 +281,7 @@
           onclick={() => toggleSort("value")}
           aria-label={`${t("secrets.sortBy")} ${t("secrets.value")}`}
           title={`${t("secrets.sortBy")} ${t("secrets.value")}`}
-          ><Lock size={12} />{t(
+          >{t(
             "secrets.value",
           )}{#if sortField === "value"}{#if sortDirection === "asc"}<ArrowUp
                 size={12}
@@ -292,9 +291,7 @@
             />{/if}</button
         >
       </span>
-      <span class="flex items-center justify-start gap-1 px-2 py-2">
-        <MousePointerClick size={13} />{t("secrets.variableActions")}
-      </span>
+      <span class="flex items-center justify-start px-2 py-2">{t("secrets.variableActions")}</span>
     </div>
 
     {#if secrets.length === 0 && query}
@@ -325,7 +322,7 @@
         class="grid shrink-0 grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] items-center gap-0 border-b border-boulder-100 transition-colors hover:bg-boulder-50"
       >
         <div
-          class="flex h-full items-center justify-center border-r border-boulder-100 px-1 text-[11px] tabular-nums text-boulder-400"
+          class="flex h-full items-center justify-center border-r border-boulder-100 px-1 text-[11px] tabular-nums text-boulder-500"
         >
           {index + 1}
         </div>
@@ -427,7 +424,7 @@
 
     <div
       aria-hidden="true"
-      class="grid min-h-12 flex-1 grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px] bg-[repeating-linear-gradient(to_bottom,transparent_0,transparent_35px,var(--color-boulder-100)_35px,var(--color-boulder-100)_36px)]"
+      class="grid min-h-12 flex-1 grid-cols-[40px_minmax(180px,1.2fr)_minmax(200px,2fr)_104px]"
     >
       <div class="border-r border-boulder-100"></div>
       <div class="border-r border-boulder-100"></div>

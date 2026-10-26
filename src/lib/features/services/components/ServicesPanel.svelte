@@ -37,7 +37,7 @@
   </div>
   <div class="mt-2.5 min-h-0 flex-1 overflow-y-auto">
     <section class="flex flex-col gap-1.5" aria-label={t("services.webSection")}>
-      <div class="px-1.5 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-boulder-500">
+      <div class="px-1.5 py-1 text-xs font-medium text-boulder-500">
         {t("services.webSection")}
       </div>
       <div class="flex flex-col gap-1">
@@ -54,7 +54,7 @@
             <div class="flex items-center justify-between gap-2">
               <span class="font-semibold text-boulder-900">{t("services.webStack")}</span
               >{#if isPhpRunning}<span
-                  class="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700"
+                  class="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800"
                   >{t("services.running")}</span
                 >{/if}
             </div>
@@ -78,7 +78,7 @@
             <div class="flex items-center justify-between gap-2">
               <span class="font-semibold text-boulder-900">{t("services.node")}</span
               >{#if activeNodeVersion}<span
-                  class="rounded-full bg-boulder-100 px-1.5 py-0.5 text-[9px] font-bold text-boulder-700"
+                  class="rounded-full bg-boulder-100 px-1.5 py-0.5 text-[11px] font-semibold text-boulder-700"
                   >{activeNodeVersion}</span
                 >{/if}
             </div>

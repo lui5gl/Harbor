@@ -1,17 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    DatabaseBackup,
-    Download,
-    FolderOpen,
-    HardDrive,
-    Languages,
-    MonitorCog,
-    RotateCcw,
-    Upload,
-    Terminal,
-    Check,
-  } from "@lucide/svelte";
+  import { Check, ChevronDown, Download, FolderOpen, RotateCcw, Upload } from "@lucide/svelte";
   import { Switch } from "@ark-ui/svelte/switch";
   import { Select, createListCollection } from "@ark-ui/svelte/select";
   import { Field } from "@ark-ui/svelte/field";
@@ -29,6 +18,22 @@
 
   const settingsStore = createSettingsStore();
   const secretsStore = createSecretsStore();
+  const sectionClass =
+    "grid grid-cols-[minmax(220px,1fr)_minmax(0,1.7fr)] gap-x-12 gap-y-4 py-7 max-md:grid-cols-1";
+  const headingClass = "text-sm font-semibold text-boulder-950";
+  const descriptionClass = "mt-1 max-w-xs text-xs leading-relaxed text-boulder-600";
+  const switchClass =
+    "relative h-5.5 w-9.5 shrink-0 rounded-full bg-boulder-300 transition-colors data-[state=checked]:bg-east-bay-700 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-east-bay-400 after:absolute after:top-0.5 after:left-0.5 after:size-4.5 after:rounded-full after:bg-white after:transition-transform data-[state=checked]:after:translate-x-4";
+  const selectTriggerClass =
+    "flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-boulder-300 bg-white px-2.5 text-xs text-boulder-800 outline-none transition-colors hover:border-boulder-400 focus-visible:border-east-bay-500 focus-visible:ring-2 focus-visible:ring-east-bay-500/15";
+  const selectContentClass =
+    "z-50 min-w-[var(--reference-width)] rounded-md border border-boulder-200 bg-white p-1 shadow-lg outline-none";
+  const selectItemClass =
+    "flex h-8 cursor-pointer items-center justify-between rounded px-2 text-xs text-boulder-800 outline-none data-highlighted:bg-boulder-100 data-[state=checked]:font-semibold";
+  const inputClass =
+    "h-9 w-full rounded-md border border-boulder-300 bg-white px-2.5 text-xs text-boulder-900 outline-none focus:border-east-bay-500 focus:ring-2 focus:ring-east-bay-500/15";
+  const buttonClass =
+    "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-800 transition-colors hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50";
   let backupOpen = $state(false);
   let backupMode = $state<"export" | "restore">("export");
   const locales = createListCollection({
@@ -127,16 +132,16 @@
 >
   <header class="flex items-center justify-between gap-4 max-md:flex-col max-md:items-start">
     <div>
-      <p class="text-shine mb-2 text-[11px] font-bold uppercase tracking-[0.06em]">
-        {t("settings.eyebrow")}
-      </p>
-      <h1 id="settings-title" class="text-3xl leading-none font-semibold text-boulder-950">
+      <h1
+        id="settings-title"
+        class="text-3xl leading-tight font-semibold tracking-[-0.02em] text-boulder-950"
+      >
         {t("settings.title")}
       </h1>
       <p class="mt-2.5 text-[13px] leading-relaxed text-boulder-600">{t("settings.description")}</p>
     </div>
     <p
-      class="inline-flex h-9 items-center gap-1.5 text-xs font-semibold text-east-bay-700 transition-opacity {saved
+      class="inline-flex h-9 items-center gap-1.5 text-xs font-semibold text-emerald-800 transition-opacity {saved
         ? 'opacity-100'
         : 'opacity-0'}"
       role="status"
@@ -151,105 +156,71 @@
       {error}
     </p>{/if}
   <div
-    class="mt-8 grid grid-cols-[minmax(0,1.35fr)_minmax(280px,1fr)] gap-4 max-md:mt-6 max-md:grid-cols-1"
+    class="mt-8 flex flex-col divide-y divide-boulder-200 border-y border-boulder-200 max-md:mt-6"
   >
-    <section
-      class="row-span-2 min-w-0 rounded-lg border border-boulder-200 bg-white max-md:row-auto"
-      aria-labelledby="behavior-title"
-    >
-      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
-        <span
-          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><MonitorCog size={18} /></span
-        >
-        <div>
-          <h2 id="behavior-title" class="text-sm font-semibold text-boulder-900">
-            {t("settings.behavior")}
-          </h2>
-          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
-            {t("settings.behaviorDescription")}
-          </p>
-        </div>
+    <section class={sectionClass} aria-labelledby="behavior-title">
+      <div>
+        <h2 id="behavior-title" class={headingClass}>{t("settings.behavior")}</h2>
+        <p class={descriptionClass}>{t("settings.behaviorDescription")}</p>
       </div>
-      <Fieldset.Root class="px-4.5 py-1">
+      <Fieldset.Root class="min-w-0">
         <Fieldset.Legend class="sr-only">{t("settings.behavior")}</Fieldset.Legend>
         <Switch.Root
-          class="flex cursor-pointer items-center justify-between gap-4 border-b border-boulder-100 py-3.5"
+          class="flex cursor-pointer items-center justify-between gap-4 border-b border-boulder-100 pt-0 pb-4"
           bind:checked={settings.launchAtStartup}
           ><span class="flex flex-col gap-1"
-            ><strong class="text-[13px] font-semibold text-boulder-800"
+            ><strong class="text-[13px] font-semibold text-boulder-900"
               >{t("settings.launchAtStartup")}</strong
-            ><small class="text-[11px] leading-snug text-boulder-500"
+            ><small class="text-xs leading-snug text-boulder-600"
               >{t("settings.launchAtStartupDescription")}</small
             ></span
-          ><Switch.Control
-            class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-boulder-300 transition data-[state=checked]:bg-east-bay-700 data-[focus]:outline-2 data-[focus]:outline-east-bay-400 after:absolute after:top-0.5 after:left-0.5 after:size-4.5 after:rounded-full after:bg-white after:transition-transform data-[state=checked]:after:translate-x-4"
-            ><Switch.Thumb class="sr-only" /></Switch.Control
+          ><Switch.Control class={switchClass}><Switch.Thumb class="sr-only" /></Switch.Control
           ><Switch.HiddenInput /></Switch.Root
         >
         <Switch.Root
-          class="flex cursor-pointer items-center justify-between gap-4 border-b border-boulder-100 py-3.5"
+          class="flex cursor-pointer items-center justify-between gap-4 border-b border-boulder-100 py-4"
           bind:checked={settings.minimizeToTray}
           ><span class="flex flex-col gap-1"
-            ><strong class="text-[13px] font-semibold text-boulder-800"
+            ><strong class="text-[13px] font-semibold text-boulder-900"
               >{t("settings.minimizeToTray")}</strong
-            ><small class="text-[11px] leading-snug text-boulder-500"
+            ><small class="text-xs leading-snug text-boulder-600"
               >{t("settings.minimizeToTrayDescription")}</small
             ></span
-          ><Switch.Control
-            class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-boulder-300 transition data-[state=checked]:bg-east-bay-700 data-[focus]:outline-2 data-[focus]:outline-east-bay-400 after:absolute after:top-0.5 after:left-0.5 after:size-4.5 after:rounded-full after:bg-white after:transition-transform data-[state=checked]:after:translate-x-4"
-            ><Switch.Thumb class="sr-only" /></Switch.Control
+          ><Switch.Control class={switchClass}><Switch.Thumb class="sr-only" /></Switch.Control
           ><Switch.HiddenInput /></Switch.Root
         >
         <Switch.Root
-          class="flex cursor-pointer items-center justify-between gap-4 border-b border-boulder-100 py-3.5"
+          class="flex cursor-pointer items-center justify-between gap-4 border-b border-boulder-100 py-4"
           bind:checked={settings.closeToTray}
           ><span class="flex flex-col gap-1"
-            ><strong class="text-[13px] font-semibold text-boulder-800"
+            ><strong class="text-[13px] font-semibold text-boulder-900"
               >{t("settings.closeToTray")}</strong
-            ><small class="text-[11px] leading-snug text-boulder-500"
+            ><small class="text-xs leading-snug text-boulder-600"
               >{t("settings.closeToTrayDescription")}</small
             ></span
-          ><Switch.Control
-            class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-boulder-300 transition data-[state=checked]:bg-east-bay-700 data-[focus]:outline-2 data-[focus]:outline-east-bay-400 after:absolute after:top-0.5 after:left-0.5 after:size-4.5 after:rounded-full after:bg-white after:transition-transform data-[state=checked]:after:translate-x-4"
-            ><Switch.Thumb class="sr-only" /></Switch.Control
+          ><Switch.Control class={switchClass}><Switch.Thumb class="sr-only" /></Switch.Control
           ><Switch.HiddenInput /></Switch.Root
         >
         <Switch.Root
-          class="flex cursor-pointer items-center justify-between gap-4 py-3.5"
+          class="flex cursor-pointer items-center justify-between gap-4 pt-4 pb-0"
           bind:checked={settings.openLastSection}
           ><span class="flex flex-col gap-1"
-            ><strong class="text-[13px] font-semibold text-boulder-800"
+            ><strong class="text-[13px] font-semibold text-boulder-900"
               >{t("settings.restoreLastSection")}</strong
-            ><small class="text-[11px] leading-snug text-boulder-500"
+            ><small class="text-xs leading-snug text-boulder-600"
               >{t("settings.restoreLastSectionDescription")}</small
             ></span
-          ><Switch.Control
-            class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-boulder-300 transition data-[state=checked]:bg-east-bay-700 data-[focus]:outline-2 data-[focus]:outline-east-bay-400 after:absolute after:top-0.5 after:left-0.5 after:size-4.5 after:rounded-full after:bg-white after:transition-transform data-[state=checked]:after:translate-x-4"
-            ><Switch.Thumb class="sr-only" /></Switch.Control
+          ><Switch.Control class={switchClass}><Switch.Thumb class="sr-only" /></Switch.Control
           ><Switch.HiddenInput /></Switch.Root
         >
       </Fieldset.Root>
     </section>
-    <section
-      class="min-w-0 rounded-lg border border-boulder-200 bg-white"
-      aria-labelledby="language-title"
-    >
-      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
-        <span
-          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><Languages size={18} /></span
-        >
-        <div>
-          <h2 id="language-title" class="text-sm font-semibold text-boulder-900">
-            {t("settings.language")}
-          </h2>
-          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
-            {t("settings.languageDescription")}
-          </p>
-        </div>
+    <section class={sectionClass} aria-labelledby="language-title">
+      <div>
+        <h2 id="language-title" class={headingClass}>{t("settings.language")}</h2>
+        <p class={descriptionClass}>{t("settings.languageDescription")}</p>
       </div>
-      <div class="p-4.5">
+      <div class="max-w-sm">
         <Select.Root
           collection={locales}
           value={[i18n.locale]}
@@ -260,24 +231,17 @@
             >{t("settings.language")}</Select.Label
           >
           <Select.Control class="flex w-full">
-            <Select.Trigger
-              class="flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus-visible:border-east-bay-400 focus-visible:ring-2 focus-visible:ring-east-bay-100"
-            >
+            <Select.Trigger class={selectTriggerClass}>
               <Select.ValueText />
-              <Select.Indicator aria-hidden="true">⌄</Select.Indicator>
+              <Select.Indicator><ChevronDown size={14} aria-hidden="true" /></Select.Indicator>
             </Select.Trigger>
           </Select.Control>
           <Select.Positioner>
-            <Select.Content
-              class="z-50 min-w-[var(--reference-width)] rounded-md border border-boulder-200 bg-white p-1 shadow-lg outline-none"
-            >
+            <Select.Content class={selectContentClass}>
               {#each locales.items as item (item.value)}
-                <Select.Item
-                  {item}
-                  class="flex h-8 cursor-pointer items-center justify-between rounded px-2 text-xs text-boulder-800 outline-none data-[highlighted]:bg-boulder-100 data-[state=checked]:font-semibold"
-                >
+                <Select.Item {item} class={selectItemClass}>
                   <Select.ItemText>{item.label}</Select.ItemText>
-                  <Select.ItemIndicator aria-hidden="true">✓</Select.ItemIndicator>
+                  <Select.ItemIndicator><Check size={14} aria-hidden="true" /></Select.ItemIndicator>
                 </Select.Item>
               {/each}
             </Select.Content>
@@ -286,46 +250,33 @@
         </Select.Root>
       </div>
     </section>
-    <section
-      class="min-w-0 rounded-lg border border-boulder-200 bg-white"
-      aria-labelledby="workspace-title"
-    >
-      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
-        <span
-          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><HardDrive size={18} /></span
-        >
-        <div>
-          <h2 id="workspace-title" class="text-sm font-semibold text-boulder-900">
-            {t("settings.workspace")}
-          </h2>
-          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
-            {t("settings.workspaceDescription")}
-          </p>
-        </div>
+    <section class={sectionClass} aria-labelledby="workspace-title">
+      <div>
+        <h2 id="workspace-title" class={headingClass}>{t("settings.workspace")}</h2>
+        <p class={descriptionClass}>{t("settings.workspaceDescription")}</p>
       </div>
-      <div class="p-4.5">
-        <div class="flex items-center gap-2">
+      <div class="min-w-0">
+        <div class="flex items-end gap-2">
           <Field.Root class="flex min-w-0 flex-1 flex-col gap-1.5">
             <Field.Label class="text-xs font-semibold text-boulder-700"
               >{t("settings.workspaceLabel")}</Field.Label
             >
             <Field.Input
               id="workspace-path"
-              class="h-9 w-full rounded-md border border-boulder-200 bg-boulder-50 px-2.5 text-xs text-boulder-700"
+              class="h-9 w-full truncate rounded-md border border-boulder-200 bg-boulder-50 px-2.5 font-mono text-xs text-boulder-700"
               value={workspacePath}
               readonly
             />
           </Field.Root>
           <button
-            class="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-boulder-300 bg-white text-boulder-700 hover:bg-boulder-50"
+            class="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-boulder-300 bg-white text-boulder-700 transition-colors hover:bg-boulder-100"
             type="button"
             onclick={openWorkspace}
             title={t("settings.openWorkspace")}
             aria-label={t("settings.openWorkspace")}><FolderOpen size={16} /></button
           >
         </div>
-        <p class="mt-1 text-xs leading-relaxed text-boulder-500">{t("settings.workspaceHint")}</p>
+        <p class="mt-2 text-xs leading-relaxed text-boulder-600">{t("settings.workspaceHint")}</p>
       </div>
     </section>
     <ProxySettingsSection
@@ -335,25 +286,12 @@
       bind:username={settings.proxyUsername}
       bind:password={settings.proxyPassword}
     />
-    <section
-      class="min-w-0 rounded-lg border border-boulder-200 bg-white"
-      aria-labelledby="shell-title"
-    >
-      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
-        <span
-          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><Terminal size={18} /></span
-        >
-        <div>
-          <h2 id="shell-title" class="text-sm font-semibold text-boulder-900">
-            {t("settings.shell")}
-          </h2>
-          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
-            {t("settings.shellDescription")}
-          </p>
-        </div>
+    <section class={sectionClass} aria-labelledby="shell-title">
+      <div>
+        <h2 id="shell-title" class={headingClass}>{t("settings.shell")}</h2>
+        <p class={descriptionClass}>{t("settings.shellDescription")}</p>
       </div>
-      <div class="grid gap-4 p-4.5">
+      <div class="grid max-w-sm gap-4">
         <Field.Root class="flex flex-col gap-1.5">
           <Field.Label class="text-xs font-semibold text-boulder-700">
             {t("settings.terminal")}
@@ -365,24 +303,17 @@
             positioning={{ sameWidth: true }}
           >
             <Select.Control class="flex w-full">
-              <Select.Trigger
-                class="flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus-visible:border-east-bay-400 focus-visible:ring-2 focus-visible:ring-east-bay-100"
-              >
+              <Select.Trigger class={selectTriggerClass}>
                 <Select.ValueText />
-                <Select.Indicator aria-hidden="true">⌄</Select.Indicator>
+                <Select.Indicator><ChevronDown size={14} aria-hidden="true" /></Select.Indicator>
               </Select.Trigger>
             </Select.Control>
             <Select.Positioner>
-              <Select.Content
-                class="z-50 min-w-[var(--reference-width)] rounded-md border border-boulder-200 bg-white p-1 shadow-lg outline-none"
-              >
+              <Select.Content class={selectContentClass}>
                 {#each terminals.items as item (item.value)}
-                  <Select.Item
-                    {item}
-                    class="flex h-8 cursor-pointer items-center justify-between rounded px-2 text-xs text-boulder-800 outline-none data-[highlighted]:bg-boulder-100 data-[state=checked]:font-semibold"
-                  >
+                  <Select.Item {item} class={selectItemClass}>
                     <Select.ItemText>{item.label}</Select.ItemText>
-                    <Select.ItemIndicator aria-hidden="true">✓</Select.ItemIndicator>
+                    <Select.ItemIndicator><Check size={14} aria-hidden="true" /></Select.ItemIndicator>
                   </Select.Item>
                 {/each}
               </Select.Content>
@@ -391,7 +322,7 @@
           </Select.Root>
           {#if settings.terminalType === "custom"}
             <Field.Input
-              class="h-9 w-full rounded-md border border-boulder-200 bg-white px-2.5 text-xs text-boulder-800 outline-none focus:border-east-bay-400 focus:ring-2 focus:ring-east-bay-100"
+              class={inputClass}
               bind:value={settings.customTerminalPath}
               placeholder={t("settings.customTerminalPath")}
             />
@@ -399,34 +330,21 @@
         </Field.Root>
       </div>
     </section>
-    <section
-      class="min-w-0 rounded-lg border border-boulder-200 bg-white"
-      aria-labelledby="secrets-data-title"
-    >
-      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
-        <span
-          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><DatabaseBackup size={18} /></span
-        >
-        <div>
-          <h2 id="secrets-data-title" class="text-sm font-semibold text-boulder-900">
-            {t("settings.secretsData")}
-          </h2>
-          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
-            {t("settings.secretsDataDescription")}
-          </p>
-        </div>
+    <section class={sectionClass} aria-labelledby="secrets-data-title">
+      <div>
+        <h2 id="secrets-data-title" class={headingClass}>{t("settings.secretsData")}</h2>
+        <p class={descriptionClass}>{t("settings.secretsDataDescription")}</p>
       </div>
-      <div class="flex flex-wrap gap-2 p-4.5">
+      <div class="flex flex-wrap items-start gap-2">
         <button
-          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-800 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
+          class={buttonClass}
           type="button"
           disabled={!secretsStore.canWrite || secretsStore.isSaving}
           onclick={() => void openBackup("export")}
           ><Download size={14} /><span>{t("secrets.exportBackupItem")}</span></button
         >
         <button
-          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-800 hover:bg-boulder-100 disabled:cursor-not-allowed disabled:opacity-50"
+          class={buttonClass}
           type="button"
           disabled={!secretsStore.canWrite ||
             secretsStore.isSaving ||
@@ -436,29 +354,13 @@
         >
       </div>
     </section>
-    <section
-      class="min-w-0 rounded-lg border border-boulder-200 bg-white"
-      aria-labelledby="reset-title"
-    >
-      <div class="flex items-center gap-3 border-b border-boulder-100 p-4.5">
-        <span
-          class="flex size-8.5 shrink-0 items-center justify-center rounded-md border border-east-bay-100 bg-east-bay-50 text-east-bay-700"
-          ><RotateCcw size={18} /></span
-        >
-        <div>
-          <h2 id="reset-title" class="text-sm font-semibold text-boulder-900">
-            {t("settings.resetTitle")}
-          </h2>
-          <p class="mt-1 text-xs leading-relaxed text-boulder-500">
-            {t("settings.resetDescription")}
-          </p>
-        </div>
+    <section class={sectionClass} aria-labelledby="reset-title">
+      <div>
+        <h2 id="reset-title" class={headingClass}>{t("settings.resetTitle")}</h2>
+        <p class={descriptionClass}>{t("settings.resetDescription")}</p>
       </div>
-      <div class="p-4.5">
-        <button
-          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-boulder-300 bg-white px-3 text-xs font-semibold text-boulder-800 hover:bg-boulder-100"
-          type="button"
-          onclick={resetSettings}><RotateCcw size={14} /><span>{t("settings.reset")}</span></button
+      <div>
+        <button class={buttonClass} type="button" onclick={resetSettings}><RotateCcw size={14} /><span>{t("settings.reset")}</span></button
         >
       </div>
     </section>
