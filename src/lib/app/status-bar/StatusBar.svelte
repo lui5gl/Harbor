@@ -6,12 +6,17 @@
   import { Menu } from "@ark-ui/svelte/menu";
   import { Portal } from "@ark-ui/svelte/portal";
   import {
+    ArrowUpRight,
     Check,
     ChevronUp,
+    FileCode2,
+    Folder,
+    Hexagon,
     KeyRound,
     Play,
     PowerOff,
     Server,
+    Settings2,
     Square,
     Terminal,
   } from "@lucide/svelte";
@@ -39,12 +44,17 @@
   const triggerClass =
     "inline-flex min-h-7 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded border-0 bg-transparent px-1.5 text-[11.5px] text-inherit hover:bg-white/10 data-[state=open]:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60";
   const contentClass =
-    "z-100 max-h-72 min-w-56 overflow-y-auto rounded-md border border-boulder-200 bg-white p-1.5 shadow-lg outline-none";
+    "z-100 max-h-96 w-72 overflow-y-auto rounded-lg border border-boulder-200 bg-white p-1.5 shadow-xl outline-none";
   const itemClass =
-    "flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-xs font-medium text-boulder-700 outline-none transition-colors data-[highlighted]:bg-boulder-100 data-[highlighted]:text-boulder-950 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40";
+    "flex min-h-9 cursor-pointer items-center gap-2.5 rounded-md px-2 py-1 text-xs font-medium text-boulder-700 outline-none transition-colors data-[highlighted]:bg-boulder-100 data-[highlighted]:text-boulder-950 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40";
   const labelClass =
-    "px-2 py-1 text-[10.5px] font-bold uppercase tracking-[0.04em] text-boulder-500";
-  const separatorClass = "mx-2 my-1 h-px border-0 bg-boulder-100";
+    "flex items-center gap-1.5 px-2 pb-1 pt-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-boulder-500";
+  const separatorClass = "mx-1 my-1.5 h-px border-0 bg-boulder-100";
+  const tileClass =
+    "flex size-6 shrink-0 items-center justify-center rounded-md bg-boulder-100 text-boulder-600";
+  const activeBadgeClass =
+    "ml-auto inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700";
+  const emptyClass = "px-2 py-2 text-xs text-boulder-500";
 
   let projects = $state<Project[]>([]);
   let activeEnvironmentId = $state<number | null>(null);
@@ -221,6 +231,26 @@
   });
 </script>
 
+{#snippet menuHeader(Icon: typeof KeyRound, title: string, subtitle: string, running?: boolean)}
+  <div class="mb-1 flex items-center gap-2.5 rounded-md bg-boulder-50 px-2.5 py-2">
+    <span
+      class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-east-bay-950 text-white"
+    >
+      <Icon size={16} aria-hidden="true" />
+    </span>
+    <div class="min-w-0">
+      <div class="truncate text-xs font-semibold text-boulder-950">{title}</div>
+      <div class="flex items-center gap-1.5 truncate text-[11px] text-boulder-500">
+        {#if running !== undefined}
+          <span class={`size-1.5 rounded-full ${running ? "bg-green-500" : "bg-boulder-300"}`}
+          ></span>
+        {/if}
+        {subtitle}
+      </div>
+    </div>
+  </div>
+{/snippet}
+
 <footer
   class="flex min-h-7 shrink-0 select-none items-center justify-between bg-east-bay-950 px-3 text-[11.5px] text-east-bay-100 max-sm:gap-2 max-sm:px-2"
   aria-label={t("status.application")}
@@ -247,34 +277,53 @@
       <Portal>
         <Menu.Positioner>
           <Menu.Content class={contentClass}>
+            {@render menuHeader(
+              KeyRound,
+              t("status.activeProfile"),
+              activeProfileName ?? t("status.noEnvironment"),
+            )}
             {#each projects as project (project.id)}
               <Menu.ItemGroup>
-                <Menu.ItemGroupLabel class={labelClass}>{project.name}</Menu.ItemGroupLabel>
+                <Menu.ItemGroupLabel class={labelClass}>
+                  <Folder size={12} aria-hidden="true" />{project.name}
+                </Menu.ItemGroupLabel>
                 {#each project.environments as environment (environment.id)}
                   <Menu.Item
                     value={`env-${environment.id}`}
                     class={itemClass}
                     onSelect={() => selectEnvironment(environment.id)}
                   >
-                    <span class="flex size-3.5 shrink-0 items-center justify-center">
-                      {#if environment.id === activeEnvironmentId}<Check size={14} />{/if}
-                    </span>
+                    <span class={tileClass}><KeyRound size={13} /></span>
                     <span class="truncate">{environment.name}</span>
+                    {#if environment.id === activeEnvironmentId}
+                      <span class={activeBadgeClass}
+                        ><Check size={10} strokeWidth={3} />{t("status.active")}</span
+                      >
+                    {/if}
                   </Menu.Item>
                 {/each}
               </Menu.ItemGroup>
             {/each}
             {#if projects.length === 0}
-              <div class="px-2 py-1.5 text-xs text-boulder-500">{t("status.noEnvironment")}</div>
+              <div class={emptyClass}>{t("status.noEnvironment")}</div>
             {/if}
             <Menu.Separator class={separatorClass} />
             {#if activeEnvironmentId !== null}
-              <Menu.Item value="deactivate" class={itemClass} onSelect={deactivateEnvironment}>
-                <PowerOff size={14} /><span>{t("status.deactivateEnvironment")}</span>
+              <Menu.Item
+                value="deactivate"
+                class={`${itemClass} text-red-600 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-700`}
+                onSelect={deactivateEnvironment}
+              >
+                <span class="flex size-6 shrink-0 items-center justify-center rounded-md bg-red-50"
+                  ><PowerOff size={13} /></span
+                >
+                <span>{t("status.deactivateEnvironment")}</span>
               </Menu.Item>
             {/if}
             <Menu.Item value="manage" class={itemClass} onSelect={() => void goto("/secrets")}>
-              <KeyRound size={14} /><span>{t("status.manageSecrets")}</span>
+              <span class={tileClass}><Settings2 size={13} /></span>
+              <span>{t("status.manageSecrets")}</span>
+              <ArrowUpRight size={13} class="ml-auto text-boulder-400" />
             </Menu.Item>
           </Menu.Content>
         </Menu.Positioner>
@@ -310,26 +359,36 @@
       <Portal>
         <Menu.Positioner>
           <Menu.Content class={contentClass}>
+            {@render menuHeader(
+              Terminal,
+              "Node.js",
+              nodeVersion ? `v${nodeVersion}` : t("common.none"),
+            )}
             <Menu.ItemGroup>
-              <Menu.ItemGroupLabel class={labelClass}>Node.js</Menu.ItemGroupLabel>
+              <Menu.ItemGroupLabel class={labelClass}>{t("status.versions")}</Menu.ItemGroupLabel>
               {#each nodeVersions as version (version)}
                 <Menu.Item
                   value={`node-${version}`}
                   class={itemClass}
                   onSelect={() => selectNodeVersion(version)}
                 >
-                  <span class="flex size-3.5 shrink-0 items-center justify-center">
-                    {#if cleanVersion(version) === nodeVersion}<Check size={14} />{/if}
-                  </span>
+                  <span class={tileClass}><Hexagon size={13} /></span>
                   <span>v{cleanVersion(version)}</span>
+                  {#if cleanVersion(version) === nodeVersion}
+                    <span class={activeBadgeClass}
+                      ><Check size={10} strokeWidth={3} />{t("status.active")}</span
+                    >
+                  {/if}
                 </Menu.Item>
               {:else}
-                <div class="px-2 py-1.5 text-xs text-boulder-500">{t("status.noVersions")}</div>
+                <div class={emptyClass}>{t("status.noVersions")}</div>
               {/each}
             </Menu.ItemGroup>
             <Menu.Separator class={separatorClass} />
             <Menu.Item value="manage" class={itemClass} onSelect={() => void goto("/services")}>
-              <Server size={14} /><span>{t("status.manageServices")}</span>
+              <span class={tileClass}><Settings2 size={13} /></span>
+              <span>{t("status.manageServices")}</span>
+              <ArrowUpRight size={13} class="ml-auto text-boulder-400" />
             </Menu.Item>
           </Menu.Content>
         </Menu.Positioner>
@@ -358,39 +417,55 @@
       <Portal>
         <Menu.Positioner>
           <Menu.Content class={contentClass}>
+            {@render menuHeader(
+              FileCode2,
+              "PHP FastCGI",
+              isPhpRunning ? `${t("status.running")} · 127.0.0.1:9070` : t("common.stopped"),
+              isPhpRunning,
+            )}
             <Menu.Item
               value="toggle"
-              class={itemClass}
+              class={`${itemClass} ${isPhpRunning ? "text-red-600 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-700" : "text-green-700 data-[highlighted]:bg-green-50 data-[highlighted]:text-green-800"}`}
               disabled={!isPhpRunning && !phpVersion}
               onSelect={togglePhp}
             >
-              {#if isPhpRunning}
-                <Square size={13} fill="currentColor" /><span>{t("status.stopPhp")}</span>
-              {:else}
-                <Play size={13} fill="currentColor" /><span>{t("status.startPhp")}</span>
-              {/if}
+              <span
+                class={`flex size-6 shrink-0 items-center justify-center rounded-md ${isPhpRunning ? "bg-red-50" : "bg-green-50"}`}
+              >
+                {#if isPhpRunning}
+                  <Square size={12} fill="currentColor" />
+                {:else}
+                  <Play size={12} fill="currentColor" />
+                {/if}
+              </span>
+              <span>{isPhpRunning ? t("status.stopPhp") : t("status.startPhp")}</span>
             </Menu.Item>
             <Menu.Separator class={separatorClass} />
             <Menu.ItemGroup>
-              <Menu.ItemGroupLabel class={labelClass}>PHP</Menu.ItemGroupLabel>
+              <Menu.ItemGroupLabel class={labelClass}>{t("status.versions")}</Menu.ItemGroupLabel>
               {#each phpVersions as version (version)}
                 <Menu.Item
                   value={`php-${version}`}
                   class={itemClass}
                   onSelect={() => selectPhpVersion(version)}
                 >
-                  <span class="flex size-3.5 shrink-0 items-center justify-center">
-                    {#if cleanVersion(version) === phpVersion}<Check size={14} />{/if}
-                  </span>
+                  <span class={tileClass}><FileCode2 size={13} /></span>
                   <span>v{cleanVersion(version)}</span>
+                  {#if cleanVersion(version) === phpVersion}
+                    <span class={activeBadgeClass}
+                      ><Check size={10} strokeWidth={3} />{t("status.active")}</span
+                    >
+                  {/if}
                 </Menu.Item>
               {:else}
-                <div class="px-2 py-1.5 text-xs text-boulder-500">{t("status.noVersions")}</div>
+                <div class={emptyClass}>{t("status.noVersions")}</div>
               {/each}
             </Menu.ItemGroup>
             <Menu.Separator class={separatorClass} />
             <Menu.Item value="manage" class={itemClass} onSelect={() => void goto("/services")}>
-              <Server size={14} /><span>{t("status.manageServices")}</span>
+              <span class={tileClass}><Settings2 size={13} /></span>
+              <span>{t("status.manageServices")}</span>
+              <ArrowUpRight size={13} class="ml-auto text-boulder-400" />
             </Menu.Item>
           </Menu.Content>
         </Menu.Positioner>
